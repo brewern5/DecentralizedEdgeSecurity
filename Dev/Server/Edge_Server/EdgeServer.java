@@ -27,6 +27,7 @@ public class EdgeServer {
 
         // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
+            System.out.println("            EDGE SERVER\n\n");
             IP = config.grabIP();
         } catch (UnknownHostException e) {
             System.err.println("Error: Unable to determine local host IP address.");
@@ -52,6 +53,7 @@ public class EdgeServer {
         // Try to create a serverSocket to listen to requests 
         try {
             listening = new ServerSocket(port);
+            
             System.out.println("Listening on port " + port);
         } catch (Exception e) {
             System.err.println("Error creating Listening Socket on port " + port);
@@ -81,6 +83,11 @@ public class EdgeServer {
 
         init();         // Begins the initalization process 
 
+        while (true) {
+
+            
+
+        }
         
     }
 }

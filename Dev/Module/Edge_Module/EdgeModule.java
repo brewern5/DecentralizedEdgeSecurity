@@ -1,5 +1,3 @@
-// 
-
 package Edge_Module;
 
 import java.io.*;
@@ -29,6 +27,7 @@ public class EdgeModule {
 
         // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
+            System.out.println("            EDGE MODULE\n\n");
             IP = config.grabIP();
         } catch (UnknownHostException e) {
             System.err.println("Error: Unable to determine local host IP address.");
@@ -77,7 +76,21 @@ public class EdgeModule {
                 e.printStackTrace();
             }
             
-            System.out.println("Client connected: " + clientSocket.getInetAddress());
+            System.out.println("Client connected: " + clientSocket.getInetAddress() + "\n");
+
+            try{
+                BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                String line;
+
+                while((line = reader.readLine()) != null) {
+                    System.out.println("Client: ");
+                    System.out.println(line);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+             
 
         }
         

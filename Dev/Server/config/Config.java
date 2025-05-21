@@ -18,7 +18,7 @@ public class Config {
 
     static {
         try {
-            FileInputStream in = new FileInputStream("./config/config.properties");
+            FileInputStream in = new FileInputStream("config/config.properties");
             properties.load(in);
             in.close();
         } catch (IOException e){
