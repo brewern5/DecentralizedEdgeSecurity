@@ -5,13 +5,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
-import config.Config;       // The configuration file for the entire network
+import config.ServerConfig;
 
 public class ServerClientHandler implements Runnable {
     
     private Socket clientSocket;
 
-    private Config config = new Config();
+    private ServerConfig config = new ServerConfig();
 
     public ServerClientHandler(Socket socket) {
         this.clientSocket = socket;
@@ -27,7 +27,6 @@ public class ServerClientHandler implements Runnable {
         clientIP = clientIP.substring(1); // Removes the forward slash
 
         config.writeToConfig("edgeServer.IP", clientIP);
-
         config.writeToConfig("edgeServer.port", Integer.toString(clientSocket.getLocalPort()));
 
         // Handle client events

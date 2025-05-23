@@ -1,7 +1,7 @@
 /**
  * 
  *              Configuration for each of the nodes in the hierarchy. Will grab machine IP address and will try to generate avaiable ports.
- *              From ./config/config.properties
+ *              From ./config/coordConfig.properties
  */
 package config;
 
@@ -14,13 +14,13 @@ import java.net.UnknownHostException;   // Error for trying to grab IP address
 
 import java.util.Properties;            // Utility for getting properties from any .properties file
 
-public class Config {
+public class CoordConfig {
 
     private static Properties properties = new Properties();      // Generate the properties object
 
     static {
         try {
-            FileInputStream in = new FileInputStream("config/config.properties");
+            FileInputStream in = new FileInputStream("config/coordConfig.properties");
             properties.load(in);
             in.close();
         } catch (IOException e){
@@ -96,7 +96,7 @@ public class Config {
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("config/config.properties")){
+                try(OutputStream outputStream = new FileOutputStream("config/coordConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
                     System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
@@ -112,7 +112,7 @@ public class Config {
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("config/config.properties")){
+                try(OutputStream outputStream = new FileOutputStream("config/coordConfig.properties")){
                     properties.store(outputStream, null);
                 
                 } catch(IOException ioe) {

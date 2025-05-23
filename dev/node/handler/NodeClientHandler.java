@@ -5,15 +5,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
-import config.CoordConfig;       // The configuration file for the entire network
+import config.NodeConfig;       // The configuration file for the entire network
 
-public class CoordClientHandler implements Runnable {
+public class NodeClientHandler implements Runnable {
     
     private Socket clientSocket;
 
-    private CoordConfig config = new CoordConfig();
+    private NodeConfig config = new NodeConfig();
 
-    public CoordClientHandler(Socket socket) {
+    public NodeClientHandler(Socket socket) {
         this.clientSocket = socket;
     }
 
@@ -27,6 +27,7 @@ public class CoordClientHandler implements Runnable {
         clientIP = clientIP.substring(1); // Removes the forward slash
 
         config.writeToConfig("edgeServer.IP", clientIP);
+
         config.writeToConfig("edgeServer.port", Integer.toString(clientSocket.getLocalPort()));
 
         // Handle client events

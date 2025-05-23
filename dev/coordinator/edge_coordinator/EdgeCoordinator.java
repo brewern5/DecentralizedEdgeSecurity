@@ -5,16 +5,17 @@ import java.net.*;
 import java.rmi.ConnectIOException;
 import java.util.*;
 
-import config.Config;       // The configuration file for the entire network
+import config.CoordConfig;       // The configuration file for the entire network
 import handler.CoordClientHandler;
+
+import listeners.Listener;
 
 public class EdgeCoordinator {
 
     private static String IP;
-    private static int port;
 
-    private static ServerSocket listening;      // The socket that will be listening to requests from the Edge server.
-    private static Socket sending;        // The socket that will send messages to edge server
+    private static Listener listener;      // The socket that will be listening to requests from the Edge server.
+    private static Socket sending;              // The socket that will send messages to edge server
 
     private static Socket clientSocket;
 
@@ -25,7 +26,7 @@ public class EdgeCoordinator {
 
     public static void init() {
 
-        Config config = new Config();
+        CoordConfig config = new CoordConfig();
 
         // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
@@ -36,17 +37,11 @@ public class EdgeCoordinator {
             e.printStackTrace();
         }
 
-        port = config.getPort("edgeCoordinator.port");
-
         // Try to create a serverSocket to listen to requests 
         try {
-            listening = new ServerSocket(port);  
-            System.out.println("Listening on port " + port);
-
-            listening.setSoTimeout(5000);   // Since new connections probably won't be made too often
-
+            listener = new Listener(config.getPort("edgeCoordinator.port"), 5000);  
         } catch (Exception e) {
-            System.err.println("Error creating Listening Socket on port " + port);
+            System.err.println("Error creating Listening Socket on port " + config.getPort("edgeCoordinator.port"));
             e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
         }
@@ -56,20 +51,13 @@ public class EdgeCoordinator {
 
         init();         // Begins the initalization process 
 
-        boolean on = true;
+        Thread listeningThread = new Thread(listener);
+        listeningThread.start();
 
+        boolean on = true;
         while(on){
 
-            // Waits for a connection, when connection: start a new thread that will handle the message
-            try{
-                clientSocket = listening.accept(); // Accepts the incomming request
-                Thread handlerThread = new Thread(new CoordClientHandler(clientSocket));
-                handlerThread.start();
-            } catch (SocketTimeoutException sto) {
-                System.out.println("\nListening for new server...\n");
-            } catch (IOException e){
-                e.printStackTrace();
-            } 
+
         }
     }
 }
