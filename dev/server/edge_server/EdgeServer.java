@@ -5,20 +5,20 @@ import java.net.*;
 import java.util.*;
 
 import config.ServerConfig;       // The configuration file for the entire network
-import handler.ServerClientHandler;
+import handler.ServerNodeHandler;
 
-import listeners.Listener;
+import listeners.ServerListener;
 
 public class EdgeServer {
 
     private static String IP;
     private static int port;
 
-    private static Listener coordinatorListener;        // The socket that will be listening to requests from the Edge Coordinator
+    private static ServerListener coordinatorListener;        // The socket that will be listening to requests from the Edge Coordinator
 
     private static Socket coordinatorSender;            // The socket that will send messages to the Edge Coordinator
 
-    private static Listener nodeListener;               // The socket that will be listening for Nodes
+    private static ServerListener nodeListener;               // The socket that will be listening for Nodes
 
     private static Socket nodeSender;                   // The socket that will send messages to its Nodes
 
@@ -42,7 +42,7 @@ public class EdgeServer {
 
         // Create the inital connection with the coordinator
         try {
-            coordinatorSender = new Socket(config.getIPByKey("edgeCoordinator.IP"), config.getPort("edgeCoordinator.port"));
+            coordinatorSender = new Socket(config.getIPByKey("Coordinator.IP"), config.getPortByKey("Coordinator.sendingPort"));
 
             PrintWriter output = new PrintWriter(coordinatorSender.getOutputStream(), true);
             BufferedReader input = new BufferedReader(new InputStreamReader(coordinatorSender.getInputStream()));
@@ -67,18 +67,18 @@ public class EdgeServer {
 
         // Create listening port for the coordinator
         try {
-            coordinatorListener = new Listener(config.getPort("edgeCoordinatorListener.port"), 5000);
+            coordinatorListener = new ServerListener(config.getPortByKey("CoordinatorListener.listeningPort"), 5000);
         } catch (Exception e) {
-            System.err.println("Error creating Listening Socket on port " + config.getPort("edgeCoordinatorListener.port"));
+            System.err.println("Error creating Listening Socket on port " + config.getPortByKey("CoordinatorListener.listeningPort"));
             e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
         }
 
         // Try to create a serverSocket to listen to requests from Nodes
         try {
-            nodeListener = new Listener(config.getPort("edgeNodeListener.port"), 1000);
+            nodeListener = new ServerListener(config.getPortByKey("NodeListener.listeningPort"), 1000);
         } catch (Exception e) {
-            System.err.println("Error creating Listening Socket on port " + config.getPort("edgeNodeListener.port"));
+            System.err.println("Error creating Listening Socket on port " + config.getPortByKey("NodeListener.listeningPort"));
             e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
         }

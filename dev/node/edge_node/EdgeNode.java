@@ -6,15 +6,15 @@ import java.net.*;
 import java.util.*;
 
 import config.NodeConfig;               // The configuration file for the entire network
-import handler.NodeClientHandler;   
+import handler.NodeServerHandler;   
 
-import listeners.Listener;
+import listeners.NodeListener;
 
 public class EdgeNode {
 
     private static String IP;
 
-    private static Listener listener;            // The socket that will be listening to requests from the Edge server.
+    private static NodeListener listener;            // The socket that will be listening to requests from the Edge server.
     private static Socket sending;              // The socket that will send messages to edge server
 
     /*
@@ -37,12 +37,19 @@ public class EdgeNode {
 
         // Try to connect to the edge server
         try {
-            sending = new Socket(config.getIPByKey("edgeServer.IP"), config.getPort("edgeServer.port"));
+            sending = new Socket(config.getIPByKey("Server.IP"), config.getPortByKey("Server.listeningPort"));
 
             PrintWriter output = new PrintWriter(sending.getOutputStream(), true);
             BufferedReader input = new BufferedReader(new InputStreamReader(sending.getInputStream()));
 
             output.println("This is the edge Node");
+
+            // Read the response
+            String line = input.readLine();
+            if(line != null){
+                System.out.println("Response: \n\t");
+                System.out.println(line);
+            }
 
             output.close();         //
             input.close();          // Close the port
@@ -54,9 +61,9 @@ public class EdgeNode {
 
         // Try to create a serverSocket to listen to requests 
         try {
-            listener = new Listener(config.getPort("edgeNode.port"), 2000);
+            listener = new NodeListener(config.getPortByKey("Node.listeningPort"), 2000);
         } catch (Exception e) {
-            System.err.println("Error creating Listening Socket on port " + config.getPort("edgeNode.port"));
+            System.err.println("Error creating Listening Socket on port " + config.getPortByKey("Node.listeningPort"));
             e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
         }
@@ -66,7 +73,8 @@ public class EdgeNode {
 
         init();         // Begins the initalization process 
 
-        Thread listeningThread = new Thread(listener);
+        Thread serverThread = new Thread(listener);
+        serverThread.start();
 
         boolean on = true;
         while(on){

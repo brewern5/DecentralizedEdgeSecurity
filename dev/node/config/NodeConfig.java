@@ -41,7 +41,7 @@ public class NodeConfig {
         InetAddress localHost = InetAddress.getLocalHost();     // Grabs the IP and will convert it to a Java object
         ipAddress = localHost.getHostAddress();                 // Generates the IP as a string to pass it back to the edge node using it
 
-        writeToConfig("edgeServer.IP", ipAddress);          // Since the IP will be machine dependant at the moment, just grab the machine IP
+        writeToConfig("Server.IP", ipAddress);          // Since the IP will be machine dependant at the moment, just grab the machine IP
 
         return ipAddress;       // Will return a null value if no IP is found 
     }
@@ -66,7 +66,7 @@ public class NodeConfig {
      *  @return int, if port is found. If not found 0
      */
 
-    public int getPort(String key){
+    public int getPortByKey(String key){
 
         int port = 0;
         try{
