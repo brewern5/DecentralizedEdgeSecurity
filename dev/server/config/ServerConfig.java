@@ -44,7 +44,6 @@ public class ServerConfig {
         InetAddress localHost = InetAddress.getLocalHost();     // Grabs the IP and will convert it to a Java object
         ipAddress = localHost.getHostAddress();                 // Generates the IP as a string to pass it back to the edge node using it
 
-
         writeToConfig("edgeNode.IP", ipAddress);            // Since the IP will be machine dependant at the moment, just grab the machine IP
         writeToConfig("edgeCoordinator.IP", ipAddress);
 
