@@ -8,24 +8,29 @@ public class ServerPacket implements Serializable {
     private String sender;
     private String payload;
 
-    public ServerPacket(int packetType, String sender, String payload) {
-        this.packetType = packetType;
-        this.sender = sender;
-        this.payload = payload;
-    }
+    public ServerPacket() {} // Packets will be created 
 
-    /*          Accessor methods         */
+    /*          Accessor/setter methods         */
 
     public int getPacketType() {
         return packetType;
+    }
+    public void setPacketType(int packetType) {
+        this.packetType = packetType;
     }
 
     public String getSender() {
         return sender;
     }
+    public void setSender(String sender) {
+        this.sender = sender;
+    }
 
     public String payload() {
         return payload;
+    }
+    public void setPayload(String payload) {
+        this.payload = payload;
     }
 
     // Need to serialize the data since they will be sent (and read) as bytes
@@ -41,5 +46,11 @@ public class ServerPacket implements Serializable {
         ByteArrayInputStream bis = new ByteArrayInputStream(data);
         ObjectInputStream in = new ObjectInputStream(bis);
         return (ServerPacket) in.readObject();  // returns the Object as a ServerPacket object rather than a generic object
+    }
+
+    // converts the packet to a key/value String 
+    public String toString() {
+        String packetString = "packetType=" + packetType + " sender=" + sender + " payload=" + payload;
+        return packetString;
     }
 }

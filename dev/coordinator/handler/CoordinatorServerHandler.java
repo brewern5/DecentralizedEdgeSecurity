@@ -46,7 +46,7 @@ public class CoordinatorServerHandler implements Runnable {
 
             String line = reader.readLine();
             if (line != null) {
-                System.out.println("Node: \n\t" + line);
+                System.out.println("Server: \n\t" + line);
                 PrintWriter output = new PrintWriter(serverSocket.getOutputStream(), true);
                 output.println("Hi, edge server, this is the edge coordinator!");
             }
