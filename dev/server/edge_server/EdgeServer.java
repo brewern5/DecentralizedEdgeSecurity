@@ -4,13 +4,17 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import config.ServerConfig;       // The configuration file for the entire network
-import handler.ServerNodeHandler;
+import config.ServerConfig;       // The configuration file for the server, holds the IPs and Ports for different layers 
 
+// Configures the listeners
+import handler.ServerNodeHandler;
 import listeners.ServerListener;
+
+// Packet Structure
 import packet.ServerPacketType;
 import packet.ServerPacket;
 
+// Jsonify the packet before sending
 import com.google.gson.Gson;
 
 public class EdgeServer {
@@ -20,11 +24,11 @@ public class EdgeServer {
     private static String IP;
     private static int port;
 
-    private static ServerListener coordinatorListener;        // The socket that will be listening to requests from the Edge Coordinator
+    private static ServerListener coordinatorListener;  // The socket that will be listening to requests from the Edge Coordinator
 
     private static Socket coordinatorSender;            // The socket that will send messages to the Edge Coordinator
 
-    private static ServerListener nodeListener;               // The socket that will be listening for Nodes
+    private static ServerListener nodeListener;         // The socket that will be listening for Nodes
 
     private static Socket nodeSender;                   // The socket that will send messages to its Nodes
 
@@ -37,7 +41,7 @@ public class EdgeServer {
 
         ServerConfig config = new ServerConfig();
 
-        // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
+        // try to generate the IP from the machines IP - Throws UnknownHostException if it cannot determine
         try{
             System.out.println("            EDGE SERVER\n\n");
             IP = config.grabIP();
@@ -60,7 +64,7 @@ public class EdgeServer {
             );
 
 
-            // If the acknowledgement is not recieved then it will try 2 more times and if then shutdown
+            // If the acknowledgement is not recieved then it will try 2 more times and if it still can't connect then it will shutdown
             int maxRetries = 3;
             int attempts = 0;
             boolean ackReceived = false;
@@ -91,7 +95,7 @@ public class EdgeServer {
                         System.err.println("Attempt limit met trying to recieve ACK - shutting down");
                         // TODO: shutdown
                     }
-                    // Wait to retry
+                    // Wait to retry and increment attempts
                     Thread.sleep(1000);
                     attempts++;
                 }
@@ -108,7 +112,7 @@ public class EdgeServer {
          * 
          */
 
-        // Create listening port for the coordinator
+        // Instantiate a listening port for the coordinator, will need to run this on a thread
         try {
             coordinatorListener = new ServerListener(config.getPortByKey("CoordinatorListener.listeningPort"), 5000);
         } catch (Exception e) {
@@ -117,7 +121,7 @@ public class EdgeServer {
             // TODO: try to grab new port if this one is unavailable
         }
 
-        // Try to create a serverSocket to listen to requests from Nodes
+        // Instantiate a listening port for the Nodes, will need to run this on a thread
         try {
             nodeListener = new ServerListener(config.getPortByKey("NodeListener.listeningPort"), 1000);
         } catch (Exception e) {

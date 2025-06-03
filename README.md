@@ -46,9 +46,24 @@ This design allows the Coordinator to flexibly handle different types of message
 
 ## Server
 
-- Connects to the Coordinator and sends a greeting.
-- Listens for incoming connections from Nodes.
-- Prints received messages from Nodes and responds with a greeting.
+The Server is a crucial component that connects to the Coordinator and manages communication with Nodes. Its responsibilities include:
+
+- **Initialization and Registration:**
+  - Connects to the Coordinator and sends an INITIALIZATION packet containing its configuration (e.g., listening port).
+  - Waits for an ACK from the Coordinator to confirm successful registration.
+
+- **Node Communication:**
+  - Listens for incoming connections from Nodes on its configured port.
+  - Receives and parses packets from Nodes using the generic packet structure.
+  - Responds to Node messages and can send/receive various packet types (e.g., MESSAGE, ACK).
+
+- **Packet Parsing and Handling:**
+  - Inspects the `packetType` field of received packets to determine the type of message.
+  - Handles MESSAGE and ACK packet types with appropriate logic (e.g., printing messages, sending acknowledgments).
+
+- **Thread Management:**
+  - Manages each Node connection in a separate thread for concurrent processing.
+  - Demonstrates proper socket, stream, and thread management for robust operation.
 
 ---
 
