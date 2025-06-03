@@ -1,7 +1,7 @@
 /**
  * 
  *              Configuration for each of the nodes in the hierarchy. Will grab machine IP address and will try to generate avaiable ports.
- *              From ./config/coordConfig.properties
+ *              From ./config/coordinatorConfig.properties
  */
 package config;
 
@@ -96,7 +96,7 @@ public class CoordinatorConfig {
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("config/coordConfig.properties")){
+                try(OutputStream outputStream = new FileOutputStream("config/coordinatorConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
                     System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
@@ -112,7 +112,7 @@ public class CoordinatorConfig {
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("config/coordConfig.properties")){
+                try(OutputStream outputStream = new FileOutputStream("config/coordinatorConfig.properties")){
                     properties.store(outputStream, null);
                 
                 } catch(IOException ioe) {

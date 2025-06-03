@@ -11,7 +11,7 @@
 package packet;
 
 public enum ServerPacketType {
-    INITIALIZATION,   // For handshake or setup
+    INITIALIZATION,   // For handshake or setup - Will send the preferred listening port 
     AUTH,             // Authentication packets
     MESSAGE,          // Generic text/data message
     COMMAND,          // Control commands (start, stop, etc.)

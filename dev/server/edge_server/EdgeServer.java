@@ -11,7 +11,11 @@ import listeners.ServerListener;
 import packet.ServerPacketType;
 import packet.ServerPacket;
 
+import com.google.gson.Gson;
+
 public class EdgeServer {
+
+    private static Gson gson = new Gson();
 
     private static String IP;
     private static int port;
@@ -44,27 +48,55 @@ public class EdgeServer {
 
         // Create the inital connection with the coordinator
         try {
+            System.out.println("\n\n\t\tSending initalization packet to the Coordinator\n\n");
+
             coordinatorSender = new Socket(config.getIPByKey("Coordinator.IP"), config.getPortByKey("Coordinator.sendingPort"));
 
             // Create the initalization packet
             ServerPacket initPacket = new ServerPacket(
-                ServerPacketType.INITIALIZATION,      // Packet type
-                "EdgeServer",            // Sender
-                "Requesting handshake"  // Payload
+                ServerPacketType.INITIALIZATION,       // Packet type
+                "EdgeServer",                   // Sender
+                "server.listeningPort:5003"    // Payload
             );
 
-            String json = initPacket.toString();
 
-            PrintWriter output = new PrintWriter(coordinatorSender.getOutputStream(), true);
-            BufferedReader input = new BufferedReader(new InputStreamReader(coordinatorSender.getInputStream()));
+            // If the acknowledgement is not recieved then it will try 2 more times and if then shutdown
+            int maxRetries = 3;
+            int attempts = 0;
+            boolean ackReceived = false;
 
-            output.println(json);
+            while(!ackReceived){
+                String json = initPacket.toString();        // jsonifies the packet to be sent
 
-            // TODO: Get ack somewhere in here
+                PrintWriter output = new PrintWriter(coordinatorSender.getOutputStream(), true);
+                BufferedReader input = new BufferedReader(new InputStreamReader(coordinatorSender.getInputStream()));
 
-            output.close();
-            input.close();          // Close the port
-            coordinatorSender.close();
+                output.println(json);
+
+                String response = input.readLine();
+                
+                // Will handle the response packet and look for errors, if packetType = ACK then good to contiue initalization
+                ServerPacket ackPacket = gson.fromJson(response, ServerPacket.class);
+                System.out.println("Sender: \n\t" + ackPacket.getSender() + "\n\nPacket Type: \n\t" + ackPacket.getPacketType() + "\n\nPayload: \n\t" + ackPacket.getPayload()  + "\n");
+                
+                if(ackPacket.getPacketType() == ServerPacketType.ACK) {
+                    output.close();             //
+                    input.close();              // Close the port
+                    coordinatorSender.close();  //
+
+                    ackReceived = true;     // Break out of while loop
+                } else {
+                    System.err.println("Failed to recieve ACK - retrying");
+                    if(attempts >= maxRetries) {
+                        System.err.println("Attempt limit met trying to recieve ACK - shutting down");
+                        // TODO: shutdown
+                    }
+                    // Wait to retry
+                    Thread.sleep(1000);
+                    attempts++;
+                }
+            }
+            
 
         } catch (Exception e) {
             e.printStackTrace();

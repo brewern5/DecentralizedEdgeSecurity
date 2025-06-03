@@ -7,6 +7,7 @@
  * 
  *  Need to find an approach that will tell the reciever when the end of the packet is reached:
  *          - Delimited approach (adding clear ending to the message such as: ||END||);
+ *          - Add character counter, this seems like too much to run    
  * 
  */
 package packet;
@@ -16,8 +17,6 @@ import java.io.*;
 import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
 
 public class ServerPacket {
-    
-    private Gson gson = new Gson();
 
     private ServerPacketType packetType;     // Enum for easy constant assignment
     private String sender;

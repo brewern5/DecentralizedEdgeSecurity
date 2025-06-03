@@ -13,6 +13,8 @@ import packet.*;
 
 public class CoordinatorServerHandler implements Runnable {
 
+    private volatile boolean running = true;
+
     private CoordinatorConfig config = new CoordinatorConfig();
 
     private Socket serverSocket;
@@ -38,18 +40,46 @@ public class CoordinatorServerHandler implements Runnable {
         // TODO: handle initalization from here
         serverIP = serverSocket.getInetAddress().toString();
         serverIP = serverIP.substring(1); // Removes the forward slash
+        
+        // Grab the payload from the packet
+        String payload = serverPacket.getPayload();
 
+        String[] pairs = payload.split(";");
+
+        for (String pair : pairs) {
+            String[] keyValue = pair.split(":", 2);
+            String key = keyValue[0];
+            String value = keyValue.length > 1 ? keyValue[1] : ""; // makes sure the value is always a valid string
+
+            // Write the key value to coordinatorConfig
+            config.writeToConfig(key, value);
+        }
+        
         // TODO: Instatiate returnPacket
-
+        responsePacket = new CoordinatorPacket(
+                CoordinatorPacketType.ACK,   // Packet type
+                "Coordinator",   // Sender
+                "Good"          // Payload
+        );
+        respond();
     }
 
     /*
      *                     Acknowledgment
      */
 
-     // Sends the response packet back to sender
-    private void sendAck() {
+    // Takes an already initalized response packet and returns to sender
+    private void respond() {
 
+        String json = responsePacket.toString();
+
+        try{
+            PrintWriter output = new PrintWriter(serverSocket.getOutputStream(), true);
+            output.println(json);
+        } catch (IOException e) {
+            System.err.println("Error sending response packet of type: " + responsePacket.getPacketType());
+            e.printStackTrace();
+        }
     }
 
     /*
@@ -64,8 +94,9 @@ public class CoordinatorServerHandler implements Runnable {
 
         Gson gson = new Gson();     // Allows us to decode the json string from the message
 
-        System.out.println("Server connected from "+ serverSocket.getInetAddress().toString()+ ":" + serverSocket.getLocalPort());
+        System.out.println("Server connected from "+ serverSocket.getInetAddress().toString()+ ":" + serverSocket.getPort());
 
+        // Stores the IP address from the sender
         serverIP = serverSocket.getInetAddress().toString();
         serverIP = serverIP.substring(1); // Removes the forward slash
 
@@ -86,7 +117,6 @@ public class CoordinatorServerHandler implements Runnable {
                 // Checks the packet type to determine how it needs to handle it
                 switch (serverPacket.getPacketType()) {
                     case INITIALIZATION:
-                        // TODO: Handle initialization logic
                         init();
                         break;
                     case AUTH:
@@ -119,17 +149,8 @@ public class CoordinatorServerHandler implements Runnable {
                     default:
                         // Handle unknown or unsupported packet types
                         break;
-                
-                    }
-
-                PrintWriter output = new PrintWriter(serverSocket.getOutputStream(), true);
-                output.println("Hi, edge server, this is the edge coordinator!");
+                }
             }
-
-            // TODO: Do stuff here with message
-
-            // Acknowledge
-
             reader.close();
 
             // TODO: check some other things before closing the sockets
