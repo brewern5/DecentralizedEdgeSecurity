@@ -5,10 +5,13 @@
 DecentralizedEdgeSecurity is a research project for building a basic 3-tiered edge network. The current implementation sets up a Coordinator, a Server, and a Node, each running as a separate Java process. These components establish TCP connections and exchange simple messages to demonstrate connectivity between tiers.
 
 **Current features:**
-- Coordinator listens for connections from Servers.
-- Server connects to the Coordinator and listens for connections from Nodes.
-- Node connects to the Server.
-- Each component sends and receives a simple greeting message upon connection.
+- Coordinator listens for connections from Servers and processes packets using a unified JSON structure.
+- Server connects to the Coordinator, sends an INITIALIZATION packet, and listens for connections from Nodes.
+- Node connects to the Server and exchanges messages using the generic packet format.
+- All components use a flexible packet structure with `packetType`, `sender`, and `payload` fields.
+- Coordinator parses and handles different packet types (e.g., INITIALIZATION, MESSAGE, ACK, etc.), with extensible logic for future types.
+- Basic handshake and acknowledgment logic implemented between tiers.
+- Each component demonstrates proper TCP socket management and thread handling.
 
 ---
 
@@ -53,6 +56,58 @@ This design allows the Coordinator to flexibly handle different types of message
 
 - Connects to the Server and sends a greeting.
 - Prints the response from the Server.
+
+---
+
+## Packet Structure: Generic Packet
+
+All packets exchanged between components (Coordinator, Server, Node) follow a common JSON structure. This structure allows for flexible message types and payloads.
+
+**Fields:**
+- `packetType`: The type of the packet (e.g., INITIALIZATION, AUTH, MESSAGE, COMMAND, HEARTBEAT, STATUS, DATA, ERROR, ACK, DISCONNECT).
+- `sender`: The name or identifier of the sender (e.g., EdgeServer, EdgeNode, Coordinator).
+- `payload`: The message content, which may be a string, JSON object, or key-value pairs depending on the packet type.
+
+**Example JSON:**
+```json
+{
+  "packetType": "MESSAGE",
+  "sender": "EdgeNode",
+  "payload": "Hello, server!"
+}
+```
+
+**Notes:**
+- The meaning and format of `payload` depend on the `packetType`.
+- All packets must include these three fields.
+
+---
+
+## Packet Structure: INITIALIZATION Type
+
+When a Server connects to the Coordinator, it sends an INITIALIZATION packet. This packet is serialized as JSON and contains the following fields:
+
+- `packetType`: The type of the packet. For initialization, this is `INITIALIZATION`.
+- `sender`: The name or identifier of the sender (e.g., `EdgeServer`).
+- `payload`: A string containing key-value pairs separated by semicolons, describing initialization parameters (e.g., the server's listening port).
+
+**Example JSON:**
+```json
+{
+  "packetType": "INITIALIZATION",
+  "sender": "EdgeServer",
+  "payload": "server.listeningPort:5003"
+}
+```
+
+**Payload Format:**
+- The payload is a string of key-value pairs separated by semicolons (`;`).
+- Each key and value are separated by a colon (`:`).
+- Example: `"server.listeningPort:5003;anotherKey:anotherValue"`
+
+**Coordinator Handling:**
+- The Coordinator parses the payload, extracts each key-value pair, and stores them in its configuration.
+- After processing, the Coordinator responds with an ACK packet to confirm successful initialization.
 
 ---
 
