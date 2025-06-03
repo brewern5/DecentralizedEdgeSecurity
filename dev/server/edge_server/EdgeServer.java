@@ -8,6 +8,8 @@ import config.ServerConfig;       // The configuration file for the entire netwo
 import handler.ServerNodeHandler;
 
 import listeners.ServerListener;
+import packet.PacketType;
+import packet.ServerPacket;
 
 public class EdgeServer {
 
@@ -44,10 +46,19 @@ public class EdgeServer {
         try {
             coordinatorSender = new Socket(config.getIPByKey("Coordinator.IP"), config.getPortByKey("Coordinator.sendingPort"));
 
+            // Create the initalization packet
+            ServerPacket initPacket = new ServerPacket(
+                PacketType.INITIALIZATION,      // Packet type
+                "EdgeServer",            // Sender
+                "Requesting handshake"  // Payload
+            );
+
+            String json = initPacket.toString();
+
             PrintWriter output = new PrintWriter(coordinatorSender.getOutputStream(), true);
             BufferedReader input = new BufferedReader(new InputStreamReader(coordinatorSender.getInputStream()));
 
-            output.println("Hello From the Server!");
+            output.println(json);
 
             // TODO: Get ack somewhere in here
 

@@ -5,6 +5,8 @@ import java.net.*;
 import java.rmi.ConnectIOException;
 import java.util.*;
 
+import com.google.gson.Gson;        // For Json 
+
 import config.CoordinatorConfig;       // The configuration file for the entire network
 import handler.CoordinatorServerHandler;
 

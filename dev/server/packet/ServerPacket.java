@@ -1,21 +1,37 @@
+/*
+ *  Packet class that easily allows for creation of packets that are in the Json Format for
+ *  digestability and ease of use.
+ * 
+ *  I chose the Json format for easy formatting purposes and the preservation of variables
+ *  Gson Docs: https://github.com/google/gson/blob/main/UserGuide.md
+ * 
+ */
 package packet;
 
 import java.io.*;
 
-public class ServerPacket implements Serializable {
+import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
+
+public class ServerPacket {
     
-    private int packetType;     // 1 for message 2 for command
+    private PacketType packetType;     // Enum for easy constant assignment
     private String sender;
     private String payload;
 
-    public ServerPacket() {} // Packets will be created 
+    public ServerPacket() {} // No-args constructor
+
+    public ServerPacket(PacketType packetType, String sender, String payload) {
+        this.packetType = packetType;
+        this.sender = sender;
+        this.payload = payload;
+    }
 
     /*          Accessor/setter methods         */
 
-    public int getPacketType() {
+    public PacketType getPacketType() {
         return packetType;
     }
-    public void setPacketType(int packetType) {
+    public void setPacketType(PacketType packetType) {
         this.packetType = packetType;
     }
 
@@ -33,24 +49,8 @@ public class ServerPacket implements Serializable {
         this.payload = payload;
     }
 
-    // Need to serialize the data since they will be sent (and read) as bytes
-    public byte[] serialize() throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(bos);
-        out.writeObject(this);
-        return bos.toByteArray();
-    }
-
-    // This will deserialize the data (i.e the recieved data);
-    public static ServerPacket deserialize(byte[] data) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        ObjectInputStream in = new ObjectInputStream(bis);
-        return (ServerPacket) in.readObject();  // returns the Object as a ServerPacket object rather than a generic object
-    }
-
     // converts the packet to a key/value String 
     public String toString() {
-        String packetString = "packetType=" + packetType + " sender=" + sender + " payload=" + payload;
-        return packetString;
+        return new Gson().toJson(this);
     }
 }
