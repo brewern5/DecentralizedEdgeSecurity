@@ -8,7 +8,7 @@ import config.ServerConfig;       // The configuration file for the entire netwo
 import handler.ServerNodeHandler;
 
 import listeners.ServerListener;
-import packet.PacketType;
+import packet.ServerPacketType;
 import packet.ServerPacket;
 
 public class EdgeServer {
@@ -48,7 +48,7 @@ public class EdgeServer {
 
             // Create the initalization packet
             ServerPacket initPacket = new ServerPacket(
-                PacketType.INITIALIZATION,      // Packet type
+                ServerPacketType.INITIALIZATION,      // Packet type
                 "EdgeServer",            // Sender
                 "Requesting handshake"  // Payload
             );

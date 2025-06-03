@@ -5,9 +5,6 @@
  *  I chose the Json format for easy formatting purposes and the preservation of variables
  *  Gson Docs: https://github.com/google/gson/blob/main/UserGuide.md
  * 
- *  Need to find an approach that will tell the reciever when the end of the packet is reached:
- *          - Delimited approach (adding clear ending to the message such as: ||END||);
- * 
  */
 package packet;
 
@@ -15,17 +12,15 @@ import java.io.*;
 
 import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
 
-public class ServerPacket {
+public class CoordinatorPacket {
     
-    private Gson gson = new Gson();
-
-    private ServerPacketType packetType;     // Enum for easy constant assignment
+    private CoordinatorPacketType packetType;     // Enum for easy constant assignment
     private String sender;
     private String payload;
 
-    public ServerPacket() {} // No-args constructor
+    public CoordinatorPacket() {} // No-args constructor
 
-    public ServerPacket(ServerPacketType packetType, String sender, String payload) {
+    public CoordinatorPacket(CoordinatorPacketType packetType, String sender, String payload) {
         this.packetType = packetType;
         this.sender = sender;
         this.payload = payload;
@@ -33,10 +28,10 @@ public class ServerPacket {
 
     /*          Accessor/setter methods         */
 
-    public ServerPacketType getPacketType() {
+    public CoordinatorPacketType getPacketType() {
         return packetType;
     }
-    public void setPacketType(ServerPacketType packetType) {
+    public void setPacketType(CoordinatorPacketType packetType) {
         this.packetType = packetType;
     }
 
@@ -50,28 +45,12 @@ public class ServerPacket {
     public String getPayload() {
         return payload;
     }
-
     public void setPayload(String payload) {
         this.payload = payload;
     }
 
-    // converts the packet to a key/value String
+    // converts the packet to a key/value String 
     public String toString() {
         return new Gson().toJson(this);
     }
-
-
-
-    
-    //
-    //
-    //      NOT IMPLEMENTED
-    //
-    //
-    // adds a clear end of message line that will be handled 
-    public String toDelimitedString() {
-        return new Gson().toJson(this) + "||END||";
-    }
-
-    
 }

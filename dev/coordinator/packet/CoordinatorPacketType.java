@@ -10,7 +10,7 @@
  */
 package packet;
 
-public enum PacketType {
+public enum CoordinatorPacketType {
     INITIALIZATION,   // For handshake or setup
     AUTH,             // Authentication packets
     MESSAGE,          // Generic text/data message
