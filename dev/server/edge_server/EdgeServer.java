@@ -50,7 +50,12 @@ public class EdgeServer {
             e.printStackTrace();
         }
 
-        // Create the inital connection with the coordinator
+        /* 
+        Create the inital connection with the coordinator. This Try/Catch will try to create the inital
+        connection with the Coordinator. 
+        In this it will try and create an Initalization packet, which will send it's preffered receiving port
+        to the Coordinator in order to store that into it's config file
+        */
         try {
             System.out.println("\n\n\t\tSending initalization packet to the Coordinator\n\n");
 
@@ -60,17 +65,17 @@ public class EdgeServer {
             ServerPacket initPacket = new ServerPacket(
                 ServerPacketType.INITIALIZATION,       // Packet type
                 "EdgeServer",                   // Sender
-                "server.listeningPort:5003"    // Payload
+                ""    // Payload
             );
-
 
             // If the acknowledgement is not recieved then it will try 2 more times and if it still can't connect then it will shutdown
             int maxRetries = 3;
             int attempts = 0;
             boolean ackReceived = false;
 
+            // This is where the server will wait for a proper Ack from the coordinator - if not received, will retry 3 times
             while(!ackReceived){
-                String json = initPacket.toString();        // jsonifies the packet to be sent
+                String json = initPacket.toDelimitedString();        // jsonifies the packet to be sent
 
                 PrintWriter output = new PrintWriter(coordinatorSender.getOutputStream(), true);
                 BufferedReader input = new BufferedReader(new InputStreamReader(coordinatorSender.getInputStream()));
@@ -80,10 +85,12 @@ public class EdgeServer {
                 String response = input.readLine();
                 
                 // Will handle the response packet and look for errors, if packetType = ACK then good to contiue initalization
-                ServerPacket ackPacket = gson.fromJson(response, ServerPacket.class);
-                System.out.println("Sender: \n\t" + ackPacket.getSender() + "\n\nPacket Type: \n\t" + ackPacket.getPacketType() + "\n\nPayload: \n\t" + ackPacket.getPayload()  + "\n");
+                ServerPacket responsePacket = gson.fromJson(response, ServerPacket.class);
+                System.out.println("Sender: \n\t" + responsePacket.getSender() + "\n\nPacket Type: \n\t" + responsePacket.getPacketType() + "\n\nPayload: \n\t" + responsePacket.getPayload()  + "\n");
+
+                System.out.println("\nPacket:\n\n" + responsePacket.toString() + "\n\n");
                 
-                if(ackPacket.getPacketType() == ServerPacketType.ACK) {
+                if(responsePacket.getPacketType() == ServerPacketType.ACK) {
                     output.close();             //
                     input.close();              // Close the port
                     coordinatorSender.close();  //
@@ -91,28 +98,32 @@ public class EdgeServer {
                     ackReceived = true;     // Break out of while loop
                 } else {
                     System.err.println("Failed to recieve ACK - retrying");
+
+                    output.close();             //
+                    input.close();              // Close the port
+                    coordinatorSender.close();  //
+                    
                     if(attempts >= maxRetries) {
                         System.err.println("Attempt limit met trying to recieve ACK - shutting down");
-                        // TODO: shutdown
+                        System.exit(0);
+
                     }
+                    // recreate the socket
+                    coordinatorSender = new Socket(config.getIPByKey("Coordinator.IP"), config.getPortByKey("Coordinator.sendingPort"));
                     // Wait to retry and increment attempts
                     Thread.sleep(1000);
                     attempts++;
                 }
             }
-            
-
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         /*
-         * 
          *                  Listeners
-         * 
          */
 
-        // Instantiate a listening port for the coordinator, will need to run this on a thread
+        // Instantiate a listening port for the coordinator
         try {
             coordinatorListener = new ServerListener(config.getPortByKey("CoordinatorListener.listeningPort"), 5000);
         } catch (Exception e) {
@@ -121,7 +132,7 @@ public class EdgeServer {
             // TODO: try to grab new port if this one is unavailable
         }
 
-        // Instantiate a listening port for the Nodes, will need to run this on a thread
+        // Instantiate a listening port for the Nodes
         try {
             nodeListener = new ServerListener(config.getPortByKey("NodeListener.listeningPort"), 1000);
         } catch (Exception e) {

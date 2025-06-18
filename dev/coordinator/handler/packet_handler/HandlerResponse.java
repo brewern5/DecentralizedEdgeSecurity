@@ -1,0 +1,97 @@
+/*
+ * 
+ * 
+ *      This object will define the success/failure message of handling a packet
+ *      of any type. 
+ * 
+ *      For example
+ *          If a packetType of INITALIZATION sends a preferred port and no errors
+ *          occur in handling the payload on the receiving end, then "success" = True
+ *          and the "message" will be something along the lines of "Good request"
+ * 
+ *          If a packetType of INITALIZATION does not send a preferred port or an
+ *          error occurs, then "success" = False and the message will provide adequate
+ *          details on what went wrong
+ *          
+ * 
+ */
+
+package handler.packet_handler;
+
+import java.util.List;
+import java.util.ArrayList;
+
+public class HandlerResponse {
+
+    // If successful, this will be True. If unsuccessful, then False
+    private boolean success;
+
+    // The message will provide details on what went wrong if anything at all
+    private List<String> message = new ArrayList<>();
+
+    private Exception exception;
+
+    // Since there may be multiple messages, I am using Varargs since we do not know how many messages may be sent (if there is multiple)
+    public HandlerResponse(boolean success, String... messages){
+        this.success = success;
+        this.exception = null;
+        // Converts all the messages to the arraylist for storage
+        for (String msg : messages) {
+            this.message.add(msg);
+        }
+    }
+
+    // Overloaded constructor in the case there are exceptions thrown.
+    public HandlerResponse(boolean success, Exception exception, String... messages){
+        this.success = success;
+        this.exception = exception;
+        // Converts all the messages to the arraylist for storage
+        for (String msg : messages) {
+            this.message.add(msg);
+        }
+    }
+
+    // Used for errors - will print to the console to describe issues
+    public void printMessages(){
+        for(String msg : message) {
+            System.err.println(msg);
+        }
+    }
+
+    // Used to send this to the payload and make it readable
+    @Override
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        for (String msg : message) {
+            sb.append(msg).append("; ");
+        }
+        if (exception != null) {
+            sb.append("Exception: ").append(exception.getMessage());
+        }
+        return sb.toString().trim();
+    }
+
+    public void setSuccess(boolean success){
+        this.success = success;
+    }
+
+    public void addMessage(String message){
+        this.message.add(message);
+    }
+
+    public void setException(Exception exception){
+        this.exception = exception;
+    }
+
+
+    public boolean getSuccess(){
+        return success;
+    }
+    public List getMessage(){
+        return message;
+    }
+
+    public Exception getException(){
+        return exception;
+    }
+}

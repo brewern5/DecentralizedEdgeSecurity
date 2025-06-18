@@ -20,7 +20,7 @@ public class ServerPacket {
 
     private ServerPacketType packetType;     // Enum for easy constant assignment
     private String sender;
-    private String payload;
+    private String payload;     
 
     public ServerPacket() {} // No-args constructor
 
