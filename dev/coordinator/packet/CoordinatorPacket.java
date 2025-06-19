@@ -53,4 +53,9 @@ public class CoordinatorPacket {
     public String toString() {
         return new Gson().toJson(this);
     }
+
+    // adds a clear end of message line that will be handled 
+    public String toDelimitedString() {
+        return new Gson().toJson(this) + "||END||";
+    }
 }

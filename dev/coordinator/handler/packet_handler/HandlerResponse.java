@@ -73,6 +73,10 @@ public class HandlerResponse {
         return sb.toString().trim();
     }
 
+    public String toDelimitedString(){
+        return this.toString() + "||END||";
+    }
+
     // Changes the success message to indicate a positive/negative success factor, meaning the 
     public void setSuccess(boolean success){
         this.success = success;

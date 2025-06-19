@@ -1,3 +1,23 @@
+/*
+ *      Author: Nate Brewer
+ * 
+ *      This is the main handling point Packets recieved from the server.
+ *      All recieved packets will be sent from it's respective thread to
+ *      here where the packet will be checked in this order:
+ *          - Proper termination
+ *              - Will respond with a failure packet if delimiter is not at the end
+ *          - Packet Type 
+ *              - Sends to a switch case with the different packet types which will in
+ *                turn be handled differently dependent on the type. Each packet type
+ *                handler will be in their own class
+ * 
+ *      Once the packet has been handled, the repective Packet Type handler will have 
+ *      created a 'HandleResponse' object, that will be the response messages, exceptions
+ *      (If there are exceptions) and the success status(Boolean). If the success status
+ *      is true, then a ACK packet will be sent, else a Failure packet or Error packet will
+ *      be sent instead.
+ */
+
 package handler;
 
 import java.io.BufferedReader;
@@ -42,12 +62,13 @@ public class CoordinatorServerHandler implements Runnable {
         respond();
     }
 
+    // This is the creation of the failure packet based on the packet response 
     private void failure(HandlerResponse packetResponse) {
         
         responsePacket = new CoordinatorPacket(
-                CoordinatorPacketType.ERROR,  // Packet type
-                "Coordinator",       // Sender
-                packetResponse.toString()   // Payload
+                CoordinatorPacketType.ERROR,               // Packet type
+                "Coordinator",                      // Sender
+                packetResponse.toDelimitedString()         // Payload
         );
         respond();
     }
@@ -59,10 +80,14 @@ public class CoordinatorServerHandler implements Runnable {
     // Takes an already initalized response packet and returns to sender
     private void respond() {
 
-        String json = responsePacket.toString();
+        // Puts the contents of the packet to JSON with a non-JSON compatable delimiter at the end to be handled prior to pakcet content hanlding
+        String json = responsePacket.toDelimitedString();
 
         try{
-            PrintWriter output = new PrintWriter(serverSocket.getOutputStream(), true);
+            PrintWriter output = new PrintWriter(
+                serverSocket.getOutputStream(), 
+                true
+            );
             output.println(json);
         } catch (IOException e) {
             System.err.println("Error sending response packet of type: " + responsePacket.getPacketType());
@@ -75,7 +100,6 @@ public class CoordinatorServerHandler implements Runnable {
      *                      Main run loop
      * 
      */
-
 
     @Override
     public void run(){
