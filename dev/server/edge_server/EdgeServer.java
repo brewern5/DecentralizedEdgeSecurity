@@ -65,7 +65,7 @@ public class EdgeServer {
             ServerPacket initPacket = new ServerPacket(
                 ServerPacketType.INITIALIZATION,       // Packet type
                 "EdgeServer",                   // Sender
-                ""    // Payload
+                "server.listeningPort:5003"    // Payload
             );
 
             // If the acknowledgement is not recieved then it will try 2 more times and if it still can't connect then it will shutdown

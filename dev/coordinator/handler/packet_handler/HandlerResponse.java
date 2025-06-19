@@ -1,6 +1,5 @@
-/*
- * 
- * 
+/*      Author: Nate Brewer     
+ *      
  *      This object will define the success/failure message of handling a packet
  *      of any type. 
  * 
@@ -11,9 +10,9 @@
  * 
  *          If a packetType of INITALIZATION does not send a preferred port or an
  *          error occurs, then "success" = False and the message will provide adequate
- *          details on what went wrong
+ *          details on what went wrong alongside what exception that may have risen from    
+ *          the potential error
  *          
- * 
  */
 
 package handler.packet_handler;
@@ -29,6 +28,7 @@ public class HandlerResponse {
     // The message will provide details on what went wrong if anything at all
     private List<String> message = new ArrayList<>();
 
+    // If there is an exception, it will be stored here and sent along side the message
     private Exception exception;
 
     // Since there may be multiple messages, I am using Varargs since we do not know how many messages may be sent (if there is multiple)
@@ -53,12 +53,14 @@ public class HandlerResponse {
 
     // Used for errors - will print to the console to describe issues
     public void printMessages(){
+
+        // Loops through all the stored messages and will print them to the main terminal
         for(String msg : message) {
             System.err.println(msg);
         }
     }
 
-    // Used to send this to the payload and make it readable
+    // Used to send this to the payload and make it Json-ified to be sent
     @Override
     public String toString(){
         StringBuilder sb = new StringBuilder();
@@ -71,22 +73,30 @@ public class HandlerResponse {
         return sb.toString().trim();
     }
 
+    // Changes the success message to indicate a positive/negative success factor, meaning the 
     public void setSuccess(boolean success){
         this.success = success;
     }
 
-    public void addMessage(String message){
-        this.message.add(message);
+    // If any new messages arrive in the stack, before this is sent back to the original sender, they will be added here
+    public void addMessage(String... message){
+        // Loops through each of the sent messages (if there is more than one) and adds the 
+        for(String msg : message){
+            this.message.add(msg);
+        }
     }
 
+    // If an exception arrises, after the construction of the handler response, it will be sent here
     public void setException(Exception exception){
         this.exception = exception;
     }
 
-
+    // Standard get methods
     public boolean getSuccess(){
         return success;
     }
+
+    // Returns the list of messages
     public List getMessage(){
         return message;
     }

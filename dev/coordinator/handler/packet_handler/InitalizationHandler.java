@@ -23,6 +23,11 @@ public class InitalizationHandler extends PacketHandler{
     // Allows writting to the config file
     private CoordinatorConfig config = new CoordinatorConfig();
 
+    /* This method will be called from the 'PacketHandler' SuperClass's "handle" method.
+     * This particular method will seperate the handled KeyValue pairs and seperate them
+     * into a key and a value. In this instance it is the Servers preferred recieving port.
+     * Once recieved and handled, this method will put the Key Value into the config file
+     */
     @Override
     public HandlerResponse process() {
 
@@ -30,10 +35,13 @@ public class InitalizationHandler extends PacketHandler{
             // Lambda function - HashMap has a ForEach function that receives the all the keys(k) and their corresponding values(v) and will loop through each one individually and send it to the config
             PayloadKeyValuePairs.forEach( (k, v) -> { config.writeToConfig(k, v); });
 
+            // Generates the success response to be put into the ack packet 
             packetResponse = new HandlerResponse(true, "Preferred Port Recieved");
 
         } catch(Exception e) {
             System.err.println("Error Handling packet");
+            e.printStackTrace();
+            // Generates the response to be put into the failure packet
             packetResponse = new HandlerResponse(false, e, "Error Handling Packet.");
         }
         return packetResponse;
