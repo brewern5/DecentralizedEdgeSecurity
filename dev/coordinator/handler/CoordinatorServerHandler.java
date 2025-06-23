@@ -65,11 +65,13 @@ public class CoordinatorServerHandler implements Runnable {
     // This is the creation of the failure packet based on the packet response 
     private void failure(HandlerResponse packetResponse) {
         
+        // Construct a new failure packet
         responsePacket = new CoordinatorPacket(
                 CoordinatorPacketType.ERROR,               // Packet type
                 "Coordinator",                      // Sender
                 packetResponse.toDelimitedString()         // Payload
         );
+        // Send the packet
         respond();
     }
 
@@ -94,13 +96,11 @@ public class CoordinatorServerHandler implements Runnable {
             e.printStackTrace();
         }
     }
-
     /*
      * 
      *                      Main run loop
      * 
      */
-
     @Override
     public void run(){
 

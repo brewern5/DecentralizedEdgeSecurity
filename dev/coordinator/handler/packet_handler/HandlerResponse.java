@@ -64,8 +64,9 @@ public class HandlerResponse {
     @Override
     public String toString(){
         StringBuilder sb = new StringBuilder();
+        // Loop through each individual message in the 'message' array
         for (String msg : message) {
-            sb.append(msg).append("; ");
+            sb.append(msg).append("; ");    // Add ; between the each key/value pair
         }
         if (exception != null) {
             sb.append("Exception: ").append(exception.getMessage());

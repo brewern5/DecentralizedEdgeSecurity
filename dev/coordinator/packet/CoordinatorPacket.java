@@ -1,4 +1,6 @@
 /*
+ *      Author: Nate Brewer
+ *
  *  Packet class that easily allows for creation of packets that are in the Json Format for
  *  digestability and ease of use.
  * 
@@ -49,7 +51,7 @@ public class CoordinatorPacket {
         this.payload = payload;
     }
 
-    // converts the packet to a key/value String 
+    // converts the packet to a jsonified key/value String 
     public String toString() {
         return new Gson().toJson(this);
     }

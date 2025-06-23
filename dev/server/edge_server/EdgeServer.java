@@ -95,21 +95,21 @@ public class EdgeServer {
             while(!ackReceived){
                 String json = initPacket.toDelimitedString();        // jsonifies the packet to be sent
 
-                // To be used outside control structure
+                // Initalized inside nested control structure
                 ServerPacket responsePacket;
 
-                // Creates the input and the output for the socket. The input will be used to get either an Ack packet, or failure packet
+                // Creates the input and the output for the socket.
                 PrintWriter output = new PrintWriter(
                     coordinatorSender.getOutputStream(), 
                     true
                 );
+                // Sends the packet through the socket to the Coordinator
+                output.println(json);
 
+                // Will be where the response is read from
                 BufferedReader input = new BufferedReader(
                     new InputStreamReader(coordinatorSender.getInputStream())
                 );
-
-                // Sends the packet through the socket to the Coordinator
-                output.println(json);
 
                 // Retrieves the response packet from the Coordinator
                 String response = input.readLine();
@@ -119,6 +119,7 @@ public class EdgeServer {
                     if(!response.endsWith("||END||") || response == null){
                         throw new IllegalArgumentException("\n\nPayload not properly terminated. \n\tPossible Causes:\n\t\t- Incomplete Packet\n\t\t- Unsafe Packet\n");
                     }
+                    System.out.println("\t\t\tResponse recieved\n");
                     // If true, the packet will remove the delimiter so it can properly deserialize the Json (Since ||END|| is not json)
                     response = response.substring(
                         0, 
@@ -133,7 +134,7 @@ public class EdgeServer {
                         "Sender: \t" + responsePacket.getSender() 
                         + "\n\nPacket Type: \t" + responsePacket.getPacketType() 
                         + "\n\nPayload: \t" + responsePacket.getPayload()  
-                        + "\n"
+                        + "\n\n"
                     );
 
                     // If the packet type is a ACK packet - then it is a good connection made and the server will close this socket.

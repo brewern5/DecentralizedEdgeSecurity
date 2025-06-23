@@ -1,4 +1,6 @@
 /*
+ *      Author: Nate Brewer
+ * 
  *  Enumeration for easily setting the packetType with visualizable header options
  * 
  *  Setup example
