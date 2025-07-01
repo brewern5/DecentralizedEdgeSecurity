@@ -1,4 +1,5 @@
-/**
+/*
+ *              Author: Nate Brewer
  * 
  *              Configuration for each of the nodes in the hierarchy. Will grab machine IP address and will try to generate avaiable ports.
  *              From ./config/coordinatorConfig.properties
@@ -20,6 +21,7 @@ public class CoordinatorConfig {
 
     static {
         try {
+            // Allow the reading and wrting of the properties file as a stream
             FileInputStream in = new FileInputStream("config/coordinatorConfig.properties");
             properties.load(in);
             in.close();
@@ -36,6 +38,7 @@ public class CoordinatorConfig {
 
     public String grabIP() throws UnknownHostException {
 
+        // Set the ip to null, to be handled in the caller of this method in case an error occurs
         String ipAddress = null;
         
         InetAddress localHost = InetAddress.getLocalHost();     // Grabs the IP and will convert it to a Java object
@@ -54,9 +57,10 @@ public class CoordinatorConfig {
      */
 
     public int getPortByKey(String key){
-
+        // Set port to 0 to indicate an issue accessing the properties file or the key
         int port = 0;
         try{
+            // Try and get the port by the key sent to this method
             port = Integer.parseInt(properties.getProperty(key));
 
         } catch (Error e){
@@ -70,6 +74,7 @@ public class CoordinatorConfig {
 
         String IP = "";
         try{
+            // Try and grab the IP by the key
             IP = properties.getProperty(key);
         } catch (Error e) {
             System.err.println("Error getting " + key + "'s IP from config file!\n");
@@ -93,6 +98,7 @@ public class CoordinatorConfig {
             // If the key is already in the file, this will add the value
             if(properties.getProperty(key) != null){
 
+                // Set a new (or existing, can overwrite!) key/value pair inside the properties fils
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
@@ -114,7 +120,6 @@ public class CoordinatorConfig {
                 // Write the new key/value back to the file
                 try(OutputStream outputStream = new FileOutputStream("config/coordinatorConfig.properties")){
                     properties.store(outputStream, null);
-                
                 } catch(IOException ioe) {
                     System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
                     ioe.printStackTrace();

@@ -67,9 +67,9 @@ public class CoordinatorServerHandler implements Runnable {
         
         // Construct a new failure packet
         responsePacket = new CoordinatorPacket(
-                CoordinatorPacketType.ERROR,               // Packet type
-                "Coordinator",                      // Sender
-                packetResponse.toDelimitedString()         // Payload
+                CoordinatorPacketType.ERROR,    // Packet type
+                "Coordinator",  // Sender
+                packetResponse.toDelimitedString()  // Payload
         );
         // Send the packet
         respond();
@@ -86,10 +86,12 @@ public class CoordinatorServerHandler implements Runnable {
         String json = responsePacket.toDelimitedString();
 
         try{
+            // The responder object
             PrintWriter output = new PrintWriter(
                 serverSocket.getOutputStream(), 
                 true
             );
+            // Send the jsonified packet as a response
             output.println(json);
         } catch (IOException e) {
             System.err.println("Error sending response packet of type: " + responsePacket.getPacketType());
@@ -97,9 +99,7 @@ public class CoordinatorServerHandler implements Runnable {
         }
     }
     /*
-     * 
      *                      Main run loop
-     * 
      */
     @Override
     public void run(){
@@ -111,8 +111,15 @@ public class CoordinatorServerHandler implements Runnable {
         // Handle client events
         try{
             System.out.println("\n\n\t\t Recieved New Packet!\n\n");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
 
+            // This is what decodes the incoming packet
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(
+                    serverSocket.getInputStream()
+                )
+            );
+            
+            // Stores the payload as a string to check (and potentially remove) the delimiter
             String payload = reader.readLine();
 
             // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
@@ -132,7 +139,6 @@ public class CoordinatorServerHandler implements Runnable {
 
             // Checks if empty packet
             if (json != null) {
-
                 PacketHandler packetHandler;    // This will will be instantiated based on the PacketType that needs to handle this. I.e initalizationHandler
 
                 HandlerResponse packetResponse; // The response from the handling of the packet.    
@@ -150,17 +156,25 @@ public class CoordinatorServerHandler implements Runnable {
 
                         System.out.println("\nRecieved:\n\n" + serverPacket.toString() + "\n\n");
 
+                        // Create the packetType based handler
                         packetHandler = new InitalizationHandler();
+
+                        // Allow for the packet response to be created based on the handling response
                         packetResponse = packetHandler.handle(serverPacket); 
 
                         // If good send ack
                         if(packetResponse.getSuccess() == true){
+
+                            // Construct the ack packet
                             ack(packetResponse);
                         }
                         else if(packetResponse.getSuccess() == false){
                             System.err.println("Error Handling Packet of Type: \tINITIALIZATION\n\nDetails:");
+
+                            // Detail the errors
                             packetResponse.printMessages();
                           
+                            // Construct the failure packet based on the response
                             failure(packetResponse);
                         }
                         break;

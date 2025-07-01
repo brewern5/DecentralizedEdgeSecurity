@@ -2,7 +2,6 @@ package edge_node;
 
 import java.io.*;
 import java.net.*;
-import java.net.*;
 import java.util.*;
 
 import config.NodeConfig;               // The configuration file for the entire network
