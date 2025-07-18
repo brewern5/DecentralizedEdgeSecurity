@@ -33,6 +33,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.*;
@@ -51,11 +52,9 @@ public abstract class Sender {
 
     protected final Gson gson = new Gson();
 
-    // Abstract Constructor - Will instantiate in the child (PacketSender)
-    //public Sender(Socket setupSocket){
-    //    this.socket = setupSocket;
-    //}
-
+    // Stores the ip and the sending port to recreate the socket
+    protected String ip;
+    protected int sendingPort;
     
     /*
      *      
@@ -64,32 +63,43 @@ public abstract class Sender {
      */
 
     // The packetSender will declare 
-    public abstract void retry();
+    public abstract void retry(ServerPacket packet);
 
-    // Used by the grandchildren of this class (The PacketTypeSender classes)
-    public abstract ServerPacket getSendPacket();
+
+    // Starts the socket
+    public void startSocket() throws IOException, SocketTimeoutException {
+        this.socket = new Socket(
+            this.ip, 
+            this.sendingPort
+        );
+        this.socket.setSoTimeout(1000);
+    };
 
 
     // This will send the completed packet
-    public boolean send(){
+    public boolean send(ServerPacket packet){
 
         try{
+            startSocket();  
+
             //If the acknowledgement is not recieved then it will call upon retry (if the child class uses a retry method)
             boolean ackReceived = false;
 
             // This is where the server will wait for a proper Ack from the coordinator - if not received, will retry 3 times
-            String json = getSendPacket().toDelimitedString();        // jsonifies the packet to be sent
+            String json = packet.toDelimitedString();     
 
             // Initalized inside nested control structure
             ServerPacket responsePacket;
 
-                // Creates the input and the output for the socket.
+            // Creates the input and the output for the socket.
             PrintWriter output = new PrintWriter(
                 this.socket.getOutputStream(), 
                 true
             );
+
             // Sends the packet through the socket to the Coordinator
             output.println(json);
+            output.flush();
 
             // Will be where the response is read from
             BufferedReader input = new BufferedReader(
@@ -99,15 +109,18 @@ public abstract class Sender {
             // Retrieves the response packet from the Coordinator
             String response = input.readLine();
 
+            System.out.println("Here");
+
             // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
             try{
                 if(!response.endsWith("||END||") || response == null){
                     throw new IllegalArgumentException("\n\nPayload not properly terminated. \n\tPossible Causes:\n\t\t- Incomplete Packet\n\t\t- Unsafe Packet\n");
                 }
                 System.out.println("\t\t\tResponse recieved\n");
+
                 // If true, the packet will remove the delimiter so it can properly deserialize the Json (Since ||END|| is not json)
-                    response = response.substring(
-                0, 
+                response = response.substring(
+                    0, 
                     response.length() - "||END||".length()
                  );
 
@@ -146,6 +159,12 @@ public abstract class Sender {
             // Return the true/false value of the packet being recieved
             return ackReceived;
                 
+        } catch(SocketTimeoutException e) {
+            System.err.println("Failed waiting on a response from coordinator at " + this.ip + ":" + this.sendingPort);
+            e.printStackTrace();
+        } catch(IOException e) {
+            System.err.println("Failed to connect to coordinator at " + this.ip + ":" + this.sendingPort);
+            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
             // TODO: Log critical error

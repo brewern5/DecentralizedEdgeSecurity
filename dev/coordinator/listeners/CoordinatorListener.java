@@ -27,7 +27,7 @@ public class CoordinatorListener implements Runnable {
     private int port;       // The port the listener is on
     private int timeout;        // How long the listener refreshes
 
-    private boolean on;     // The boolean value for our while loop for our listener
+    private boolean on = true;     // The boolean value for our while loop for our listener
 
     // Constructor for the listener
     public CoordinatorListener(int port, int timeout) throws IOException {

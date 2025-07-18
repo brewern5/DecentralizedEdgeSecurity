@@ -28,7 +28,7 @@ import listeners.ServerListener;
 
 // Configures the senders
 import sender.*;
-import sender.sub_classes.*;
+
 // Packet Structure
 import packet.ServerPacketType;
 import packet.ServerPacket;
@@ -58,7 +58,7 @@ public class EdgeServer {
 
         // try to generate the IP from the machines IP - Throws UnknownHostException if it cannot determine
         try{
-            System.out.println("            EDGE SERVER\n\n");
+            System.out.println("\t\tEDGE SERVER\n\n");
             IP = config.grabIP();
         } catch (UnknownHostException e) {
             System.err.println("Error: Unable to determine local host IP address.");
@@ -67,27 +67,22 @@ public class EdgeServer {
 
         /*          Try to create senders        */
         try{
-
-            Socket tempSocket = new Socket(
-                    config.getIPByKey("Coordinator.IP"), 
-                    config.getPortByKey("Coordinator.sendingPort")
-                );
-
             // Create the main sender for the packets sent to the Coordinator
             coordinatorSender = new PacketSender();
-            coordinatorSender.setSocket(tempSocket);
-            //HeartbeatSender heartbeat = new HeartbeatSender(tempSocket);
+            coordinatorSender.setSocket(
+                config.getIPByKey("Coordinator.IP"), 
+                config.getPortByKey("Coordinator.sendingPort")
+            );
 
-        } catch(Exception e) {
-
-        }
-
-        try {
             System.out.println("\n\n\t\tSending initalization packet to the Coordinator\n\n");
 
-            InitializationSender initPacketSender = new InitializationSender();
-            
-            initPacketSender.send();
+            ServerPacket initPacket = new ServerPacket(
+                ServerPacketType.INITIALIZATION,       // Packet type
+                "EdgeServer",                   // Sender
+                "Server.listeningPort:5003"    // Payload
+            );
+
+            coordinatorSender.send(initPacket);
             
         } catch (Exception e) {
             e.printStackTrace();

@@ -27,7 +27,7 @@ public class EdgeNode {
 
         // try/catch to generate the IP from ../config/Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
-            System.out.println("            EDGE NODE\n\n");
+            System.out.println("\t\tEDGE NODE\n\n");
             IP = config.grabIP();
         } catch (UnknownHostException e) {
             System.err.println("Error: Unable to determine local host IP address.");
@@ -36,9 +36,16 @@ public class EdgeNode {
 
         // Try to connect to the edge server
         try {
-            sending = new Socket(config.getIPByKey("Server.IP"), config.getPortByKey("Server.listeningPort"));
+            sending = new Socket(
+                config.getIPByKey("Server.IP"), 
+                config.getPortByKey("Server.listeningPort")
+            );
 
-            PrintWriter output = new PrintWriter(sending.getOutputStream(), true);
+            PrintWriter output = new PrintWriter(
+                sending.getOutputStream(), 
+                true
+            );
+            
             BufferedReader input = new BufferedReader(new InputStreamReader(sending.getInputStream()));
 
             output.println("This is the edge Node");

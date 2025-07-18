@@ -49,7 +49,7 @@ public class EdgeCoordinator {
 
         // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
-            System.out.println("            EDGE COORDINATOR\n\n");
+            System.out.println("\t\tEDGE COORDINATOR\n\n");
             // Get the IP address for this coordinator
             IP = config.grabIP(); 
         } catch (UnknownHostException e) {
