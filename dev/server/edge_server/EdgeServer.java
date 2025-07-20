@@ -1,9 +1,9 @@
 /*
- *      Author: Nate Brewer
+ *      Author: Nathaniel Brewer
  * 
  *      This is the main thread of the Server (2nd tier) of the hierarchy.
- *      The server is the middle man that connects the Node layer (bottom or 3rd tier)
- *      to the coordinator layer (top or the 1st tier)
+ *      The server is the middle man that connects the Node layer (bottom or 1sts tier)
+ *      to the coordinator layer (top or the 3rd tier)
  *      
  *      In this file, an INITALIZATION packet is sent to the Coordinator to provide 
  *      it with the preferred listening port for further commands. This is part of the
@@ -16,37 +16,25 @@
  */
 package edge_server;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.UnknownHostException;
 
-import config.ServerConfig;       // The configuration file for the server, holds the IPs and Ports for different layers 
+import server_config.ServerConfig;
+import server_listener.ServerListener;
 
-// Configures the listeners
-import handler.ServerNodeHandler;
-import listeners.ServerListener;
+import server_packet.ServerPacket;
+import server_packet.ServerPacketType;
 
-// Configures the senders
-import sender.*;
-
-// Packet Structure
-import packet.ServerPacketType;
-import packet.ServerPacket;
-
-// This will allow for Jsonification of packets before sending
-import com.google.gson.Gson;
+import server_sender.ServerPacketSender;
 
 public class EdgeServer {
-
-    private static Gson gson = new Gson();      // Instantiate the object that will Jsonify our packets
 
     private static String IP;      // The IP of this devices
 
     private static ServerListener coordinatorListener;  // The socket that will be listening to requests from the Edge Coordinator
     private static ServerListener nodeListener;     // The socket that will be listening for Nodes
 
-    private static PacketSender coordinatorSender;        // The socket that will send messages to the Edge Coordinator
-    private static Socket nodeSender;       // The socket that will send messages to its Nodes
+    private static ServerPacketSender coordinatorSender;        // The socket that will send messages to the Edge Coordinator
+    private static ServerPacketSender nodeSender;       // The socket that will send messages to its Nodes
 
     /*
      *  Initalize the Edge Server
@@ -67,21 +55,22 @@ public class EdgeServer {
 
         /*          Try to create senders        */
         try{
-            // Create the main sender for the packets sent to the Coordinator
-            coordinatorSender = new PacketSender();
-            coordinatorSender.setSocket(
+            // Create the main sender for the packets sent to the Coordinator and stores the relevant socket information
+            coordinatorSender = new ServerPacketSender(
                 config.getIPByKey("Coordinator.IP"), 
                 config.getPortByKey("Coordinator.sendingPort")
             );
 
             System.out.println("\n\n\t\tSending initalization packet to the Coordinator\n\n");
 
+            // Create the initalization packet
             ServerPacket initPacket = new ServerPacket(
                 ServerPacketType.INITIALIZATION,       // Packet type
                 "EdgeServer",                   // Sender
                 "Server.listeningPort:5003"    // Payload
             );
 
+            // Sends the packet through the sender
             coordinatorSender.send(initPacket);
             
         } catch (Exception e) {
@@ -90,7 +79,7 @@ public class EdgeServer {
         }
 
         /*
-         *                  Listeners
+         *                  Listeners and node sender
          */
 
         // Instantiate a listening port for the coordinator
@@ -104,7 +93,6 @@ public class EdgeServer {
                 "Error creating Listening Socket on port " 
                 + config.getPortByKey("CoordinatorListener.listeningPort")
             );
-            
             e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
         }
@@ -116,9 +104,22 @@ public class EdgeServer {
                  1000
             );
         } catch (Exception e) {
-            System.err.println("Error creating Listening Socket on port " + config.getPortByKey("NodeListener.listeningPort"));
+            System.err.println(
+                "Error creating Listening Socket on port " 
+                + config.getPortByKey("NodeListener.listeningPort")
+            );
             e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
+        }
+
+        try{
+            nodeSender = new ServerPacketSender(
+                config.getIPByKey("Node.IP"), 
+                config.getPortByKey("Node.sendingPort")
+            );
+        } catch (Exception e) {
+            System.err.println("Error creating Node Sender on port ");
+            e.printStackTrace();
         }
     }
     public static void main(String[] args) {

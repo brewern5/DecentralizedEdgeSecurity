@@ -1,20 +1,41 @@
+/*
+ *      Author: Nathaniel Brewer
+ * 
+ *      This is the main thread for the edge node (1st tier) of the hierarchy.
+ *      This will have multiple instances per server and will switch between different servers
+ *      
+ *      In this file, an INITALIZATION packet is sent to the inital Server to provide 
+ *      it with the preferred listening port for further commands. This is part of the
+ *      node Initalization process that will establish the connection to the server
+ *      
+ *      If the initalization is successful, then a listener will be created for the 
+ *      server. A sender will also be for the server
+ */
 package edge_node;
 
 import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
-import config.NodeConfig;               // The configuration file for the entire network
-import handler.NodeServerHandler;   
+import node_handler.NodeServerHandler;
+import node_listener.NodeListener;
+import node_packet.NodePacket;
+import node_packet.NodePacketType;
+import node_sender.NodePacketSender;
 
-import listeners.NodeListener;
+// This will allow for Jsonification of packets before sending
+import com.google.gson.Gson;
+
+import node_config.NodeConfig;
 
 public class EdgeNode {
 
+    private static Gson gson = new Gson();  
+
     private static String IP;
 
-    private static NodeListener listener;            // The socket that will be listening to requests from the Edge server.
-    private static Socket sending;              // The socket that will send messages to edge server
+    private static NodeListener serverListener;            // The socket that will be listening to requests from the Edge server.
+    private static NodePacketSender serverSender;              // The socket that will send messages to edge server
 
     /*
      *  Initalizes the Edge Node
@@ -34,42 +55,41 @@ public class EdgeNode {
             e.printStackTrace();
         }
 
-        // Try to connect to the edge server
+        // Try to connect to the server
         try {
-            sending = new Socket(
+            // Create the main sender for the packets sent to the Coordinator and stores the relevant socket information
+            serverSender = new NodePacketSender(
                 config.getIPByKey("Server.IP"), 
                 config.getPortByKey("Server.listeningPort")
             );
 
-            PrintWriter output = new PrintWriter(
-                sending.getOutputStream(), 
-                true
+            NodePacket initPacket = new NodePacket(
+                NodePacketType.INITIALIZATION,         // Packet type
+                "EdgeNode",                     // Sender
+                "Node.listeningPort:6001"      // Payload
             );
-            
-            BufferedReader input = new BufferedReader(new InputStreamReader(sending.getInputStream()));
 
-            output.println("This is the edge Node");
-
-            // Read the response
-            String line = input.readLine();
-            if(line != null){
-                System.out.println("Response: \n\t");
-                System.out.println(line);
-            }
-
-            output.close();         //
-            input.close();          // Close the port
-            sending.close();        //
+            // Sends the packet through the sender
+            serverSender.send(initPacket);
 
         } catch(Exception e){
             e.printStackTrace();
         }
 
-        // Try to create a serverSocket to listen to requests 
+        /*
+         *          Listeners
+         */
+
         try {
-            listener = new NodeListener(config.getPortByKey("Node.listeningPort"), 2000);
+            serverListener = new NodeListener(
+                config.getPortByKey("Node.listeningPort"), 
+                2000
+            );
         } catch (Exception e) {
-            System.err.println("Error creating Listening Socket on port " + config.getPortByKey("Node.listeningPort"));
+            System.err.println(
+                "Error creating Listening Socket on port " 
+                + config.getPortByKey("Node.listeningPort")
+            );
             e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
         }
@@ -79,20 +99,12 @@ public class EdgeNode {
 
         init();         // Begins the initalization process 
 
-        Thread serverThread = new Thread(listener);
+        Thread serverThread = new Thread(serverListener);
         serverThread.start();
 
         boolean on = true;
         while(on){
-            // Thread for client 
-                // Send ack back on that same connection line
-                // THREADS!
-                // Define packet structure
-                // Create seperate class for the packet
-                    // Instantiate a new packet class and will populate that instance
-                    // Create a packet DTO
-                    // DTO (Look into this)
-            // Listen for the Server
+            
         }       
     }
 }

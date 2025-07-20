@@ -1,5 +1,5 @@
 /*
- *      Author: Nate Brewer
+ *      Author: Nathaniel Brewer
  * 
  *      This is the top of the hierarchy in our edge network, this is the connection point between the
  *      hierarchy and the cloud. Since this is the top of the network, it's instantiation is the highest
@@ -18,24 +18,20 @@
  */
 package edge_coordinator;
 
-import java.io.*;
-import java.net.*;
-import java.rmi.ConnectIOException;
-import java.util.*;
+import java.net.UnknownHostException;
 
-import com.google.gson.Gson;        // For Json 
+import coordinator_config.CoordinatorConfig;
 
-import config.CoordinatorConfig;       // The configuration file for the entire network
-import handler.CoordinatorServerHandler;
+import coordinator_listener.CoordinatorListener;
 
-import listeners.CoordinatorListener;   // This the listener object
+import coordinator_sender.CoordinatorPacketSender;
 
 public class EdgeCoordinator {
 
     private static String IP;
 
     private static CoordinatorListener serverListener;  // The socket that will be listening to requests from the Edge server.
-    private static Socket sending;  // The socket that will send messages to edge server
+    private static CoordinatorPacketSender serverSender;  // The socket that will send messages to edge server
 
     /*
      *  Initalizes the Node Coordinator - This will be the first thing that runs when the Node Coordinator is started up
@@ -65,9 +61,25 @@ public class EdgeCoordinator {
                  5000
             );  
         } catch (Exception e) {
-            System.err.println("Error creating Listening Socket on port " + config.getPortByKey("Coordinator.listeningPort"));
+            System.err.println(
+                "Error creating Listening Socket on port " 
+                + config.getPortByKey("Coordinator.listeningPort")
+            );
             e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
+        }
+
+        try{
+
+            // Create the sender to the server
+            serverSender = new CoordinatorPacketSender(
+                config.grabIP(), 
+                config.getPortByKey("Server.listeningPort")
+            );
+
+        } catch (Exception e) {
+             System.err.println("Error creating Sending Socket");
+            e.printStackTrace();
         }
 
     }
