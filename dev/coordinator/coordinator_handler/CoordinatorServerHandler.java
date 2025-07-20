@@ -28,9 +28,12 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.RuntimeTypeAdapter;
 
 import coordinator_handler.coordinator_packet_handler.*;
 import coordinator_packet.CoordinatorPacket;
+import coordinator_packet.coordinator_packet_class.*;
 import coordinator_packet.CoordinatorPacketType;
 
 public class CoordinatorServerHandler implements Runnable {
@@ -38,7 +41,7 @@ public class CoordinatorServerHandler implements Runnable {
     private Socket serverSocket;
     private String serverIP;
 
-    private CoordinatorPacket serverPacket;
+    private CoordinatorGenericPacket serverPacket;
 
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private CoordinatorPacket responsePacket;
@@ -50,10 +53,10 @@ public class CoordinatorServerHandler implements Runnable {
     // This is a good response, it will be sent back to the server to ensure a packet was recieved 
     private void ack(CoordinatorHandlerResponse packetResponse) {
 
-        responsePacket = new CoordinatorPacket(
-                CoordinatorPacketType.ACK,  // Packet type
-                "Coordinator",       // Sender
-                packetResponse.toString()   // Payload
+        responsePacket = new CoordinatorGenericPacket(
+                CoordinatorPacketType.ACK,
+                "Coordinator",
+                packetResponse.combineMaps()
         );
         respond();
     }
@@ -62,10 +65,10 @@ public class CoordinatorServerHandler implements Runnable {
     private void failure(CoordinatorHandlerResponse packetResponse) {
         
         // Construct a new failure packet
-        responsePacket = new CoordinatorPacket(
+        responsePacket = new CoordinatorGenericPacket(
                 CoordinatorPacketType.ERROR,    // Packet type
                 "Coordinator",  // Sender
-                packetResponse.toDelimitedString()  // Payload
+                packetResponse.combineMaps()  // Payload
         );
         // Send the packet
         respond();
@@ -146,9 +149,14 @@ public class CoordinatorServerHandler implements Runnable {
                 // Grabs the server IP in order to be saved in config file
                 serverIP = serverSocket.getInetAddress().toString();
                 serverIP = serverIP.substring(1); // Removes the forward slash
+
+                // This is needed in order to construct the packet class from Gson, it will throw an error
+                // without this package
+                RuntimeTypeAdapterFactory<CoordinatorPacket> packetAdapterFactory=
+                    
                 
                 // Instantiates a new packet with the json 
-                serverPacket = gson.fromJson(json, CoordinatorPacket.class);
+                serverPacket = gson.fromJson(json, CoordinatorGenericPacket.class);
 
                 // Checks the packet type to determine how it needs to handle it
                 switch (serverPacket.getPacketType()) {

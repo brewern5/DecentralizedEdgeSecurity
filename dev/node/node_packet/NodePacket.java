@@ -5,30 +5,27 @@
  *      digestability and ease of use.
  * 
  *      I chose the Json format for easy formatting purposes and the preservation of variables
+ * 
  *      Gson Docs: https://github.com/google/gson/blob/main/UserGuide.md
  * 
- *      Need to find an approach that will tell the reciever when the end of the packet is reached:
- *          - Delimited approach (adding clear ending to the message such as: ||END||);
- *          - Add character counter, this seems like too much to run    
+ *      This is an abstract class that's child classes will handle unique logic. Such as heartbeat having
+ *      the need for a timer.
  * 
  */
 package node_packet;
 
+import java.util.LinkedHashMap;
+import java.util.Arrays;
+
 import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
 
-public class NodePacket {
+public abstract class NodePacket {
 
-    private NodePacketType packetType;     // Enum for easy constant assignment
-    private String sender;
-    private String payload;     
+    protected NodePacketType packetType;     // Enum for easy constant assignment
+    protected String sender;
+    protected LinkedHashMap<String, String> payload;    
 
     public NodePacket() {} // No-args constructor
-
-    public NodePacket(NodePacketType packetType, String sender, String payload) {
-        this.packetType = packetType;
-        this.sender = sender;
-        this.payload = payload;
-    }
 
     /*          Accessor/setter methods         */
 
@@ -46,21 +43,56 @@ public class NodePacket {
         this.sender = sender;
     }
 
-    public String getPayload() {
+    public LinkedHashMap<String, String> getPayload() {
         return payload;
     }
-
-    public void setPayload(String payload) {
+    public void setPayload(LinkedHashMap<String, String> payload) {
         this.payload = payload;
     }
 
     // converts the packet to a key/value String
-    public String toString() {
+    public String toJson() {
         return new Gson().toJson(this);
     }
 
     // adds a clear end of message line that will be handled 
     public String toDelimitedString() {
         return new Gson().toJson(this) + "||END||";
+    }
+
+    public void addKeyValueToPayload(String key, String value) {
+        payload.put(key, value);
+    }
+
+    public String[] getAllPayloadKeys() {
+
+        Object[] objKeys;
+        String[] keys;
+
+        // Since LinkedHashMap .keySet returns an array of Objects, we need to convert it to an array of strings
+        objKeys = payload.keySet().toArray();
+
+        // Copies the obj array to string array
+        keys = Arrays.copyOf(objKeys, objKeys.length, String[].class);
+
+        return keys;
+    }
+
+    public String[] getAllPayloadValues() {
+
+        Object[] objValues;
+        String[] values;
+
+        // Since LinkedHashMap .values returns an array of Objects, we need to convert it to an array of strings
+        objValues = payload.values().toArray();
+
+        // Copies the obj array to string array
+        values = Arrays.copyOf(objValues, objValues.length, String[].class);
+
+        return values;
+    } 
+
+    public String getValueByKey(String key) {
+        return payload.get(key);
     }
 }

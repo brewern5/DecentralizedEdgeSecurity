@@ -17,8 +17,7 @@
 
 package coordinator_handler.coordinator_packet_handler;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 public class CoordinatorHandlerResponse {
 
@@ -26,38 +25,44 @@ public class CoordinatorHandlerResponse {
     private boolean success;
 
     // The message will provide details on what went wrong if anything at all
-    private List<String> message = new ArrayList<>();
+    private LinkedHashMap<String, String> messages;
 
     // If there is an exception, it will be stored here and sent along side the message
-    private Exception exception;
+    private LinkedHashMap<String, String> exceptions;
+
+    // This is the counter that gets appended to the messages (e.g. Message + 1 = Message1)
+    // We are storing this globally here. Since more messages can get added after, we want to save the #
+    private int messageCounter = 0;
+    private int exceptionCounter = 0;
 
     // Since there may be multiple messages, I am using Varargs since we do not know how many messages may be sent (if there is multiple)
-    public CoordinatorHandlerResponse(boolean success, String... messages){
+    public CoordinatorHandlerResponse(boolean success, String... message){
         this.success = success;
-        this.exception = null;
-        // Converts all the messages to the arraylist for storage
-        for (String msg : messages) {
-            this.message.add(msg);
-        }
+        this.exceptions = new LinkedHashMap<>(); // Empty linked hash map in case of new exceptions;
+        storePayload(message);
     }
 
     // Overloaded constructor in the case there are exceptions thrown.
-    public CoordinatorHandlerResponse(boolean success, Exception exception, String... messages){
+    public CoordinatorHandlerResponse(boolean success, Exception exception, String... message){
         this.success = success;
-        this.exception = exception;
-        // Converts all the messages to the arraylist for storage
-        for (String msg : messages) {
-            this.message.add(msg);
+        addException(exception);
+        storePayload(message);
+    }
+
+    // Converts all the messages to the arraylist for storage
+    private void storePayload(String... message) {
+        for (String msg : message) {
+            this.messages.put("Message" + messageCounter, msg);
+            messageCounter++;
         }
     }
 
     // Used for errors - will print to the console to describe issues
     public void printMessages(){
-
         // Loops through all the stored messages and will print them to the main terminal
-        for(String msg : message) {
-            System.err.println(msg);
-        }
+        messages.forEach( (key, value) -> {
+            System.out.println("Key: " + key + " - Value: " + value);
+        });
     }
 
     // Used to send this to the payload and make it Json-ified to be sent
@@ -65,11 +70,16 @@ public class CoordinatorHandlerResponse {
     public String toString(){
         StringBuilder sb = new StringBuilder();
         // Loop through each individual message in the 'message' array
-        for (String msg : message) {
-            sb.append(msg).append("; ");    // Add ; between the each key/value pair
-        }
-        if (exception != null) {
-            sb.append("Exception: ").append(exception.getMessage());
+        this.messages.forEach( (key, value) -> {
+             sb.append(key).append("; ").append(value);    // Add ; between the each key/value pair
+
+            // TODO: Check this output for seperation of each Key Value Pair
+        });
+        if (!exceptions.isEmpty()) {
+            sb.append(':');
+            this.exceptions.forEach( (key, value) -> {
+                sb.append("Exception - ").append(key + ": ").append(value.toString());
+            });
         }
         return sb.toString().trim();
     }
@@ -85,15 +95,15 @@ public class CoordinatorHandlerResponse {
 
     // If any new messages arrive in the stack, before this is sent back to the original sender, they will be added here
     public void addMessage(String... message){
-        // Loops through each of the sent messages (if there is more than one) and adds the 
-        for(String msg : message){
-            this.message.add(msg);
-        }
+        storePayload(message);
     }
 
-    // If an exception arrises, after the construction of the handler response, it will be sent here
-    public void setException(Exception exception){
-        this.exception = exception;
+    // Stores a string-ified version of the exeption inside the response message
+    public void addException(Exception... exception) {
+        for (Exception exc : exception) {
+            this.messages.put("Exception" + exceptionCounter, exc.toString());
+            exceptionCounter++;
+        }
     }
 
     // Standard get methods
@@ -101,12 +111,23 @@ public class CoordinatorHandlerResponse {
         return success;
     }
 
-    // Returns the list of messages
-    public List getMessage(){
-        return message;
+    public LinkedHashMap<String, String> getMessageMap(){
+        return messages;
     }
 
-    public Exception getException(){
-        return exception;
+    public LinkedHashMap<String, String> getExceptionMap(){
+        return exceptions;
+    }
+
+    // Store exceptions in the message map if available
+    public LinkedHashMap<String, String> combineMaps() {
+
+        // Will check for empty exceptions map, if not empty then it will add to 
+        if(!exceptions.isEmpty()){
+            exceptions.forEach( (key, value) -> {
+                messages.put(key, value);
+            });
+        }
+        return messages;
     }
 }

@@ -13,24 +13,22 @@
  */
 package edge_node;
 
-import java.io.*;
-import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.LinkedHashMap;
 
-import node_handler.NodeServerHandler;
 import node_listener.NodeListener;
 import node_packet.NodePacket;
 import node_packet.NodePacketType;
+import node_packet.node_packet_class.*;
 import node_sender.NodePacketSender;
 
-// This will allow for Jsonification of packets before sending
-import com.google.gson.Gson;
+import java.util.Scanner;
 
 import node_config.NodeConfig;
 
 public class EdgeNode {
 
-    private static Gson gson = new Gson();  
+    protected static String nodeID;       // The variable that is responsable 
 
     private static String IP;
 
@@ -63,11 +61,16 @@ public class EdgeNode {
                 config.getPortByKey("Server.listeningPort")
             );
 
-            NodePacket initPacket = new NodePacket(
-                NodePacketType.INITIALIZATION,         // Packet type
-                "EdgeNode",                     // Sender
-                "Node.listeningPort:6001"      // Payload
+            LinkedHashMap<String, String> payload = new LinkedHashMap<>();
+            payload.put("Node.listeningPort", "6001");
+
+            NodePacket initPacket = new NodeGenericPacket(
+                NodePacketType.INITIALIZATION, 
+                "EdgeNode",                            
+                payload        
             );
+
+            System.out.println(initPacket.toDelimitedString());
 
             // Sends the packet through the sender
             serverSender.send(initPacket);
@@ -93,8 +96,8 @@ public class EdgeNode {
             e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
         }
-        
     }
+
     public static void main(String[] args) {
 
         init();         // Begins the initalization process 
@@ -102,9 +105,14 @@ public class EdgeNode {
         Thread serverThread = new Thread(serverListener);
         serverThread.start();
 
+        // DEMO
+        Scanner in = new Scanner(System.in);
+
         boolean on = true;
         while(on){
             
+            // TODO: DEMO
+
         }       
     }
 }

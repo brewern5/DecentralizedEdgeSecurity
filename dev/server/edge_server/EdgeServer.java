@@ -17,10 +17,12 @@
 package edge_server;
 
 import java.net.UnknownHostException;
+import java.util.LinkedHashMap;
 
 import server_config.ServerConfig;
 import server_listener.ServerListener;
 
+import server_packet.server_packet_class.*;
 import server_packet.ServerPacket;
 import server_packet.ServerPacketType;
 
@@ -63,11 +65,14 @@ public class EdgeServer {
 
             System.out.println("\n\n\t\tSending initalization packet to the Coordinator\n\n");
 
+            LinkedHashMap<String, String> payload = new LinkedHashMap<>();
+            payload.put("Server.listeningPort", "5003");
+
             // Create the initalization packet
-            ServerPacket initPacket = new ServerPacket(
-                ServerPacketType.INITIALIZATION,       // Packet type
-                "EdgeServer",                   // Sender
-                "Server.listeningPort:5003"    // Payload
+            ServerPacket initPacket = new ServerGenericPacket(
+                ServerPacketType.INITIALIZATION, 
+                "EdgeServer",                   
+                payload
             );
 
             // Sends the packet through the sender
@@ -112,6 +117,7 @@ public class EdgeServer {
             // TODO: try to grab new port if this one is unavailable
         }
 
+        // TODO: Create a reactive/dynamic sender for each instance of the node
         try{
             nodeSender = new ServerPacketSender(
                 config.getIPByKey("Node.IP"), 

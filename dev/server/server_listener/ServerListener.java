@@ -1,3 +1,13 @@
+/*
+ *      Author: Nathaniel Brewer
+ * 
+ *      This is the logic for listening for packets from the server, used by the Coordinator.
+ *      This is a thread and will be created by the Main coordinator file once initialization
+ *      is complete.
+ * 
+ *      
+ * 
+ */
 package server_listener;
 
 import java.io.*;
@@ -13,6 +23,7 @@ public class ServerListener implements Runnable {
     private int port;   
     private int timeout;
 
+    // Constructor
     public ServerListener(int port, int timeout) throws IOException {
         this.port = port;
         this.timeout = timeout;

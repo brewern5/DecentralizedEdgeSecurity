@@ -33,7 +33,7 @@ import node_handler.node_packet_handler.NodeInitalizationHandler;
 import node_handler.node_packet_handler.NodePacketHandler;
 import node_packet.NodePacket;
 import node_packet.NodePacketType;
-
+import node_packet.node_packet_class.NodeGenericPacket;
 import node_config.NodeConfig; 
 
 public class NodeServerHandler implements Runnable {
@@ -56,10 +56,10 @@ public class NodeServerHandler implements Runnable {
     // This is a good response, it will be sent back to the server to ensure a packet was recieved 
     private void ack(NodeHandlerResponse packetResponse) {
 
-        responsePacket = new NodePacket(
-            NodePacketType.ACK,  // Packet type
-            "Node",       // Sender
-            packetResponse.toString()   // Payload
+        responsePacket = new NodeGenericPacket(
+            NodePacketType.ACK,         
+            "Node",              
+            packetResponse.getMessageMap() 
         );
         respond();
     }
@@ -68,10 +68,10 @@ public class NodeServerHandler implements Runnable {
     private void failure(NodeHandlerResponse packetResponse) {
         
         // Construct a new failure packet
-        responsePacket = new NodePacket(
-            NodePacketType.ERROR,    // Packet type
-            "Node",  // Sender
-            packetResponse.toDelimitedString()  // Payload
+        responsePacket = new NodeGenericPacket(
+            NodePacketType.ERROR,   
+            "Node",  
+            packetResponse.getMessageMap() 
         );
         // Send the packet
         respond();
@@ -142,6 +142,7 @@ public class NodeServerHandler implements Runnable {
                     "Incomplete Packet")
                 );
             }
+
 
             // Reads the packet as json
             String json = payload;

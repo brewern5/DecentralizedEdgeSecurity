@@ -1,5 +1,5 @@
 /*
- *      Author: Nate Brewer
+ *      Author: Nathaniel Brewer
  * 
  *      This is the main handling point Packets recieved from any node.
  *      All recieved packets will be sent from it's respective thread to
@@ -70,7 +70,7 @@ public class ServerNodeHandler implements Runnable {
         responsePacket = new ServerPacket(
                 ServerPacketType.ERROR,            // Packet type
                 "Server",                   // Sender
-                packetResponse.toDelimitedString() // Payload
+                packetResponse.toString() // Payload
         );
         // Send the packet
         respond();

@@ -12,12 +12,11 @@
 
 package coordinator_listener;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.*;
+import java.net.Socket;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 
-import coordinator_config.CoordinatorConfig;
 import coordinator_handler.CoordinatorServerHandler;
 
 public class CoordinatorListener implements Runnable {
@@ -50,9 +49,7 @@ public class CoordinatorListener implements Runnable {
         while(on){
             try {
                 connected = listenerSocket.accept();        // if a packet comes, create the socket to handle the packet
-                Thread handlerThread = new Thread(
-                    new CoordinatorServerHandler(connected)
-                ); // sends the packet to the packet handler, simultaneously starting a new thread
+                Thread handlerThread = new Thread(new CoordinatorServerHandler(connected)); // sends the packet to the packet handler, simultaneously starting a new thread
                 handlerThread.start(); // Begins the new thread
 
                 // Keeping the 'SocketTimeoutException' catch statement empty. Since we want to constantly be reseting our listener, we want this exception to be thrown
