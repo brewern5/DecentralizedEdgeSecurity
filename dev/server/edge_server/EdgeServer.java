@@ -136,8 +136,8 @@ public class EdgeServer {
         Thread coordinatorThread = new Thread(coordinatorListener); // Starts listening for messages on the top
         coordinatorThread.start();
 
-        Thread bottomThread = new Thread(nodeListener);  // Starts listening for messages on the bottom
-        bottomThread.start();
+        Thread serverThread = new Thread(nodeListener);  // Starts listening for messages on the bottom
+        serverThread.start();
 
         // DEMO
         Scanner in = new Scanner(System.in);
