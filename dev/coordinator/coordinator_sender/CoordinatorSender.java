@@ -31,16 +31,25 @@ package coordinator_sender;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.*;
+
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 // This will allow for Jsonification of packets before sending
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import coordinator_lib.RuntimeTypeAdapterFactory;
 
 import coordinator_packet.*;
+import coordinator_packet.coordinator_packet_class.*;
 
 public abstract class CoordinatorSender {
 
@@ -49,7 +58,7 @@ public abstract class CoordinatorSender {
 
     protected Socket socket;    // Socket that sends the packet - will be instantiated on initalization
 
-    protected final Gson gson = new Gson();
+    protected Gson gson;
 
     // Stores the ip and the sending port to recreate the socket
     protected String ip;
@@ -61,9 +70,14 @@ public abstract class CoordinatorSender {
      * 
      */
 
-    // The packetSender will declare 
+    // The packetSender will declare this
     public abstract void retry(CoordinatorPacket packet);
 
+    /*
+     * 
+     *          End Abstraction
+     * 
+     */
 
     // Starts the socket
     public void startSocket() throws IOException, SocketTimeoutException {
@@ -74,6 +88,27 @@ public abstract class CoordinatorSender {
         this.socket.setSoTimeout(1000);
     };
 
+    // This is needed in order to construct the packet class from Gson, it will throw an error
+    // without this package since the packet lass is a abstract. 
+    // This allows the Gson structure to build the packet without throwing that error
+    // This is a dynamic way of creating the packet, since we cannot register different subtypes 
+    // since RuntimeTypeAdapterFactory will allow for two unique subtypes with the same base class time
+    // e.g. .registerSubtype(ServerGenericPacket.class, ERROR.name())
+    // and  .registerSubtype(ServerGenericPacket.class, ACK.name())
+    // Will throw an "IllegalArgumentException: types and labels must be unique" exception
+
+    public CoordinatorPacket buildGsonWithPacketSubtype(CoordinatorPacketType type, String json) {
+        RuntimeTypeAdapterFactory<CoordinatorPacket> packetAdapterFactory =
+        RuntimeTypeAdapterFactory
+            .of(CoordinatorPacket.class, "packetType")
+            .registerSubtype(CoordinatorGenericPacket.class, type.name());
+
+        Gson tempGson = new GsonBuilder()
+            .registerTypeAdapterFactory(packetAdapterFactory)
+            .create();
+
+        return tempGson.fromJson(json, CoordinatorPacket.class);
+    }
 
     // This will send the completed packet
     public boolean send(CoordinatorPacket packet){
@@ -111,7 +146,12 @@ public abstract class CoordinatorSender {
             // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
             try{
                 if(!response.endsWith("||END||") || response == null){
-                    throw new IllegalArgumentException("\n\nPayload not properly terminated. \n\tPossible Causes:\n\t\t- Incomplete Packet\n\t\t- Unsafe Packet\n");
+                    throw new IllegalArgumentException(
+                        "\n\nPayload not properly terminated. " 
+                        + "\n\tPossible Causes:\n\t\t" 
+                        + "- Incomplete Packet\n\t\t"
+                        +"- Unsafe Packet\n"
+                    );
                 }
                 System.out.println("\t\t\tResponse recieved\n");
 
@@ -119,10 +159,18 @@ public abstract class CoordinatorSender {
                 response = response.substring(
                     0, 
                     response.length() - "||END||".length()
-                 );
+                );
 
-                // Will handle the response packet and look for errors, if packetType = ACK then good to contiue initalization
-                responsePacket = gson.fromJson(response, CoordinatorPacket.class);
+                // Pre-parses the Json in order to grab the packetType to use for the switch statement
+                JsonObject jsonObj = JsonParser.parseString(response).getAsJsonObject();
+
+                String packetTypeStr = jsonObj.get("packetType").getAsString();
+
+                // Covert the string to the ENUM packetType
+                CoordinatorPacketType packetType = CoordinatorPacketType.valueOf(packetTypeStr);
+
+                // Sends the the json and the packetType to be built by Gson dynamically
+                responsePacket = buildGsonWithPacketSubtype(packetType, response);
 
                 // Print out the packet 
                 System.out.println(

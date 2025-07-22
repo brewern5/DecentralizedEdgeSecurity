@@ -27,14 +27,17 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import node_handler.node_packet_handler.NodeHandlerResponse;
-import node_handler.node_packet_handler.NodeInitalizationHandler;
-import node_handler.node_packet_handler.NodePacketHandler;
+import node_handler.node_packet_type_handler.*;
+
+import node_lib.RuntimeTypeAdapterFactory;
+
 import node_packet.NodePacket;
 import node_packet.NodePacketType;
 import node_packet.node_packet_class.NodeGenericPacket;
-import node_config.NodeConfig; 
 
 public class NodeServerHandler implements Runnable {
 
@@ -43,7 +46,7 @@ public class NodeServerHandler implements Runnable {
 
     private NodePacket serverPacket;
 
-    private NodeConfig config = new NodeConfig();
+    private BufferedReader reader;
 
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private NodePacket responsePacket;
@@ -52,6 +55,32 @@ public class NodeServerHandler implements Runnable {
     public NodeServerHandler(Socket socket) {
         this.serverSocket = socket;
     }
+
+    /*
+     * 
+     *          Packet Recreation
+     * 
+     */
+
+    private NodePacket buildGsonWithPacketSubtype(NodePacketType type, String json) {
+        RuntimeTypeAdapterFactory<NodePacket> packetAdapterFactory =
+        RuntimeTypeAdapterFactory
+            .of(NodePacket.class, "packetType")
+            .registerSubtype(NodeGenericPacket.class, type.name());
+
+        Gson tempGson = new GsonBuilder()
+            .registerTypeAdapterFactory(packetAdapterFactory)
+            .create();
+
+        return tempGson.fromJson(json, NodePacket.class);
+    }
+
+    /*          End Packet Recreation
+     *
+     * 
+     *          Responses 
+     * 
+     */
 
     // This is a good response, it will be sent back to the server to ensure a packet was recieved 
     private void ack(NodeHandlerResponse packetResponse) {
@@ -76,8 +105,12 @@ public class NodeServerHandler implements Runnable {
         // Send the packet
         respond();
     }
-    /*
-     *                     Acknowledgment
+
+    /*          End Reponses
+     *
+     *
+     *          Respond
+     * 
      */
 
     // Takes an already initalized response packet and returns to sender
@@ -100,13 +133,13 @@ public class NodeServerHandler implements Runnable {
         }
     }
     /*
-     *                      Main run loop
+     *
+     *          Main run loop
+     * 
      */
 
     @Override
     public void run() {
-
-        Gson gson = new Gson();
 
         System.out.println(
             "Server connected: " 
@@ -119,7 +152,7 @@ public class NodeServerHandler implements Runnable {
         try{
 
             // This is what decodes the incoming packet
-            BufferedReader reader = new BufferedReader(
+            reader = new BufferedReader(
                 new InputStreamReader(
                     serverSocket.getInputStream()
                 )
@@ -143,7 +176,6 @@ public class NodeServerHandler implements Runnable {
                 );
             }
 
-
             // Reads the packet as json
             String json = payload;
 
@@ -156,19 +188,20 @@ public class NodeServerHandler implements Runnable {
                 // Grabs the server IP in order to be saved in config file
                 serverIP = serverSocket.getInetAddress().toString();
                 serverIP = serverIP.substring(1); // Removes the forward slash
-                
-                // Instantiates a new packet with the json 
-                serverPacket = gson.fromJson(json, NodePacket.class);
+
+                // Pre-parses the Json in order to grab the packetType to use for the switch statement
+                JsonObject jsonObj = JsonParser.parseString(json).getAsJsonObject();
+
+                String packetTypeStr = jsonObj.get("packetType").getAsString();
+
+                // Covert the string to the ENUM packetType
+                NodePacketType packetType = NodePacketType.valueOf(packetTypeStr);
 
                 // Checks the packet type to determine how it needs to handle it
-                switch (serverPacket.getPacketType()) {
+                switch (packetType) {
                     case INITIALIZATION:
-
-                        System.out.println(
-                            "\nRecieved:\n\n" 
-                            + serverPacket.toString() 
-                            + "\n\n"
-                        );
+                        // Builds the packet to be handled
+                        serverPacket = buildGsonWithPacketSubtype(packetType, json);
 
                         // Create the packetType based handler
                         packetHandler = new NodeInitalizationHandler();
@@ -196,7 +229,32 @@ public class NodeServerHandler implements Runnable {
                         // TODO: Handle authentication logic
                         break;
                     case MESSAGE:
-                        // TODO: Handle message logic
+                        // Builds the packet to be handled
+                        serverPacket = buildGsonWithPacketSubtype(packetType, json);
+
+                        System.out.println("\nRecieved:\n\n" + serverPacket.toJson() + "\n\n");
+
+                        // Create the packetType based handler
+                        packetHandler = new NodeMessageHandler();
+
+                        // Allow for the packet response to be created based on the handling response
+                        packetResponse = packetHandler.handle(serverPacket); 
+
+                        // If good send ack
+                        if(packetResponse.getSuccess() == true){
+
+                            // Construct the ack packet
+                            ack(packetResponse);
+                        }
+                        else if(packetResponse.getSuccess() == false){
+                            System.err.println("Error Handling Packet of Type: \t MESSAGE \n\n Details:");
+
+                            // Detail the errors
+                            packetResponse.printMessages();
+                          
+                            // Construct the failure packet based on the response
+                            failure(packetResponse);
+                        }
                         break;
                     case COMMAND:
                         // TODO: Handle command logic
@@ -224,13 +282,16 @@ public class NodeServerHandler implements Runnable {
                         break;
                 }
             }
-            reader.close();
-
-            // TODO: check some other things before closing the sockets
-            serverSocket.close();
-        
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if( reader != null){ reader.close(); }
+                if( serverSocket != null && !serverSocket.isClosed()) { serverSocket.close(); }
+            } catch (IOException e) {
+                System.err.println("Error closing socket!");
+                e.printStackTrace();
+            }
         }
     }
 }

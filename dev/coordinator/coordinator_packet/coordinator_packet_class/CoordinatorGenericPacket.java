@@ -19,13 +19,28 @@ public class CoordinatorGenericPacket extends CoordinatorPacket {
     public CoordinatorGenericPacket(CoordinatorPacketType packetType, String sender) {
         this.packetType = packetType;
         this.sender = sender;
-        this.payload = new LinkedHashMap<>();
+        this.payload = new LinkedHashMap<String, String>();
     }
     // Constructor for setting a payload
     public CoordinatorGenericPacket(CoordinatorPacketType packetType, String sender, LinkedHashMap<String, String> payload) {
         this.packetType = packetType;
         this.sender = sender;
         this.payload = payload;
+
+        payload.forEach( (key, value) -> {
+            payloadPairCounter++;
+        });
+    }
+    // Contructor with multiple value strings with no key
+    public CoordinatorGenericPacket(CoordinatorPacketType packetType, String sender, String... value) {
+        this.packetType = packetType;
+        this.sender = sender;
+        this.payload = new LinkedHashMap<String, String>();
+
+        for(String val : value) {
+            payload.put("message" + payloadPairCounter, val);
+            payloadPairCounter++;
+        }
     }
 
 }

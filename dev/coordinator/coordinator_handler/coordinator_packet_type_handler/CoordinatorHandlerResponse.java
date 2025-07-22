@@ -15,7 +15,7 @@
  *          
  */
 
-package coordinator_handler.coordinator_packet_handler;
+package coordinator_handler.coordinator_packet_type_handler;
 
 import java.util.LinkedHashMap;
 
@@ -39,12 +39,15 @@ public class CoordinatorHandlerResponse {
     public CoordinatorHandlerResponse(boolean success, String... message){
         this.success = success;
         this.exceptions = new LinkedHashMap<>(); // Empty linked hash map in case of new exceptions;
+        this.messages = new LinkedHashMap<>();
         storePayload(message);
     }
 
     // Overloaded constructor in the case there are exceptions thrown.
     public CoordinatorHandlerResponse(boolean success, Exception exception, String... message){
         this.success = success;
+        this.exceptions = new LinkedHashMap<>(); 
+        this.messages = new LinkedHashMap<>();
         addException(exception);
         storePayload(message);
     }
@@ -52,7 +55,7 @@ public class CoordinatorHandlerResponse {
     // Converts all the messages to the arraylist for storage
     private void storePayload(String... message) {
         for (String msg : message) {
-            this.messages.put("Message" + messageCounter, msg);
+            messages.put("Message" + messageCounter, msg);
             messageCounter++;
         }
     }
@@ -82,10 +85,6 @@ public class CoordinatorHandlerResponse {
             });
         }
         return sb.toString().trim();
-    }
-
-    public String toDelimitedString(){
-        return this.toString() + "||END||";
     }
 
     // Changes the success message to indicate a positive/negative success factor, meaning the 

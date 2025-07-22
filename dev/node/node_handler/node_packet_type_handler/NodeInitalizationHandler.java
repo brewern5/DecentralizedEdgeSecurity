@@ -8,14 +8,12 @@
  *      variable called "PayloadKeyValuePair" (HashMap is still Key Value pair just makes it
  *      accessable). This variable is declared in the SuperClass 'PacketHandler'
  * 
- *      The recieved packet will be instansiated inside the CoordinatorServerHandler and 
+ *      The recieved packet will be instansiated inside the NodeServerHandler and 
  *      then sent here when the payload will be handled accordingly
  * 
- *      TODO: figure out response packet handling
- * 
- *      Response packet will be generated in the CoordinatorServerHandler
+ *      Response packet will be generated in the NodeServerHandler
  */
-package node_handler.node_packet_handler;
+package node_handler.node_packet_type_handler;
 
 import node_config.NodeConfig;
 

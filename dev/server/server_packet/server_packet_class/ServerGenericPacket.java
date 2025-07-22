@@ -25,6 +25,21 @@ public class ServerGenericPacket extends ServerPacket {
         this.packetType = packetType;
         this.sender = sender;
         this.payload = payload;
+
+        payload.forEach( (key, value) -> {
+            payloadPairCounter++;
+        });
     }
 
+    // Contructor with multiple value strings with no key
+    public ServerGenericPacket(ServerPacketType packetType, String sender, String... value) {
+        this.packetType = packetType;
+        this.sender = sender;
+        this.payload = new LinkedHashMap<>();
+
+        for(String val : value) {
+            payload.put("message" + payloadPairCounter, val);
+            payloadPairCounter++;
+        }
+    }
 }

@@ -15,21 +15,20 @@
  *          
  */
 
-package node_handler.node_packet_handler;
+package server_handler.server_packet_type_handler;
 
-import java.util.Map;
 import java.util.LinkedHashMap;
 
-public class NodeHandlerResponse {
+public class ServerHandlerResponse {
 
     // If successful, this will be True. If unsuccessful, then False
     private boolean success;
 
     // The message will provide details on what went wrong if anything at all
-    private LinkedHashMap<String, String> messages = new LinkedHashMap<>();
+    private LinkedHashMap<String, String> messages;
 
     // If there is an exception, it will be stored here and sent along side the message
-    private LinkedHashMap<String, Exception> exceptions;
+    private LinkedHashMap<String, String> exceptions;
 
     // This is the counter that gets appended to the messages (e.g. Message + 1 = Message1)
     // We are storing this globally here. Since more messages can get added after, we want to save the #
@@ -37,15 +36,18 @@ public class NodeHandlerResponse {
     private int exceptionCounter = 0;
 
     // Since there may be multiple messages, I am using Varargs since we do not know how many messages may be sent (if there is multiple)
-    public NodeHandlerResponse(boolean success, String... message){
+    public ServerHandlerResponse(boolean success, String... message){
         this.success = success;
-        this.exceptions = new LinkedHashMap<>(); // Empty linked hash map in case of new exceptions
+        this.exceptions = new LinkedHashMap<>(); 
+        this.messages = new LinkedHashMap<>();
         storePayload(message);
     }
 
     // Overloaded constructor in the case there are exceptions thrown.
-    public NodeHandlerResponse(boolean success, Exception exception, String... message){
+    public ServerHandlerResponse(boolean success, Exception exception, String... message){
         this.success = success;
+        this.exceptions = new LinkedHashMap<>(); 
+        this.messages = new LinkedHashMap<>();
         addException(exception);
         storePayload(message);
     }
@@ -61,10 +63,9 @@ public class NodeHandlerResponse {
     // Used for errors - will print to the console to describe issues
     public void printMessages(){
         // Loops through all the stored messages and will print them to the main terminal
-        this.messages.forEach( (key, value) -> {
+        messages.forEach( (key, value) -> {
             System.out.println("Key: " + key + " - Value: " + value);
         });
-        
     }
 
     // Used to send this to the payload and make it Json-ified to be sent
@@ -72,9 +73,8 @@ public class NodeHandlerResponse {
     public String toString(){
         StringBuilder sb = new StringBuilder();
         // Loop through each individual message in the 'message' array
-
         this.messages.forEach( (key, value) -> {
-            sb.append(key).append("; ").append(value);    // Add ; between the each key/value pair
+             sb.append(key).append("; ").append(value);    // Add ; between the each key/value pair
 
             // TODO: Check this output for seperation of each Key Value Pair
         });
@@ -108,14 +108,26 @@ public class NodeHandlerResponse {
     // Standard get methods
     public boolean getSuccess(){
         return success;
-    }
+    }   
 
     // Returns the list of messages
     public LinkedHashMap<String, String> getMessageMap(){
         return messages;
     }
 
-    public LinkedHashMap<String, Exception> getException(){
+    public LinkedHashMap<String, String> getExceptionMap(){
         return exceptions;
+    }
+
+    // Store exceptions in the message map if available
+    public LinkedHashMap<String, String> combineMaps() {
+
+        // Will check for empty exceptions map, if not empty then it will add to 
+        if(!exceptions.isEmpty()){
+            exceptions.forEach( (key, value) -> {
+                messages.put(key, value);
+            });
+        }
+        return messages;
     }
 }

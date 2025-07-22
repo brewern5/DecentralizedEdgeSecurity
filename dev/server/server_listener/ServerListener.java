@@ -13,7 +13,6 @@ package server_listener;
 import java.io.*;
 import java.net.*;
 
-import server_config.ServerConfig;
 import server_handler.ServerNodeHandler;
 
 public class ServerListener implements Runnable {
@@ -38,6 +37,9 @@ public class ServerListener implements Runnable {
         System.out.flush(); // clears system.out to prevent overflow
 
         boolean on = true;
+
+        //TODO: Look into thread pool since the server will have a lot of clients
+
         while(on){
             try {
                 connected = listenerSocket.accept();

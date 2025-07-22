@@ -27,18 +27,15 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import node_handler.node_packet_handler.NodeHandlerResponse;
-import node_handler.node_packet_handler.NodeInitalizationHandler;
-import node_handler.node_packet_handler.NodePacketHandler;
-import node_packet.NodePacket;
-import node_packet.NodePacketType;
-import server_handler.server_packet_handler.*;
-
+import server_handler.server_packet_type_handler.*;
+import server_lib.RuntimeTypeAdapterFactory;
+import server_packet.server_packet_class.*;
 import server_packet.ServerPacket;
 import server_packet.ServerPacketType;
-
-import server_config.ServerConfig;
 
 public class ServerCoordinatorHandler implements Runnable {
 
@@ -46,8 +43,6 @@ public class ServerCoordinatorHandler implements Runnable {
     private String coordinatorIP;
 
     private ServerPacket coordinatorPacket;
-
-    private ServerConfig config = new ServerConfig();
 
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private ServerPacket responsePacket;
@@ -57,13 +52,39 @@ public class ServerCoordinatorHandler implements Runnable {
         this.coordinatorSocket = socket;
     }
 
+    /*
+     *  
+     *          Packet Reconstruction
+     * 
+     */
+
+    private ServerPacket buildGsonWithPacketSubtype(ServerPacketType type, String json) {
+        RuntimeTypeAdapterFactory<ServerPacket> packetAdapterFactory =
+        RuntimeTypeAdapterFactory
+            .of(ServerPacket.class, "packetType")
+            .registerSubtype(ServerGenericPacket.class, type.name());
+
+        Gson tempGson = new GsonBuilder()
+            .registerTypeAdapterFactory(packetAdapterFactory)
+            .create();
+
+        return tempGson.fromJson(json, ServerPacket.class);
+    }
+
+    /*          End Packet Reconstruction
+     * 
+     * 
+     *          Responses
+     * 
+     */
+
     // This is a good response, it will be sent back to the server to ensure a packet was recieved 
     private void ack(ServerHandlerResponse packetResponse) {
 
-        responsePacket = new ServerPacket(
+        responsePacket = new ServerGenericPacket(
             ServerPacketType.ACK,       // Packet type
             "Server",            // Sender
-            packetResponse.toString()   // Payload
+            packetResponse.combineMaps()   // Payload
         );
         respond();
     }
@@ -72,16 +93,20 @@ public class ServerCoordinatorHandler implements Runnable {
     private void failure(ServerHandlerResponse packetResponse) {
         
         // Construct a new failure packet
-        responsePacket = new ServerPacket(
+        responsePacket = new ServerGenericPacket(
             ServerPacketType.ERROR,    // Packet type
             "Server",  // Sender
-            packetResponse.toDelimitedString()  // Payload
+            packetResponse.combineMaps()  // Payload
         );
         // Send the packet
         respond();
     }
-    /*
-     *                     Acknowledgment
+
+    /*          End Responses
+     * 
+     * 
+     *          Respond
+     * 
      */
 
     // Takes an already initalized response packet and returns to sender
@@ -109,8 +134,6 @@ public class ServerCoordinatorHandler implements Runnable {
 
     @Override
     public void run() {
-
-        Gson gson = new Gson();
 
         System.out.println(
             "Coordinator connected: " 
@@ -161,17 +184,25 @@ public class ServerCoordinatorHandler implements Runnable {
                 // Grabs the server IP in order to be saved in config file
                 coordinatorIP = coordinatorSocket.getInetAddress().toString();
                 coordinatorIP = coordinatorIP.substring(1); // Removes the forward slash
-                
-                // Instantiates a new packet with the json 
-                coordinatorPacket = gson.fromJson(json, ServerPacket.class);
+
+                // Pre-parses the Json in order to grab the packetType to use for the switch statement
+                JsonObject jsonObj = JsonParser.parseString(json).getAsJsonObject();
+
+                String packetTypeStr = jsonObj.get("packetType").getAsString();
+
+                // Covert the string to the ENUM packetType
+                ServerPacketType packetType = ServerPacketType.valueOf(packetTypeStr);
 
                 // Checks the packet type to determine how it needs to handle it
-                switch (coordinatorPacket.getPacketType()) {
+                switch (packetType) {
                     case INITIALIZATION:
+
+                        // Builds the packet to be handled
+                        coordinatorPacket = buildGsonWithPacketSubtype(packetType, json);
 
                         System.out.println(
                             "\nRecieved:\n\n" 
-                            + coordinatorPacket.toString() 
+                            + coordinatorPacket.toJson() 
                             + "\n\n"
                         );
 
@@ -201,7 +232,32 @@ public class ServerCoordinatorHandler implements Runnable {
                         // TODO: Handle authentication logic
                         break;
                     case MESSAGE:
-                        // TODO: Handle message logic
+                        // Builds the packet to be handled
+                        coordinatorPacket = buildGsonWithPacketSubtype(packetType, json);
+
+                        System.out.println("\nRecieved:\n\n" + coordinatorPacket.toJson() + "\n\n");
+
+                        // Create the packetType based handler
+                        packetHandler = new ServerMessageHandler();
+
+                        // Allow for the packet response to be created based on the handling response
+                        packetResponse = packetHandler.handle(coordinatorPacket); 
+
+                        // If good send ack
+                        if(packetResponse.getSuccess() == true){
+
+                            // Construct the ack packet
+                            ack(packetResponse);
+                        }
+                        else if(packetResponse.getSuccess() == false){
+                            System.err.println("Error Handling Packet of Type: \t MESSAGE \n\n Details:");
+
+                            // Detail the errors
+                            packetResponse.printMessages();
+                          
+                            // Construct the failure packet based on the response
+                            failure(packetResponse);
+                        }
                         break;
                     case COMMAND:
                         // TODO: Handle command logic

@@ -70,8 +70,6 @@ public class EdgeNode {
                 payload        
             );
 
-            System.out.println(initPacket.toDelimitedString());
-
             // Sends the packet through the sender
             serverSender.send(initPacket);
 
@@ -105,14 +103,26 @@ public class EdgeNode {
         Thread serverThread = new Thread(serverListener);
         serverThread.start();
 
-        // DEMO
+        // TODO: DEMO
         Scanner in = new Scanner(System.in);
 
         boolean on = true;
         while(on){
             
             // TODO: DEMO
+            System.out.println("Manually Send Message to Server: ");
+            String message = in.nextLine();
 
+            if(!message.isEmpty()) {
+                NodePacket messagePacket = new NodeGenericPacket(
+                    NodePacketType.MESSAGE,
+                    "Node",
+                    message
+                );
+
+                serverSender.send(messagePacket);
+            }
         }       
+        in.close();
     }
 }

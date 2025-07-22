@@ -21,6 +21,8 @@ import com.google.gson.Gson;    // external library that allows for jsonify of j
 
 public abstract class NodePacket {
 
+    protected int payloadPairCounter = 0;
+
     protected NodePacketType packetType;     // Enum for easy constant assignment
     protected String sender;
     protected LinkedHashMap<String, String> payload;    
@@ -49,6 +51,13 @@ public abstract class NodePacket {
     public void setPayload(LinkedHashMap<String, String> payload) {
         this.payload = payload;
     }
+
+    public void addStringValue(String... value) {
+        for(String val : value) {
+            payload.put("Message" + payloadPairCounter, val);
+            payloadPairCounter++;
+        }
+    }   
 
     // converts the packet to a key/value String
     public String toJson() {

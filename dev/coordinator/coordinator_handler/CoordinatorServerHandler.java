@@ -29,9 +29,13 @@ import java.net.Socket;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.RuntimeTypeAdapter;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import coordinator_handler.coordinator_packet_handler.*;
+import coordinator_handler.coordinator_packet_type_handler.*;
+
+import coordinator_lib.RuntimeTypeAdapterFactory;
+
 import coordinator_packet.CoordinatorPacket;
 import coordinator_packet.coordinator_packet_class.*;
 import coordinator_packet.CoordinatorPacketType;
@@ -41,7 +45,9 @@ public class CoordinatorServerHandler implements Runnable {
     private Socket serverSocket;
     private String serverIP;
 
-    private CoordinatorGenericPacket serverPacket;
+    private CoordinatorPacket serverPacket;
+
+    private BufferedReader reader;
 
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private CoordinatorPacket responsePacket;
@@ -49,6 +55,32 @@ public class CoordinatorServerHandler implements Runnable {
     public CoordinatorServerHandler(Socket socket) {
         this.serverSocket = socket;
     }
+
+    /*
+     *  
+     *          Packet Reconstruction
+     * 
+     */
+
+    private CoordinatorPacket buildGsonWithPacketSubtype(CoordinatorPacketType type, String json) {
+        RuntimeTypeAdapterFactory<CoordinatorPacket> packetAdapterFactory =
+        RuntimeTypeAdapterFactory
+            .of(CoordinatorPacket.class, "packetType")
+            .registerSubtype(CoordinatorGenericPacket.class, type.name());
+
+        Gson tempGson = new GsonBuilder()
+            .registerTypeAdapterFactory(packetAdapterFactory)
+            .create();
+
+        return tempGson.fromJson(json, CoordinatorPacket.class);
+    }
+
+    /*          End Packet Reconstruction
+     * 
+     * 
+     *          Responses
+     * 
+     */
 
     // This is a good response, it will be sent back to the server to ensure a packet was recieved 
     private void ack(CoordinatorHandlerResponse packetResponse) {
@@ -74,8 +106,11 @@ public class CoordinatorServerHandler implements Runnable {
         respond();
     }
 
-    /*
-     *                     Acknowledgment
+    /*          End Responses
+     * 
+     * 
+     *          Respond
+     * 
      */
 
     // Takes an already initalized response packet and returns to sender
@@ -103,8 +138,6 @@ public class CoordinatorServerHandler implements Runnable {
     @Override
     public void run(){
 
-        Gson gson = new Gson();     // Allows us to decode the json string from the message
-
         System.out.println(
             "Server connected from "
             + serverSocket.getInetAddress().toString()
@@ -116,7 +149,7 @@ public class CoordinatorServerHandler implements Runnable {
         try{
 
             // This is what decodes the incoming packet
-            BufferedReader reader = new BufferedReader(
+            reader = new BufferedReader(
                 new InputStreamReader(
                     serverSocket.getInputStream()
                 )
@@ -127,7 +160,10 @@ public class CoordinatorServerHandler implements Runnable {
 
             // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
             if(payload.endsWith("||END||")){
-                payload = payload.substring(0, payload.length() - "||END||".length());
+                payload = payload.substring(
+                    0, 
+                    payload.length() - "||END||".length()
+                );
             }
             else{
                 failure(new CoordinatorHandlerResponse(
@@ -150,19 +186,21 @@ public class CoordinatorServerHandler implements Runnable {
                 serverIP = serverSocket.getInetAddress().toString();
                 serverIP = serverIP.substring(1); // Removes the forward slash
 
-                // This is needed in order to construct the packet class from Gson, it will throw an error
-                // without this package
-                RuntimeTypeAdapterFactory<CoordinatorPacket> packetAdapterFactory=
-                    
-                
-                // Instantiates a new packet with the json 
-                serverPacket = gson.fromJson(json, CoordinatorGenericPacket.class);
+                // Pre-parses the Json in order to grab the packetType to use for the switch statement
+                JsonObject jsonObj = JsonParser.parseString(json).getAsJsonObject();
+
+                String packetTypeStr = jsonObj.get("packetType").getAsString();
+
+                // Covert the string to the ENUM packetType
+                CoordinatorPacketType packetType = CoordinatorPacketType.valueOf(packetTypeStr);
 
                 // Checks the packet type to determine how it needs to handle it
-                switch (serverPacket.getPacketType()) {
+                switch (packetType) {
                     case INITIALIZATION:
+                        // Builds the packet to be handled
+                        serverPacket = buildGsonWithPacketSubtype(packetType, json);
 
-                        System.out.println("\nRecieved:\n\n" + serverPacket.toString() + "\n\n");
+                        System.out.println("\nRecieved:\n\n" + serverPacket.toJson() + "\n\n");
 
                         // Create the packetType based handler
                         packetHandler = new CoordinatorInitalizationHandler();
@@ -190,7 +228,32 @@ public class CoordinatorServerHandler implements Runnable {
                         // TODO: Handle authentication logic
                         break;
                     case MESSAGE:
-                        // TODO: Handle message logic
+                        // Builds the packet to be handled
+                        serverPacket = buildGsonWithPacketSubtype(packetType, json);
+
+                        System.out.println("\nRecieved:\n\n" + serverPacket.toJson() + "\n\n");
+
+                        // Create the packetType based handler
+                        packetHandler = new CoordinatorMessageHandler();
+
+                        // Allow for the packet response to be created based on the handling response
+                        packetResponse = packetHandler.handle(serverPacket); 
+
+                        // If good send ack
+                        if(packetResponse.getSuccess() == true){
+
+                            // Construct the ack packet
+                            ack(packetResponse);
+                        }
+                        else if(packetResponse.getSuccess() == false){
+                            System.err.println("Error Handling Packet of Type: \t MESSAGE \n\n Details:");
+
+                            // Detail the errors
+                            packetResponse.printMessages();
+                          
+                            // Construct the failure packet based on the response
+                            failure(packetResponse);
+                        }
                         break;
                     case COMMAND:
                         // TODO: Handle command logic
@@ -218,13 +281,16 @@ public class CoordinatorServerHandler implements Runnable {
                         break;
                 }
             }
-            reader.close();
-
-            // TODO: check some other things before closing the sockets
-            serverSocket.close();
-
         } catch (IOException e) {
             e.printStackTrace();
-        }      
+        } finally {
+            try {
+                if( reader != null){ reader.close(); }
+                if( serverSocket != null && !serverSocket.isClosed()) { serverSocket.close(); }
+            } catch (IOException e) {
+                System.err.println("Error closing socket!");
+                e.printStackTrace();
+            }
+        }   
     }
 }

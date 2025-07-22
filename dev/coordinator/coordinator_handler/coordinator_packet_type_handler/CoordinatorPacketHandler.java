@@ -10,46 +10,41 @@
  *      not have to be overwritten. 
  */
 
-package node_handler.node_packet_handler;
-
-import node_packet.NodePacket;
+package coordinator_handler.coordinator_packet_type_handler;
 
 import java.util.*;
 
-public abstract class NodePacketHandler {
+import coordinator_packet.CoordinatorPacket;
+
+public abstract class CoordinatorPacketHandler {
 
     // Stores the recieved payload into a map (key Value) so the 
-    protected Map<String, String> PayloadKeyValuePairs = new HashMap<>(); // Protected means any class inside this package can access this variable
+    protected LinkedHashMap<String, String> PayloadKeyValuePairs = new LinkedHashMap<>(); // Protected means any class inside this package can access this variable
 
     // This is the object that will be instantiated if the packet is handled succesfuly or an error gets thrown
-    protected NodeHandlerResponse packetResponse;
+    protected CoordinatorHandlerResponse packetResponse;
     
     // Tears the packet apart and seperates the head from the body
-    public NodeHandlerResponse handle(NodePacket recievedPacket){
+    public CoordinatorHandlerResponse handle(CoordinatorPacket recievedPacket){
+
+        // Print out the packet 
+        System.out.println(
+            "Sender: \t" + recievedPacket.getSender() 
+            + "\n\nPacket Type: \t" + recievedPacket.getPacketType() 
+            + "\n\nPayload: \t" + recievedPacket.getPayload()  
+            + "\n\n"
+        );
 
         // Grab the payload from the packet
-        String payload = recievedPacket.getPayload();
+         LinkedHashMap<String, String> payload = recievedPacket.getPayload();
 
         // If the payload is empty , then an error will be sent back to the original packet sender
-        if(payload.trim().isEmpty()){
-            return new NodeHandlerResponse(
+        if(payload.isEmpty()){
+            return new CoordinatorHandlerResponse(
                 false, 
                 new Exception("No payload Sent."),
                  "Error handling payload for PacketType " + recievedPacket.getPacketType()
             );
-        }
-
-        // Splits apart each set of key/value pair
-        String[] pairs = payload.split(";");
-
-        // Seperates the Key Value pairs into a pair then puts the pairs into the PayloadKeyValuePair HashMap
-        for (String pair : pairs) {
-            String[] keyValue = pair.split(":", 2);
-            String key = keyValue[0];
-            String value = keyValue.length > 1 ? keyValue[1] : ""; // makes sure the value is always a valid string
-
-            // Stores the key Value pair into the hashMap
-            PayloadKeyValuePairs.put(key, value);
         }
         return process();
     }
@@ -61,6 +56,6 @@ public abstract class NodePacketHandler {
      */
 
     // Will process the data and handle it according to what packet type is overwritting this method
-    public abstract NodeHandlerResponse process();
+    public abstract CoordinatorHandlerResponse process();
 
 }

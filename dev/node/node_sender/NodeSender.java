@@ -31,18 +31,25 @@ package node_sender;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 
 // This will allow for Jsonification of packets before sending
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import node_packet.NodePacket;
-import node_packet.NodePacketType;;
+import node_lib.RuntimeTypeAdapterFactory;
+
+import node_packet.*;
+import node_packet.node_packet_class.*;
 
 public abstract class NodeSender {
 
@@ -50,8 +57,6 @@ public abstract class NodeSender {
     protected final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     protected Socket socket;    // Socket that sends the packet - will be instantiated on initalization
-
-    protected final Gson gson = new Gson();
 
     // Stores the ip and the sending port to recreate the socket
     protected String ip;
@@ -63,9 +68,14 @@ public abstract class NodeSender {
      * 
      */
 
-    // The packetSender will declare 
+    // The packetSender will declare this
     public abstract void retry(NodePacket packet);
 
+    /*
+     *      
+     *          End Abstraction
+     * 
+     */
 
     // Starts the socket
     public void startSocket() throws IOException, SocketTimeoutException {
@@ -75,6 +85,28 @@ public abstract class NodeSender {
         );
         this.socket.setSoTimeout(1000);
     };
+
+    // This is needed in order to construct the packet class from Gson, it will throw an error
+    // without this package since the packet lass is a abstract. 
+    // This allows the Gson structure to build the packet without throwing that error
+    // This is a dynamic way of creating the packet, since we cannot register different subtypes 
+    // since RuntimeTypeAdapterFactory will allow for two unique subtypes with the same base class time
+    // e.g. .registerSubtype(ServerGenericPacket.class, ERROR.name())
+    // and  .registerSubtype(ServerGenericPacket.class, ACK.name())
+    // Will throw an "IllegalArgumentException: types and labels must be unique" exception
+
+    public NodePacket buildGsonWithPacketSubtype(NodePacketType type, String json) {
+        RuntimeTypeAdapterFactory<NodePacket> packetAdapterFactory =
+        RuntimeTypeAdapterFactory
+            .of(NodePacket.class, "packetType")
+            .registerSubtype(NodeGenericPacket.class, type.name());
+
+        Gson tempGson = new GsonBuilder()
+            .registerTypeAdapterFactory(packetAdapterFactory)
+            .create();
+
+        return tempGson.fromJson(json, NodePacket.class);
+    }
 
 
     // This will send the completed packet
@@ -112,7 +144,10 @@ public abstract class NodeSender {
 
             // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
             try{
-                if(!response.endsWith("||END||") || response == null){
+                if(response == null) {
+                    throw new Exception("No Response Packet Received!");
+                }
+                else if(!response.endsWith("||END||")) {
                     throw new IllegalArgumentException(
                         "\n\nPayload not properly terminated. "
                         + "\n\tPossible Causes:\n\t\t" 
@@ -126,10 +161,18 @@ public abstract class NodeSender {
                 response = response.substring(
                     0, 
                     response.length() - "||END||".length()
-                 );
+                );
 
-                // Will handle the response packet and look for errors, if packetType = ACK then good to contiue initalization
-                responsePacket = gson.fromJson(response, NodePacket.class);
+                // Pre-parses the Json in order to grab the packetType to use for the switch statement
+                JsonObject jsonObj = JsonParser.parseString(response).getAsJsonObject();
+
+                String packetTypeStr = jsonObj.get("packetType").getAsString();
+
+                // Covert the string to the ENUM packetType
+                NodePacketType packetType = NodePacketType.valueOf(packetTypeStr);
+
+                // Sends the the json and the packetType to be built by Gson dynamically
+                responsePacket = buildGsonWithPacketSubtype(packetType, response);
 
                 // Print out the packet 
                 System.out.println(
@@ -153,7 +196,11 @@ public abstract class NodeSender {
                 // The exception if the packet is not of the type ACK
                 System.err.println("Error: " + illegalState.getMessage());
                 illegalState.printStackTrace();
-            } finally {
+            } catch(Exception e) {
+                System.err.println("Unknown Error!");
+                e.printStackTrace();
+            }
+                finally {
                 // Always close the ports no matter the success status. 
                 output.close();          //
                 input.close();          // Close the port, we cannot reuse the same socket connection if a retry is needed

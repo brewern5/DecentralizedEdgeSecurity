@@ -19,11 +19,14 @@ import com.google.gson.Gson;    // external library that allows for jsonify of j
 
 public abstract class ServerPacket {
 
+    protected int payloadPairCounter = 0;
+
     protected ServerPacketType packetType;     // Enum for easy constant assignment
     protected String sender;
     protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();     
 
-    public ServerPacket() {} // No-args constructor
+    // No-args constructor
+    public ServerPacket() {} 
 
     /*          Accessor/setter methods         */
 
@@ -49,6 +52,17 @@ public abstract class ServerPacket {
         this.payload = payload;
     }
 
+    public void addStringValue(String... value) {
+        for(String val : value) {
+            payload.put("Message" + payloadPairCounter, val);
+            payloadPairCounter++;
+        }
+    }   
+    
+    public void addKeyValueToPayload(String key, String value) {
+        payload.put(key, value);
+    }
+
     // converts the packet to a key/value String
     public String toJson() {
         return new Gson().toJson(this);
@@ -59,9 +73,7 @@ public abstract class ServerPacket {
         return new Gson().toJson(this) + "||END||";
     }
 
-        public void addKeyValueToPayload(String key, String value) {
-        payload.put(key, value);
-    }
+    
 
     public String[] getAllPayloadKeys() {
 

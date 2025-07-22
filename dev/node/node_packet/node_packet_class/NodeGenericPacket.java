@@ -20,11 +20,25 @@ public class NodeGenericPacket extends NodePacket {
         this.sender = sender;
         this.payload = new LinkedHashMap<>();
     }
-    // Constructor for setting a payload
+    // Constructor for setting a LinkdHashMap payload
     public NodeGenericPacket(NodePacketType packetType, String sender, LinkedHashMap<String, String> payload) {
         this.packetType = packetType;
         this.sender = sender;
         this.payload = payload;
-    }
 
+        payload.forEach( (key, value) -> {
+            payloadPairCounter++;
+        });
+    }
+    // Contructor with multiple value strings with no key
+    public NodeGenericPacket(NodePacketType packetType, String sender, String... value) {
+        this.packetType = packetType;
+        this.sender = sender;
+        this.payload = new LinkedHashMap<String, String>();
+
+        for(String val : value) {
+            payload.put("message" + payloadPairCounter, val);
+            payloadPairCounter++;
+        }
+    }
 }

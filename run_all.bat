@@ -6,7 +6,10 @@ REM Base directory = where this script is located
 set BASEDIR=%~dp0
 
 REM Path to Gson.jar
-set GSON_JAR=%BASEDIR%\lib\gson-2.13.1.jar
+set GSON_JAR=%BASEDIR%\dev\lib\gson-2.13.1.jar
+
+REM Delete old class files from output directories
+del /S /Q %BASEDIR%\dev\*.class > $null
 
 REM Compile Coordinator
 cd /d %BASEDIR%\dev\coordinator

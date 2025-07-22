@@ -19,6 +19,8 @@ import java.util.Arrays;
 import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
 
 public abstract class CoordinatorPacket {
+
+    protected int payloadPairCounter = 0;
     
     protected CoordinatorPacketType packetType;     // Enum for easy constant assignment
     protected String sender;
@@ -49,8 +51,15 @@ public abstract class CoordinatorPacket {
         this.payload = payload;
     }
 
+    public void addStringValue(String... value) {
+        for(String val : value) {
+            payload.put("Message" + payloadPairCounter, val);
+            payloadPairCounter++;
+        }
+    }   
+
     // converts the packet to a jsonified key/value String 
-    public String toString() {
+    public String toJson() {
         return new Gson().toJson(this);
     }
 

@@ -19,10 +19,15 @@
 package edge_coordinator;
 
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 import coordinator_config.CoordinatorConfig;
 
 import coordinator_listener.CoordinatorListener;
+
+import coordinator_packet.CoordinatorPacket;
+import coordinator_packet.CoordinatorPacketType;
+import coordinator_packet.coordinator_packet_class.*;
 
 import coordinator_sender.CoordinatorPacketSender;
 
@@ -93,9 +98,24 @@ public class EdgeCoordinator {
         // Start the thread
         listeningThread.start();
 
+        // TODO: DEMO
+        Scanner in = new Scanner(System.in);
+
         boolean on = true;
         while(on){
             // TODO: Stuff
+            System.out.println("Manually send message to server: ");
+            String message = in.nextLine();
+
+            if(!message.isEmpty()) {
+                CoordinatorPacket messagePacket = new CoordinatorGenericPacket(
+                    CoordinatorPacketType.MESSAGE,
+                    "Coordinator",
+                    message
+                );
+                serverSender.send(messagePacket);
+            }
         }
+        in.close();
     }
 }

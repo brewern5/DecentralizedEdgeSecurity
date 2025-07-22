@@ -1,10 +1,9 @@
 /*
- *      Author: Nate Brewer
+ *      Author: Nathaniel Brewer
  *      This is the child of "Sender". 
  */
 
 package node_sender;
-import java.net.*;
 
 import node_packet.*;
 

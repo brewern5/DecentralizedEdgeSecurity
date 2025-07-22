@@ -1,4 +1,4 @@
-/*      Author: Nate Brewer     
+/*      Author: Nathaniel Brewer     
  *      
  *      This object will define the success/failure message of handling a packet
  *      of any type. 
@@ -15,17 +15,17 @@
  *          
  */
 
-package server_handler.server_packet_handler;
+package node_handler.node_packet_type_handler;
 
 import java.util.LinkedHashMap;
 
-public class ServerHandlerResponse {
+public class NodeHandlerResponse {
 
     // If successful, this will be True. If unsuccessful, then False
     private boolean success;
 
     // The message will provide details on what went wrong if anything at all
-    private LinkedHashMap<String, String> messages;
+    private LinkedHashMap<String, String> messages = new LinkedHashMap<>();
 
     // If there is an exception, it will be stored here and sent along side the message
     private LinkedHashMap<String, String> exceptions;
@@ -36,15 +36,18 @@ public class ServerHandlerResponse {
     private int exceptionCounter = 0;
 
     // Since there may be multiple messages, I am using Varargs since we do not know how many messages may be sent (if there is multiple)
-    public ServerHandlerResponse(boolean success, String... message){
+    public NodeHandlerResponse(boolean success, String... message){
         this.success = success;
-        this.exceptions = new LinkedHashMap<>(); // Empty linked hash map in case of new exceptions;
+        this.exceptions = new LinkedHashMap<>(); // Empty linked hash map in case of new exceptions
+        this.messages = new LinkedHashMap<>();
         storePayload(message);
     }
 
     // Overloaded constructor in the case there are exceptions thrown.
-    public ServerHandlerResponse(boolean success, Exception exception, String... message){
+    public NodeHandlerResponse(boolean success, Exception exception, String... message){
         this.success = success;
+        this.exceptions = new LinkedHashMap<>(); 
+        this.messages = new LinkedHashMap<>();
         addException(exception);
         storePayload(message);
     }
@@ -59,11 +62,11 @@ public class ServerHandlerResponse {
 
     // Used for errors - will print to the console to describe issues
     public void printMessages(){
-
         // Loops through all the stored messages and will print them to the main terminal
-        messages.forEach( (key, value) -> {
+        this.messages.forEach( (key, value) -> {
             System.out.println("Key: " + key + " - Value: " + value);
         });
+        
     }
 
     // Used to send this to the payload and make it Json-ified to be sent
@@ -71,8 +74,9 @@ public class ServerHandlerResponse {
     public String toString(){
         StringBuilder sb = new StringBuilder();
         // Loop through each individual message in the 'message' array
+
         this.messages.forEach( (key, value) -> {
-             sb.append(key).append("; ").append(value);    // Add ; between the each key/value pair
+            sb.append(key).append("; ").append(value);    // Add ; between the each key/value pair
 
             // TODO: Check this output for seperation of each Key Value Pair
         });
@@ -113,7 +117,19 @@ public class ServerHandlerResponse {
         return messages;
     }
 
-    public LinkedHashMap<String, String> getExceptionMap(){
+    public LinkedHashMap<String, String> getException(){
         return exceptions;
+    }
+
+    // Store exceptions in the message map if available
+    public LinkedHashMap<String, String> combineMaps() {
+
+        // Will check for empty exceptions map, if not empty then it will add to 
+        if(!exceptions.isEmpty()){
+            exceptions.forEach( (key, value) -> {
+                messages.put(key, value);
+            });
+        }
+        return messages;
     }
 }

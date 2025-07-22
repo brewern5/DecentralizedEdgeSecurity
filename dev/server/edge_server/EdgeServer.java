@@ -18,6 +18,7 @@ package edge_server;
 
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
+import java.util.Scanner;
 
 import server_config.ServerConfig;
 import server_listener.ServerListener;
@@ -138,9 +139,35 @@ public class EdgeServer {
         Thread bottomThread = new Thread(nodeListener);  // Starts listening for messages on the bottom
         bottomThread.start();
 
+        // DEMO
+        Scanner in = new Scanner(System.in);
+
         boolean on = true;
         while (on) {
-            // TODO : do something in this main thread's loop
+            // TODO: DEMO
+            System.out.println("\n\nManually Send Message: ");
+            String message = in.nextLine();
+
+            if(!message.isEmpty()) {
+                ServerPacket messagePacket = new ServerGenericPacket(
+                    ServerPacketType.MESSAGE,
+                    "Server",
+                    message
+                );
+
+                System.out.println("Send message to Node or to Coordinator?");
+                String recipient = in.nextLine();
+
+                if(recipient.equals("node") || recipient.equals("Node")) {
+                    nodeSender.send(messagePacket);
+                } else if(recipient.equals("coordinator") || recipient.equals("Coordinator")) {
+                    coordinatorSender.send(messagePacket);
+                }
+                else {
+                    System.out.println("Unknown Recipient! \nYour input was: " + recipient + "\nTry again.");
+                }
+            }
         }
+        in.close();
     }
 }
