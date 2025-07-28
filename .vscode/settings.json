@@ -1,5 +1,8 @@
 {
   "java.project.referencedLibraries": [
-    "dev/lib/gson-2.13.1.jar"
+    "dev/lib/error_prone_annotations-2.27.0.jar",
+    "dev/lib/gson-2.13.1.jar",
+    "dev/lib/log4j-api-2.23.1.jar",
+    "dev/lib/log4j-core-2.23.1.jar"
   ]
 }
