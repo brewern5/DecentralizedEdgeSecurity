@@ -1,40 +1,55 @@
 package server_logger;
 
 import java.util.logging.*;
-import java.io.*;
+import java.io.IOException;
 
 public class ServerLogger {
 
-    private static final Logger logger = Logger.getLogger(ServerLogger.class.getName());
+    private static Logger logger;
     
     static {
+        setupLogger();
+    }
+
+    private static void setupLogger() {
+        logger = Logger.getLogger("ServerLog");
+        logger.setUseParentHandlers(false);
+
         try {
-            Handler fileHandler = new FileHandler("server.log", true);
+            // Create file handler
+            Handler fileHandler = new FileHandler("logs/server_logs.log", true);
             fileHandler.setFormatter(new SimpleFormatter());
+            fileHandler.setLevel(Level.ALL);
+
+            ConsoleHandler consoleHandler = new ConsoleHandler();
+            consoleHandler.setFormatter(new SimpleFormatter());
+            consoleHandler.setLevel(Level.INFO);
+
             logger.addHandler(fileHandler);
-            logger.setUseParentHandlers(false);
-        } catch (IOException ioe) {
-            logger.log(Level.SEVERE, "Failed to initialize file handler for logger", ioe);
+            logger.addHandler(consoleHandler);
 
+            logger.setLevel(Level.ALL);
+        } catch (IOException e) {
+            System.out.println("Failed to instantiate logger: " +e.getMessage());
         }
+        
     }
 
-    public static void formatter(String classification, String message) {
-
-        // TODO: create a standard format for all logging.
-
+    public static void logException(Exception e) {
+        logger.log(Level.WARNING, "EXCEPTION HAS OCCURED!", e);
     }
 
-    private static void info(String message) {
+    public static void logEvent(String message) {
         logger.log(Level.INFO, message);
     }
 
-    private static void warning(String message) {
 
+    public static void error(String message, Throwable throwable) {
+        logger.log(Level.SEVERE, message, throwable);
     }
 
-    private static void error(String message, Throwable throwable) {
-        logger.log(Level.SEVERE, message, throwable);
+    public static Logger getLogger() {
+        return logger;
     }
 
 }

@@ -19,17 +19,21 @@ package edge_server;
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
+import java.util.logging.*;
 
 import server_config.ServerConfig;
 import server_listener.ServerListener;
 
 import server_packet.server_packet_class.*;
-import server_packet.ServerPacket;
-import server_packet.ServerPacketType;
+import server_packet.*;
 
 import server_sender.ServerPacketSender;
 
+import server_logger.ServerLogger;
+
 public class EdgeServer {
+
+    private static Logger logger = ServerLogger.getLogger();
 
     private static String IP;      // The IP of this devices
 
@@ -51,6 +55,7 @@ public class EdgeServer {
         try{
             System.out.println("\t\tEDGE SERVER\n\n");
             IP = config.grabIP();
+            //logger.logEvent();
         } catch (UnknownHostException e) {
             System.err.println("Error: Unable to determine local host IP address.");
             e.printStackTrace();

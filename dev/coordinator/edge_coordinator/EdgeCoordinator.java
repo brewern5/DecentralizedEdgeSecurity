@@ -65,6 +65,8 @@ public class EdgeCoordinator {
                 config.getPortByKey("Coordinator.listeningPort"),
                  5000
             );  
+
+
         } catch (Exception e) {
             System.err.println(
                 "Error creating Listening Socket on port " 

@@ -1,11 +1,13 @@
 /*
- *  Packet class that easily allows for creation of packets that are in the Json Format for
- *  digestability and ease of use.
+ *      Author: Nathaniel Brewer
  * 
- *  I chose the Json format for easy formatting purposes and the preservation of variables
- *  Gson Docs: https://github.com/google/gson/blob/main/UserGuide.md
+ *      Packet class that easily allows for creation of packets that are in the Json Format for
+ *      digestability and ease of use.
  * 
- *  Need to find an approach that will tell the reciever when the end of the packet is reached:
+ *      I chose the Json format for easy formatting purposes and the preservation of variables
+ *      Gson Docs: https://github.com/google/gson/blob/main/UserGuide.md
+ * 
+ *      Need to find an approach that will tell the reciever when the end of the packet is reached:
  *          - Delimited approach (adding clear ending to the message such as: ||END||);
  *          - Add character counter, this seems like too much to run    
  * 
@@ -30,12 +32,23 @@ public abstract class ServerPacket {
 
     /*          Accessor/setter methods         */
 
+    /*
+     * 
+     *      Packet Type Methods
+     * 
+     */
+
     public ServerPacketType getPacketType() {
         return packetType;
     }
     public void setPacketType(ServerPacketType packetType) {
         this.packetType = packetType;
     }
+    /*
+     * 
+     *      Sender Methods
+     * 
+     */
 
     public String getSender() {
         return sender;
@@ -43,6 +56,12 @@ public abstract class ServerPacket {
     public void setSender(String sender) {
         this.sender = sender;
     }
+
+    /*
+     * 
+     *      Payload methods
+     * 
+     */
 
     public LinkedHashMap<String, String> getPayload() {
         return payload;
@@ -62,18 +81,6 @@ public abstract class ServerPacket {
     public void addKeyValueToPayload(String key, String value) {
         payload.put(key, value);
     }
-
-    // converts the packet to a key/value String
-    public String toJson() {
-        return new Gson().toJson(this);
-    }
-
-    // adds a clear end of message line that will be handled 
-    public String toDelimitedString() {
-        return new Gson().toJson(this) + "||END||";
-    }
-
-    
 
     public String[] getAllPayloadKeys() {
 
@@ -106,4 +113,22 @@ public abstract class ServerPacket {
     public String getValueByKey(String key) {
         return payload.get(key);
     }
+
+    /*
+     * 
+     *      Stringify Methods
+     * 
+     */
+
+    // converts the packet to a key/value String
+    public String toJson() {
+        return new Gson().toJson(this);
+    }
+
+    // adds a clear end of message line that will be handled 
+    public String toDelimitedString() {
+        return new Gson().toJson(this) + "||END||";
+    }
+
+    
 }

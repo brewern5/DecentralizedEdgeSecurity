@@ -1,5 +1,0 @@
---release
-17
--cp
-.;D:\\\\GitHub\\\\DecentralizedEdgeSecurity\\\\\\\\dev\\\\lib\\\\gson-2.13.1.jar
-edge_server\\\\EdgeServer.java

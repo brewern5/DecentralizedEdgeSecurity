@@ -35,8 +35,7 @@ import node_handler.node_packet_type_handler.*;
 
 import node_lib.RuntimeTypeAdapterFactory;
 
-import node_packet.NodePacket;
-import node_packet.NodePacketType;
+import node_packet.*;
 import node_packet.node_packet_class.NodeGenericPacket;
 
 public class NodeServerHandler implements Runnable {

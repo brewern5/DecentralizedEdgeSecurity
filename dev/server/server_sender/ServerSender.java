@@ -1,5 +1,5 @@
 /*
- *      Author: Nate Brewer
+ *      Author: Nathaniel Brewer
  * 
  *      This is the SuperClass any packet sender for the server. Since the server will
  *      be sending packets to the coordinator(up) and to the nodes(down), each one
@@ -68,7 +68,7 @@ public abstract class ServerSender {
      * 
      */
 
-    // The packetSender will declare 
+
     public abstract void retry(ServerPacket packet);
 
     /*
@@ -77,7 +77,7 @@ public abstract class ServerSender {
      * 
      */
 
-    // Starts the socket
+
     public void startSocket() throws IOException, SocketTimeoutException {
         this.socket = new Socket(
             this.ip, 
@@ -87,13 +87,14 @@ public abstract class ServerSender {
     };
 
     // This is needed in order to construct the packet class from Gson, it will throw an error
-    // without this package since the packet lass is a abstract. 
+    // without this package since the packet class is abstract. 
     // This allows the Gson structure to build the packet without throwing that error
     // This is a dynamic way of creating the packet, since we cannot register different subtypes 
-    // since RuntimeTypeAdapterFactory will allow for two unique subtypes with the same base class time
+    // since RuntimeTypeAdapterFactory will not allow for two unique subtypes with the same base class
     // e.g. .registerSubtype(ServerGenericPacket.class, ERROR.name())
     // and  .registerSubtype(ServerGenericPacket.class, ACK.name())
     // Will throw an "IllegalArgumentException: types and labels must be unique" exception
+    // This bypasses that by recieving the type and t
 
     public ServerPacket buildGsonWithPacketSubtype(ServerPacketType type, String json) {
         RuntimeTypeAdapterFactory<ServerPacket> packetAdapterFactory =
@@ -117,7 +118,6 @@ public abstract class ServerSender {
             //If the acknowledgement is not recieved then it will call upon retry (if the child class uses a retry method)
             boolean ackReceived = false;
 
-            // This is where the server will wait for a proper Ack from the coordinator - if not received, will retry 3 times
             String json = packet.toDelimitedString();     
 
             // Initalized inside nested control structure
@@ -190,7 +190,7 @@ public abstract class ServerSender {
                     );
                 }
 
-                ackReceived = true; // Break out of while loop to contiune initalization
+                if (responsePacket.getPacketType() == ServerPacketType.ACK) { ackReceived = true; } // Break out of while loop to contiune initalization
             } catch(IllegalArgumentException illegalArg) {
                 // The exception if the packet is empty or has no termination 
                  System.err.println("Error: " + illegalArg.getMessage());
@@ -220,7 +220,7 @@ public abstract class ServerSender {
             // TODO: Log critical error
         }
 
-        // Return false as if this section is reached, the packet was not sent properly meanign an error
+        // Return false as if this section is reached, the packet was not sent properly meaning an error occurred early i
         return false;
     }
 }

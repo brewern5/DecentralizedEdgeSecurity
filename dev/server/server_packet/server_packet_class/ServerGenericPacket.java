@@ -20,6 +20,7 @@ public class ServerGenericPacket extends ServerPacket {
         this.sender = sender;
         this.payload = new LinkedHashMap<>();
     }
+    
     // Constructor for setting a payload
     public ServerGenericPacket(ServerPacketType packetType, String sender, LinkedHashMap<String, String> payload) {
         this.packetType = packetType;
