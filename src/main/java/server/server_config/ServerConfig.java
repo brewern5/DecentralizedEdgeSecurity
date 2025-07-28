@@ -23,7 +23,7 @@ public class ServerConfig {
 
     static {
         try {
-            FileInputStream in = new FileInputStream("server_config/serverConfig.properties");
+            FileInputStream in = new FileInputStream("config/server_config/serverConfig.properties");
             properties.load(in);
             in.close();
         } catch (IOException e){
@@ -99,7 +99,7 @@ public class ServerConfig {
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("server_config/serverConfig.properties")){
+                try(OutputStream outputStream = new FileOutputStream("config/server_config/serverConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
                     System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
@@ -115,7 +115,7 @@ public class ServerConfig {
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("server_config/serverConfig.properties")){
+                try(OutputStream outputStream = new FileOutputStream("config/server_config/serverConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
                     System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");

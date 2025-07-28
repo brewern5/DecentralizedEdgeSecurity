@@ -22,7 +22,7 @@ public class CoordinatorConfig {
     static {
         try {
             // Allow the reading and wrting of the properties file as a stream
-            FileInputStream in = new FileInputStream("coordinator_config/coordinatorConfig.properties");
+            FileInputStream in = new FileInputStream("config/coordinator_config/coordinatorConfig.properties");
             properties.load(in);
             in.close();
         } catch (IOException e){
@@ -102,7 +102,7 @@ public class CoordinatorConfig {
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("coordinator_config/coordinatorConfig.properties")){
+                try(OutputStream outputStream = new FileOutputStream("config/coordinator_config/coordinatorConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
                     System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
@@ -118,7 +118,7 @@ public class CoordinatorConfig {
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("coordinator_config/coordinatorConfig.properties")){
+                try(OutputStream outputStream = new FileOutputStream("config/coordinator_config/coordinatorConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
                     System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");

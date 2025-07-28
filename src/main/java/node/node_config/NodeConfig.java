@@ -21,7 +21,7 @@ public class NodeConfig {
 
     static {
         try {
-            FileInputStream in = new FileInputStream("node_config/nodeConfig.properties");
+            FileInputStream in = new FileInputStream("config/node_config/nodeConfig.properties");
             properties.load(in);
             in.close();
         } catch (IOException e){
@@ -97,7 +97,7 @@ public class NodeConfig {
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("node_config/nodeConfig.properties")){
+                try(OutputStream outputStream = new FileOutputStream("config/node_config/nodeConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
                     System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
@@ -113,7 +113,7 @@ public class NodeConfig {
                 properties.setProperty(key, value);
 
                 // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("node_config/nodeConfig.properties")){
+                try(OutputStream outputStream = new FileOutputStream("config/node_config/nodeConfig.properties")){
                     properties.store(outputStream, null);
                 
                 } catch(IOException ioe) {
