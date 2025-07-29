@@ -36,7 +36,6 @@ D:\GitHub\DecentralizedEdgeSecurity\src\main\java\server\server_handler\ServerCo
 D:\GitHub\DecentralizedEdgeSecurity\src\main\java\server\server_handler\ServerNodeHandler.java
 D:\GitHub\DecentralizedEdgeSecurity\src\main\java\server\server_lib\RuntimeTypeAdapterFactory.java
 D:\GitHub\DecentralizedEdgeSecurity\src\main\java\server\server_listener\ServerListener.java
-D:\GitHub\DecentralizedEdgeSecurity\src\main\java\server\server_logger\ServerLogger.java
 D:\GitHub\DecentralizedEdgeSecurity\src\main\java\server\server_packet\server_packet_class\ServerGenericPacket.java
 D:\GitHub\DecentralizedEdgeSecurity\src\main\java\server\server_packet\ServerPacket.java
 D:\GitHub\DecentralizedEdgeSecurity\src\main\java\server\server_packet\ServerPacketType.java

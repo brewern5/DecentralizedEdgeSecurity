@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package server_lib;
+package server.server_lib;
 
 //import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.gson.Gson;

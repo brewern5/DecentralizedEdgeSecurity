@@ -27,7 +27,7 @@
  *       will be made with the coordinator
  *      (meaning that a init sender)
  */
-package coordinator_sender;
+package coordinator.coordinator_sender;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -46,10 +46,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import coordinator_lib.RuntimeTypeAdapterFactory;
+import coordinator.coordinator_lib.RuntimeTypeAdapterFactory;
 
-import coordinator_packet.*;
-import coordinator_packet.coordinator_packet_class.*;
+import coordinator.coordinator_packet.*;
+import coordinator.coordinator_packet.coordinator_packet_class.*;
 
 public abstract class CoordinatorSender {
 

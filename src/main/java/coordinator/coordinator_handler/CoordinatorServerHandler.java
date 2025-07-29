@@ -18,7 +18,7 @@
  *      be sent instead.
  */
 
-package coordinator_handler;
+package coordinator.coordinator_handler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,13 +32,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import coordinator_handler.coordinator_packet_type_handler.*;
+import coordinator.coordinator_handler.coordinator_packet_type_handler.*;
 
-import coordinator_lib.RuntimeTypeAdapterFactory;
+import coordinator.coordinator_lib.RuntimeTypeAdapterFactory;
 
-import coordinator_packet.CoordinatorPacket;
-import coordinator_packet.coordinator_packet_class.*;
-import coordinator_packet.CoordinatorPacketType;
+import coordinator.coordinator_packet.CoordinatorPacket;
+import coordinator.coordinator_packet.coordinator_packet_class.*;
+import coordinator.coordinator_packet.CoordinatorPacketType;
 
 public class CoordinatorServerHandler implements Runnable {
 

@@ -12,7 +12,7 @@
  *      the need for a timer.
  * 
  */
-package node_packet;
+package node.node_packet;
 
 import java.util.LinkedHashMap;
 import java.util.Arrays;

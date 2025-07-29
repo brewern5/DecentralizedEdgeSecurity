@@ -10,11 +10,11 @@
  *      not have to be overwritten. 
  */
 
-package coordinator_handler.coordinator_packet_type_handler;
+package coordinator.coordinator_handler.coordinator_packet_type_handler;
 
 import java.util.*;
 
-import coordinator_packet.CoordinatorPacket;
+import coordinator.coordinator_packet.CoordinatorPacket;
 
 public abstract class CoordinatorPacketHandler {
 

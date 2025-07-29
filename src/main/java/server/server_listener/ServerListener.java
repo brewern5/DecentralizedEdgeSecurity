@@ -8,12 +8,12 @@
  *      
  * 
  */
-package server_listener;
+package server.server_listener;
 
 import java.io.*;
 import java.net.*;
 
-import server_handler.ServerNodeHandler;
+import server.server_handler.ServerNodeHandler;
 
 public class ServerListener implements Runnable {
     

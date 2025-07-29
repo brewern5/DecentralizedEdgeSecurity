@@ -10,11 +10,11 @@
  *      not have to be overwritten. 
  */
 
-package node_handler.node_packet_type_handler;
+package node.node_handler.node_packet_type_handler;
 
 import java.util.LinkedHashMap;
 
-import node_packet.NodePacket;
+import node.node_packet.NodePacket;
 
 public abstract class NodePacketHandler {
 

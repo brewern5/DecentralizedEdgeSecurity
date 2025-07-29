@@ -6,11 +6,11 @@
  *      Since most packets will be this way, this will be the default way to create most packets
  * 
  */
-package node_packet.node_packet_class;
+package node.node_packet.node_packet_class;
 
 import java.util.LinkedHashMap;
 
-import node_packet.*;
+import node.node_packet.*;
 
 public class NodeGenericPacket extends NodePacket {
 

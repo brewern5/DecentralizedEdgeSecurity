@@ -4,7 +4,7 @@
  *      Configuration for each of the nodes in the hierarchy. Will grab machine IP address and will try to generate avaiable ports.
  *      From ./coordinator_config/coordinatorConfig.properties
  */
-package coordinator_config;
+package coordinator.coordinator_config;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

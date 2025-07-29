@@ -11,7 +11,7 @@
  *      If the initalization is successful, then a listener will be created for the 
  *      server. A sender will also be for the server
  */
-package edge_node;
+package node.edge_node;
 
 import java.net.UnknownHostException;
 
@@ -21,15 +21,15 @@ import java.util.Scanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import node_listener.NodeListener;
+import node.node_listener.NodeListener;
 
-import node_packet.NodePacket;
-import node_packet.NodePacketType;
-import node_packet.node_packet_class.*;
+import node.node_packet.NodePacket;
+import node.node_packet.NodePacketType;
+import node.node_packet.node_packet_class.*;
 
-import node_sender.NodePacketSender;
+import node.node_sender.NodePacketSender;
 
-import node_config.NodeConfig;
+import node.node_config.NodeConfig;
 
 public class EdgeNode {
 

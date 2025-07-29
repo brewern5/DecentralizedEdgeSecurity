@@ -15,7 +15,7 @@
  *          
  */
 
-package coordinator_handler.coordinator_packet_type_handler;
+package coordinator.coordinator_handler.coordinator_packet_type_handler;
 
 import java.util.LinkedHashMap;
 

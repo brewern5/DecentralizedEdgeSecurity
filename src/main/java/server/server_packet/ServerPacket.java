@@ -12,7 +12,7 @@
  *          - Add character counter, this seems like too much to run    
  * 
  */
-package server_packet;
+package server.server_packet;
 
 import java.util.LinkedHashMap;
 import java.util.Arrays;

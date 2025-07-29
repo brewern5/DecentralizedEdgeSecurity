@@ -6,11 +6,11 @@
  *      Since most packets will be this way, this will be the default way to create most packets
  * 
  */
-package server_packet.server_packet_class;
+package server.server_packet.server_packet_class;
 
 import java.util.LinkedHashMap;
 
-import server_packet.*;
+import server.server_packet.*;
 
 public class ServerGenericPacket extends ServerPacket {
 

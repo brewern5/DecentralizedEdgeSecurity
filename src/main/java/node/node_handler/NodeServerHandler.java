@@ -17,7 +17,7 @@
  *      is true, then a ACK packet will be sent, else a Failure packet or Error packet will
  *      be sent instead.
  */
-package node_handler;
+package node.node_handler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,12 +31,12 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import node_handler.node_packet_type_handler.*;
+import node.node_handler.node_packet_type_handler.*;
 
-import node_lib.RuntimeTypeAdapterFactory;
+import node.node_lib.RuntimeTypeAdapterFactory;
 
-import node_packet.*;
-import node_packet.node_packet_class.NodeGenericPacket;
+import node.node_packet.*;
+import node.node_packet.node_packet_class.NodeGenericPacket;
 
 public class NodeServerHandler implements Runnable {
 

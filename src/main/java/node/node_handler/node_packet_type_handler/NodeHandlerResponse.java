@@ -15,7 +15,7 @@
  *          
  */
 
-package node_handler.node_packet_type_handler;
+package node.node_handler.node_packet_type_handler;
 
 import java.util.LinkedHashMap;
 

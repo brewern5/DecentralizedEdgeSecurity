@@ -11,7 +11,7 @@
  *      the need for a timer.
  * 
  */
-package coordinator_packet;
+package coordinator.coordinator_packet;
 
 import java.util.LinkedHashMap;
 import java.util.Arrays;

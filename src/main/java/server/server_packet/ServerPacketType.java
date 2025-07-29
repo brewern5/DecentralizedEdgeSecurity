@@ -1,14 +1,16 @@
 /*
- *  Enumeration for easily setting the packetType with visualizable header options
+ *      Author: Nathaniel Brewer
  * 
- *  Setup example
- *      ServerPacket packet = new ServerPacket(PacketType.MESSAGE, "Sender", "Payload");
+ *      Enumeration for easily setting the packetType with visualizable header options
+ * 
+ *      Setup example
+ *          ServerPacket packet = new ServerPacket(PacketType.MESSAGE, "Sender", "Payload");
  *  
- *  Will pull these and use a switch statement to handle them accordingly.
- *  For example, AUTH will be sent to whatever auth system we decide to use 
+ *      Will pull these and use a switch statement to handle them accordingly.
+ *      For example, AUTH will be sent to whatever auth system we decide to use 
  * 
  */
-package server_packet;
+package server.server_packet;
 
 public enum ServerPacketType {
     INITIALIZATION,   // For handshake or setup - Will send the preferred listening port 

@@ -4,10 +4,10 @@
  *      This is the child of "Sender". 
  */
 
-package server_sender;
+package server.server_sender;
 import java.net.Socket;
 
-import server_packet.*;
+import server.server_packet.*;
 
 public class ServerPacketSender extends ServerSender{
 

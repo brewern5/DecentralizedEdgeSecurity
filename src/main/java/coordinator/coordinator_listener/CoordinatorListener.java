@@ -10,14 +10,15 @@
  *      listening for other new packets.
  */
 
-package coordinator_listener;
+package coordinator.coordinator_listener;
 
 import java.io.IOException;
+
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 
-import coordinator_handler.CoordinatorServerHandler;
+import coordinator.coordinator_handler.CoordinatorServerHandler;
 
 public class CoordinatorListener implements Runnable {
 

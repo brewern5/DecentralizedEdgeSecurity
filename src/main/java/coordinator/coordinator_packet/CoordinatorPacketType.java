@@ -10,7 +10,7 @@
  *      For example, AUTH will be sent to whatever auth system we decide to use 
  * 
  */
-package coordinator_packet;
+package coordinator.coordinator_packet;
 
 public enum CoordinatorPacketType {
     INITIALIZATION,   // For handshake or setup

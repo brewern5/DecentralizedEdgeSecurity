@@ -4,7 +4,7 @@
  *      Configuration for each of the nodes in the hierarchy. Will grab machine IP address and will try to generate avaiable ports.
  *      From ./node_config/nodeConfig.properties
  */
-package node_config;
+package node.node_config;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

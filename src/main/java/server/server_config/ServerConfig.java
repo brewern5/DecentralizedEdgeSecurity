@@ -3,7 +3,7 @@
  *              Configuration for each of the nodes in the hierarchy. Will grab machine IP address and will try to generate avaiable ports.
  *              From ./server_config/serverConfig.properties
  */
-package server_config;
+package server.server_config;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -14,12 +14,9 @@ import java.net.UnknownHostException;   // Error for trying to grab IP address
 
 import java.util.Properties;            // Utility for getting properties from any .properties file
 
-import server_logger.ServerLogger;
-
 public class ServerConfig {
 
     private static Properties properties = new Properties();      // Generate the properties object
-    private static ServerLogger logger = new ServerLogger();
 
     static {
         try {

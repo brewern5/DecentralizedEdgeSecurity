@@ -27,7 +27,7 @@
  *       will be made with the coordinator
  *      (meaning that a init sender)
  */
-package node_sender;
+package node.node_sender;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -46,10 +46,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import node_lib.RuntimeTypeAdapterFactory;
+import node.node_lib.RuntimeTypeAdapterFactory;
 
-import node_packet.*;
-import node_packet.node_packet_class.*;
+import node.node_packet.*;
+import node.node_packet.node_packet_class.*;
 
 public abstract class NodeSender {
 

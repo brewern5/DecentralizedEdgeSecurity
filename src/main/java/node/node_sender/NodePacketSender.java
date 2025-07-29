@@ -3,9 +3,9 @@
  *      This is the child of "Sender". 
  */
 
-package node_sender;
+package node.node_sender;
 
-import node_packet.*;
+import node.node_packet.*;
 
 public class NodePacketSender extends NodeSender{
 

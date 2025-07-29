@@ -4,9 +4,9 @@
  *      This is the child of Coordinator_Sender. 
  */
 
-package coordinator_sender;
+package coordinator.coordinator_sender;
 
-import coordinator_packet.CoordinatorPacket;
+import coordinator.coordinator_packet.CoordinatorPacket;
 
 public class CoordinatorPacketSender extends CoordinatorSender{
 

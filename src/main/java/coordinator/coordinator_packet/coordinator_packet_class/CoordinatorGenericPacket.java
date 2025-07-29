@@ -6,12 +6,12 @@
  *      Since most packets will be this way, this will be the default way to create most packets
  * 
  */
-package coordinator_packet.coordinator_packet_class;
+package coordinator.coordinator_packet.coordinator_packet_class;
 
 import java.util.LinkedHashMap;
 
-import coordinator_packet.CoordinatorPacket;
-import coordinator_packet.CoordinatorPacketType;
+import coordinator.coordinator_packet.CoordinatorPacket;
+import coordinator.coordinator_packet.CoordinatorPacketType;
 
 public class CoordinatorGenericPacket extends CoordinatorPacket {
 

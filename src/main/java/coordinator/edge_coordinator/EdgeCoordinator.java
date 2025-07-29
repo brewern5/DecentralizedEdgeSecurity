@@ -16,20 +16,20 @@
  *      will finish the initalization process. Once this is done, the listener will be thrown into the thread
  *      to be constantly ran seperate of this project
  */
-package edge_coordinator;
+package coordinator.edge_coordinator;
 
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import coordinator_config.CoordinatorConfig;
+import coordinator.coordinator_config.CoordinatorConfig;
 
-import coordinator_listener.CoordinatorListener;
+import coordinator.coordinator_listener.CoordinatorListener;
 
-import coordinator_packet.CoordinatorPacket;
-import coordinator_packet.CoordinatorPacketType;
-import coordinator_packet.coordinator_packet_class.*;
+import coordinator.coordinator_packet.CoordinatorPacket;
+import coordinator.coordinator_packet.CoordinatorPacketType;
+import coordinator.coordinator_packet.coordinator_packet_class.*;
 
-import coordinator_sender.CoordinatorPacketSender;
+import coordinator.coordinator_sender.CoordinatorPacketSender;
 
 public class EdgeCoordinator {
 

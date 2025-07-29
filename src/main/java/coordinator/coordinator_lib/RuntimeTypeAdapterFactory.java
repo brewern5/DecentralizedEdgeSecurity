@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package coordinator_lib;
+package coordinator.coordinator_lib;
 
 //import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.gson.Gson;

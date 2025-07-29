@@ -12,9 +12,9 @@
  * 
  *      Response packet will be generated in the CoordinatorNodeHandler
  */
-package coordinator_handler.coordinator_packet_type_handler;
+package coordinator.coordinator_handler.coordinator_packet_type_handler;
 
-import coordinator_config.CoordinatorConfig;
+import coordinator.coordinator_config.CoordinatorConfig;
 
 public class CoordinatorMessageHandler extends CoordinatorPacketHandler{
 

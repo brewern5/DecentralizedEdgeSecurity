@@ -14,26 +14,22 @@
  *      will be started on different threads.
  *      
  */
-package edge_server;
+package server.edge_server;
 
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
 import java.util.logging.*;
 
-import server_config.ServerConfig;
-import server_listener.ServerListener;
+import server.server_config.ServerConfig;
+import server.server_listener.ServerListener;
 
-import server_packet.server_packet_class.*;
-import server_packet.*;
+import server.server_packet.server_packet_class.*;
+import server.server_packet.*;
 
-import server_sender.ServerPacketSender;
-
-import server_logger.ServerLogger;
+import server.server_sender.ServerPacketSender;
 
 public class EdgeServer {
-
-    private static Logger logger = ServerLogger.getLogger();
 
     private static String IP;      // The IP of this devices
 

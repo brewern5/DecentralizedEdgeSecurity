@@ -14,9 +14,9 @@
  * 
  *      Response packet will be generated in the CoordinatorServerHandler
  */
-package server_handler.server_packet_type_handler;
+package server.server_handler.server_packet_type_handler;
 
-import server_config.ServerConfig;
+import server.server_config.ServerConfig;
 
 public class ServerInitalizationHandler extends ServerPacketHandler{
 

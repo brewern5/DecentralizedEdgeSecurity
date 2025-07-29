@@ -12,9 +12,9 @@
  * 
  *      Response packet will be generated in the NodeServerHandler
  */
-package node_handler.node_packet_type_handler;
+package node.node_handler.node_packet_type_handler;
 
-import node_config.NodeConfig;
+import node.node_config.NodeConfig;
 
 public class NodeMessageHandler extends NodePacketHandler{
 

@@ -3,17 +3,15 @@
  * 
  *      TODO: Add description
  */
-package node_listener;
+package node.node_listener;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 
-import node_config.NodeConfig;
-import node_handler.NodeServerHandler;
+import node.node_handler.NodeServerHandler;
 
 public class NodeListener implements Runnable {
     

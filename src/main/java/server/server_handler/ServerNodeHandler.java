@@ -18,7 +18,7 @@
  *      be sent instead.
  */
 
-package server_handler;
+package server.server_handler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,11 +32,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import server_handler.server_packet_type_handler.*;
-import server_lib.RuntimeTypeAdapterFactory;
-import server_packet.ServerPacket;
-import server_packet.ServerPacketType;
-import server_packet.server_packet_class.*;
+import server.server_handler.server_packet_type_handler.*;
+
+import server.server_lib.RuntimeTypeAdapterFactory;
+
+import server.server_packet.ServerPacket;
+import server.server_packet.ServerPacketType;
+import server.server_packet.server_packet_class.*;
 
 public class ServerNodeHandler implements Runnable {
 
