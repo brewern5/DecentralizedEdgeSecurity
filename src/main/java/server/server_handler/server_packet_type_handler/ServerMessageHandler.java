@@ -14,9 +14,14 @@
  */
 package server.server_handler.server_packet_type_handler;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import server.server_connections.server_connection_manager.ServerConnectionManager;
 
 public class ServerMessageHandler extends ServerPacketHandler{
+
+    private static final Logger logger = LogManager.getLogger(ServerMessageHandler.class);
 
     public ServerMessageHandler(ServerConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
@@ -35,7 +40,7 @@ public class ServerMessageHandler extends ServerPacketHandler{
         try{
             // Lambda function - HashMap has a ForEach function that receives the all the keys(k) and their corresponding values(v) and will loop through each one individually
             payload.forEach( (k, v) -> { 
-                System.out.println("Message " + messageCounter + ":\n\t\t" + v );
+                //System.out.println("Message " + messageCounter + ":\n\t\t" + v );
                 messageCounter++;
             });
 
@@ -43,8 +48,7 @@ public class ServerMessageHandler extends ServerPacketHandler{
             packetResponse = new ServerHandlerResponse(true, "Recieved");
 
         } catch(Exception e) {
-            System.err.println("Error Handling packet");
-            e.printStackTrace();
+            logger.error("Error Handling packet\n"+e);
             // Generates the response to be put into the failure packet
             packetResponse = new ServerHandlerResponse(false, e, "Error Handling Packet.");
         }

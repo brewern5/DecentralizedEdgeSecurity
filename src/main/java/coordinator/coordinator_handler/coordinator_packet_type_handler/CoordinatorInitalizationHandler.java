@@ -15,12 +15,14 @@
  */
 package coordinator.coordinator_handler.coordinator_packet_type_handler;
 
-import coordinator.coordinator_config.CoordinatorConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import coordinator.coordinator_connections.*;
-import server.server_handler.server_packet_type_handler.ServerHandlerResponse;
 
 public class CoordinatorInitalizationHandler extends CoordinatorPacketHandler{
+
+    private static final Logger logger = LogManager.getLogger(CoordinatorInitalizationHandler.class);
 
     private CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
 
@@ -63,7 +65,7 @@ public class CoordinatorInitalizationHandler extends CoordinatorPacketHandler{
             packetResponse.addCustomKeyValuePair("id", recievedPacket.getId());
 
         } catch(Exception e) {
-            System.err.println("Error Handling packet");
+            logger.error("Error Handling packet.\n" + e);
             e.printStackTrace();
             // Generates the response to be put into the failure packet
             packetResponse = new CoordinatorHandlerResponse(false, e, "Error Handling Packet.");

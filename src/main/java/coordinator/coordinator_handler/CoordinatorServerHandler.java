@@ -34,6 +34,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import coordinator.coordinator_connections.*;
 
 import coordinator.coordinator_handler.coordinator_packet_type_handler.*;
@@ -46,6 +49,8 @@ import coordinator.coordinator_packet.coordinator_packet_class.*;
 import coordinator.edge_coordinator.EdgeCoordinator;
 
 public class CoordinatorServerHandler implements Runnable {
+
+    private static final Logger logger = LogManager.getLogger(CoordinatorServerHandler.class);
 
     private static CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
 
@@ -135,8 +140,7 @@ public class CoordinatorServerHandler implements Runnable {
             // Send the jsonified packet as a response
             output.println(json);
         } catch (IOException e) {
-            System.err.println("Error sending response packet of type: " + responsePacket.getPacketType());
-            e.printStackTrace();
+            logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + "\n" + e);
         }
     }
     /*
@@ -145,8 +149,8 @@ public class CoordinatorServerHandler implements Runnable {
     @Override
     public void run(){
 
-        System.out.println(
-            "Server connected from "
+        logger.info(
+            "Server connected: "
             + serverSocket.getInetAddress().toString()
             + ":" 
             + serverSocket.getPort()
@@ -208,7 +212,7 @@ public class CoordinatorServerHandler implements Runnable {
                         // Builds the packet to be handled
                         serverPacket = buildGsonWithPacketSubtype(packetType, json);
 
-                        System.out.println("Recieved:\n" + serverPacket.toJson());
+                        logger.info("Recieved:\n" + serverPacket.toJson());
 
                         // Assign an id to the node - this will be sent back to the node
                         String serverId = UUID.randomUUID().toString();
@@ -237,7 +241,7 @@ public class CoordinatorServerHandler implements Runnable {
                             ack(packetResponse);
                         }
                         else if(packetResponse.getSuccess() == false){
-                            System.err.println("Error Handling Packet of Type: \tINITIALIZATION\n\nDetails:");
+                            logger.error("Error Handling Packet of Type: \tINITIALIZATION\nDetails:");
 
                             // Detail the errors
                             packetResponse.printMessages();
@@ -253,7 +257,7 @@ public class CoordinatorServerHandler implements Runnable {
                         // Builds the packet to be handled
                         serverPacket = buildGsonWithPacketSubtype(packetType, json);
 
-                        System.out.println("\nRecieved:\n\n" + serverPacket.toJson() + "\n\n");
+                        logger.info("Recieved:\n" + serverPacket.toJson());
 
                         // Create the packetType based handler
                         packetHandler = new CoordinatorMessageHandler();
@@ -268,7 +272,7 @@ public class CoordinatorServerHandler implements Runnable {
                             ack(packetResponse);
                         }
                         else if(packetResponse.getSuccess() == false){
-                            System.err.println("Error Handling Packet of Type: \t MESSAGE \n\n Details:");
+                            logger.error("Error Handling Packet of Type: \t MESSAGE \n Details:");
 
                             // Detail the errors
                             packetResponse.printMessages();
@@ -310,8 +314,8 @@ public class CoordinatorServerHandler implements Runnable {
                 if( reader != null){ reader.close(); }
                 if( serverSocket != null && !serverSocket.isClosed()) { serverSocket.close(); }
             } catch (IOException e) {
-                System.err.println("Error closing socket!");
-                e.printStackTrace();
+                logger.error("Error closing socket!\n" + e);
+
             }
         }   
     }

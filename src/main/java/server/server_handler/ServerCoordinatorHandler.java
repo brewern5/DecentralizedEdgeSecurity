@@ -135,8 +135,7 @@ public class ServerCoordinatorHandler implements Runnable {
             // Send the jsonified packet as a response
             output.println(json);
         } catch (IOException e) {
-            System.err.println("Error sending response packet of type: " + responsePacket.getPacketType());
-            e.printStackTrace();
+            logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + "\n", e);
         }
     }
     /*
@@ -146,8 +145,8 @@ public class ServerCoordinatorHandler implements Runnable {
     @Override
     public void run() {
 
-        System.out.println(
-            "Coordinator connected: " 
+        logger.info(
+            "Coordinator connected: \n\t" 
             + coordinatorSocket.getInetAddress().toString() 
             + ":"
             + coordinatorSocket.getPort()

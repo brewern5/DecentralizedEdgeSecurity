@@ -13,10 +13,15 @@ package server.server_listener;
 import java.io.*;
 import java.net.*;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import server.server_handler.ServerCoordinatorHandler;
 import server.server_handler.ServerNodeHandler;
 
 public class ServerListener implements Runnable {
+
+    private static final Logger logger = LogManager.getLogger(ServerListener.class);
     
     private Socket connected;   // This is the socket sent to the handler after the connection has been made by the listener
     private ServerSocket listenerSocket;    // this is the active listening socket
@@ -37,8 +42,7 @@ public class ServerListener implements Runnable {
     @Override
     public void run(){  
 
-        System.out.println("Listening on port " + this.port);
-        System.out.flush(); // clears system.out to prevent overflow
+        logger.info("Listening on port " + this.port);
 
         boolean on = true;
 
@@ -63,11 +67,9 @@ public class ServerListener implements Runnable {
                 // You need this exception handling here because it will brick at trying to start the connection
                 // Did not add any handling to this exception as it would constatly throw an error, so this just prevents it from clogging up the console
             } catch (IOException ioe) {
-                System.err.println("IOException!\n");
-                ioe.printStackTrace();
+                logger.error("IOException!\n" + ioe);
             } catch (Exception e) {
-                System.err.println("Unknown Exception!\n");
-                e.printStackTrace();
+                logger.error("Unknown Exception!\n" + e);
             }
         }
     }
@@ -94,16 +96,16 @@ public class ServerListener implements Runnable {
         try {
             listenerSocket.setSoTimeout(timeout);
         } catch (Exception e) {
-            System.err.println("Error setting new timeout on socket: ( " + port + " )");
+            logger.error("Error setting new timeout on socket: ( " + port + " )\n" + e);
         }
     }
 
     public boolean closeSocket() {
         try{
-            System.out.println("Closing socket on port: + ( " + port + " ) ");
+            logger.info("Closing socket on port: + ( " + port + " )\n");
             listenerSocket.close();
         } catch(Exception e) {
-            System.err.println("Error Closing socket on port: ( " + port + " )");
+            logger.error("Error Closing socket on port: ( " + port + " )\n" + e);
             return false;
         }
         return true;

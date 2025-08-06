@@ -34,6 +34,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import server.edge_server.EdgeServer;
 
 import server.server_connections.*;
@@ -46,6 +49,8 @@ import server.server_packet.*;
 import server.server_packet.server_packet_class.*;
 
 public class ServerNodeHandler implements Runnable {
+
+    private static final Logger logger = LogManager.getLogger(ServerNodeHandler.class);
 
     private static ServerConnectionManager nodeConnectionManager = ServerNodeConnectionManager.getInstance();
 
@@ -136,8 +141,7 @@ public class ServerNodeHandler implements Runnable {
             output.println(json);
             output.close();
         } catch (IOException e) {
-            System.err.println("Error sending response packet of type: " + responsePacket.getPacketType());
-            e.printStackTrace();
+            logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + "\n"+ e);
         }
     }
     /*
@@ -147,8 +151,8 @@ public class ServerNodeHandler implements Runnable {
     @Override
     public void run() {
         
-        System.out.println(
-            "Node connected from "
+        logger.info(
+            "Node connected: \n\t"
             + nodeSocket.getInetAddress().toString()
             + ":" 
             + nodeSocket.getPort()
@@ -208,7 +212,7 @@ public class ServerNodeHandler implements Runnable {
                         // Builds the packet to be handled
                         nodePacket = buildGsonWithPacketSubtype(packetType, json);
 
-                        System.out.println("Recieved:\n" + nodePacket.toJson());
+                        logger.info("Recieved:\n" + nodePacket.toJson());
 
                         // Assign an id to the node - this will be sent back to the node
                         String nodeId = UUID.randomUUID().toString();
@@ -238,7 +242,7 @@ public class ServerNodeHandler implements Runnable {
                             ack(packetResponse);
                         }
                         else if(packetResponse.getSuccess() == false){
-                            System.err.println("Error Handling Packet of Type: \tINITIALIZATION\n\nDetails:");
+                            logger.error("Error Handling Packet of Type: \tINITIALIZATION\n\tDetails:");
 
                             // Detail the errors
                             packetResponse.printMessages();
@@ -254,7 +258,7 @@ public class ServerNodeHandler implements Runnable {
                         // Builds the packet to be handled
                         nodePacket = buildGsonWithPacketSubtype(packetType, json);
 
-                        System.out.println("\nRecieved:\n\n" + nodePacket.toJson() + "\n\n");
+                        logger.info("Recieved:\n\t" + nodePacket.toJson());
 
                         // Create the packetType based handler
                         packetHandler = new ServerMessageHandler(nodeConnectionManager);
@@ -269,7 +273,7 @@ public class ServerNodeHandler implements Runnable {
                             ack(packetResponse);
                         }
                         else if(packetResponse.getSuccess() == false){
-                            System.err.println("Error Handling Packet of Type: \t MESSAGE \n\n Details:");
+                            logger.error("Error Handling Packet of Type: \t MESSAGE \n\t Details:");
 
                             // Detail the errors
                             packetResponse.printMessages();
@@ -311,8 +315,7 @@ public class ServerNodeHandler implements Runnable {
                 if( reader != null){ reader.close(); }
                 if( nodeSocket != null && !nodeSocket.isClosed()) { nodeSocket.close(); }
             } catch (IOException e) {
-                System.err.println("Error closing socket!");
-                e.printStackTrace();
+                logger.error("Error closing socket!\n" + e);
             }
         }
     }

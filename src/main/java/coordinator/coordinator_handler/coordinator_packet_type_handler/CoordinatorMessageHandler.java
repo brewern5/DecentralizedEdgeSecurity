@@ -14,7 +14,12 @@
  */
 package coordinator.coordinator_handler.coordinator_packet_type_handler;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class CoordinatorMessageHandler extends CoordinatorPacketHandler{
+
+    private static final Logger logger = LogManager.getLogger(CoordinatorMessageHandler.class);
 
     private int messageCounter = 0;
 
@@ -37,8 +42,7 @@ public class CoordinatorMessageHandler extends CoordinatorPacketHandler{
             packetResponse = new CoordinatorHandlerResponse(true, "Recieved");
 
         } catch(Exception e) {
-            System.err.println("Error Handling packet");
-            e.printStackTrace();
+            logger.error("Error Handling packet!\n" + e);
             // Generates the response to be put into the failure packet
             packetResponse = new CoordinatorHandlerResponse(false, e, "Error Handling Packet.");
         }

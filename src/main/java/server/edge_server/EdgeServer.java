@@ -68,12 +68,10 @@ public class EdgeServer {
 
         // try to generate the IP from the machines IP - Throws UnknownHostException if it cannot determine
         try{
-            System.out.println("\t\tEDGE SERVER");
-            IP = config.grabIP();
-            logger.info("Starting Server at " + IP + ".");
+                        IP = config.grabIP();
+            logger.info("\t\tEDGE SERVER\n\"Starting Server at " + IP + ".");
         } catch (UnknownHostException e) {
-            System.err.println("Error: Unable to determine local host IP address.");
-            e.printStackTrace();
+            logger.error("Error: Unable to determine local host IP address.\n" + e);
         }
 
         /*          Try to create senders        */
@@ -120,11 +118,11 @@ public class EdgeServer {
                 "coordinator"
             );
         } catch (Exception e) {
-            System.err.println(
+            logger.error(
                 "Error creating Listening Socket on port " 
                 + config.getPortByKey("CoordinatorListener.listeningPort")
+                + "\n" + e
             );
-            e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
         }
 
@@ -136,11 +134,11 @@ public class EdgeServer {
                  "node"
             );
         } catch (Exception e) {
-            System.err.println(
+            logger.error(
                 "Error creating Listening Socket on port " 
                 + config.getPortByKey("NodeListener.listeningPort")
+                + "\n" + e
             );
-            e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
         }
 
@@ -191,7 +189,6 @@ public class EdgeServer {
             nodeConnectionManager.checkExpiredConnections();
         }, 20, 20, TimeUnit.SECONDS);
         logger.info("Timer for checking Expired connections created!");
-
     }
 
     public static void main(String[] args) {
@@ -209,6 +206,11 @@ public class EdgeServer {
 
         boolean on = true;
         while (on) {
+            try{
+                Thread.sleep(1000);
+            } catch(InterruptedException e) {
+                logger.error("Main thread interrrupted!\n" + e);
+            }
 
             System.out.println("\nManually Send Message: ");
             String message = in.nextLine();
@@ -257,11 +259,14 @@ public class EdgeServer {
 
                 } else if(recipient.equals("coordinator") || recipient.equals("Coordinator")) {
                     //coordinatorSender.send(messagePacket);
+                    coordinatorConnectionManager.getConnectionInfoById("1").send(messagePacket);
                 }
                 else {
                     System.out.println("Unknown Recipient! \nYour input was: " + recipient + "\nTry again.");
                 }
             }
+            // Clear message to prevent while loop running again
+            message = "";
         }
         in.close();
     }

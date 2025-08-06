@@ -18,9 +18,14 @@ import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import coordinator.coordinator_handler.CoordinatorServerHandler;
 
 public class CoordinatorListener implements Runnable {
+
+    private static final Logger logger = LogManager.getLogger(CoordinatorListener.class);
 
     private Socket connected;   // The socket that will be created once a connection is made, this will be passed to the thread that handles the packet
     private ServerSocket listenerSocket;    // This is the active listening socket, only recieves
@@ -43,8 +48,7 @@ public class CoordinatorListener implements Runnable {
     @Override
     public void run(){  
 
-        System.out.println("Listening on port " + this.port);
-        System.out.flush();     // Flush output to remove sync issues
+        logger.info("Listening on port " + this.port);
 
         // Main loop that will constantly be running, this allows for constant listening for new packets
         while(on){
@@ -56,8 +60,7 @@ public class CoordinatorListener implements Runnable {
                 // Keeping the 'SocketTimeoutException' catch statement empty. Since we want to constantly be reseting our listener, we want this exception to be thrown
             } catch (SocketTimeoutException sto) {  
             } catch (IOException ioe) {     
-                System.err.println("IOException!\n");
-                ioe.printStackTrace();
+                logger.error("IOException!\n" + ioe);
             }
         }
     }
@@ -87,7 +90,7 @@ public class CoordinatorListener implements Runnable {
         } catch (Exception e) {
             // Resets the timeout to what it was prior
             timeout = oldTimeout;
-            System.err.println("Error setting new timeout on socket: ( " + port + " )");
+            logger.error("Error setting new timeout on socket: ( " + port + " )\n" + e);
         }
     }
 
@@ -95,10 +98,10 @@ public class CoordinatorListener implements Runnable {
     public boolean closeSocket() {
         try{
             on = false;     // Turn off our while loop for redundancy
-            System.out.println("Closing socket on port: + ( " + port + " ) ");
+            logger.info("Closing socket on port: + ( " + port + " ) ");
             listenerSocket.close();     // Fully close the socket
         } catch(Exception e) {
-            System.err.println("Error Closing socket on port: ( " + port + " )");
+            logger.error("Error Closing socket on port: ( " + port + " )\n"+e);
             return false;       // ungraceful shutdown
         }
         return true;        // Graceful shutdown complete

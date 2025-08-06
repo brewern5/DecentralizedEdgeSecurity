@@ -18,6 +18,7 @@
  */
 package coordinator.edge_coordinator;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 
 import java.util.Scanner;
@@ -68,12 +69,11 @@ public class EdgeCoordinator {
 
         // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
-            System.out.println("\t\tEDGE COORDINATOR");
+            logger.info("\t\tEDGE COORDINATOR");
             // Get the IP address for this coordinator
             IP = config.grabIP(); 
         } catch (UnknownHostException e) {
-            System.err.println("Error: Unable to determine local host IP address.");
-            e.printStackTrace();
+            logger.error("Error: Unable to determine local host IP address.\n" + e);
         }
 
         // Try to create a serverSocket to listen to requests 
@@ -84,13 +84,15 @@ public class EdgeCoordinator {
                  5000
             );  
 
-        } catch (Exception e) {
-            System.err.println(
+        } catch (IOException e) {
+            logger.error(
                 "Error creating Listening Socket on port " 
                 + config.getPortByKey("Coordinator.listeningPort")
+                + "\n" + e
             );
-            e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
+        } catch (Exception e) {
+            logger.error("Unknown Error creating listener ports!\n" + e);
         }
     }
 

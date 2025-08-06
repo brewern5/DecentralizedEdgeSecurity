@@ -9,12 +9,18 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
 import java.net.InetAddress;            // Used for grabbing the machine's IP address
 import java.net.UnknownHostException;   // Error for trying to grab IP address
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Properties;            // Utility for getting properties from any .properties file
 
 public class ServerConfig {
+
+    private static final Logger logger = LogManager.getLogger(ServerConfig.class);
 
     private static Properties properties = new Properties();      // Generate the properties object
 
@@ -42,7 +48,6 @@ public class ServerConfig {
 
         writeToConfig("Server.IP", ipAddress);
 
-        // TODO: REMOVE THIS
         writeToConfig("Coordinator.IP", ipAddress);
 
         return ipAddress;       // Will return a null value if no IP is found 
@@ -73,9 +78,7 @@ public class ServerConfig {
         try{
             IP = properties.getProperty(key);
         } catch (Error e) {
-            System.err.println("Error getting " + key + "'s IP from config file!\n");
-            e.printStackTrace();
-            // TODO: Write to logger the error
+            logger.error("Error getting " + key + "'s IP from config file!\n" + e);
         }
         return IP;
     }
@@ -101,13 +104,12 @@ public class ServerConfig {
                 try(OutputStream outputStream = new FileOutputStream("config/server_config/serverConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
-                    System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
-                    ioe.printStackTrace();
-                    // TODO: Write to logger the error
+                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + ioe);
+                } catch(Exception e) {
+                    logger.error("Unknown error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + e);
                 }
 
-                System.out.println("Overwrote:\n\t Key: ( " + key + " )\n\t Value: ( " + value + " )");
-                // TODO: Write to logger a warning
+                logger.info("Overwrote:\t Key: ( " + key + " )\t Value: ( " + value + " )");
             } 
             else if(properties.getProperty(key) == null){
 
@@ -117,21 +119,18 @@ public class ServerConfig {
                 try(OutputStream outputStream = new FileOutputStream("config/server_config/serverConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
-                    System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
-                    ioe.printStackTrace();
-                    // TODO: Write to logger the error
+                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + ioe);
+                } catch(Exception e) {
+                    logger.error("Unknown Error writing value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + e);
                 }
             }
             else {
                 // Error handling the key/value and or the file itself.
                 throw new Exception("Unknown Error handling Key/Value for the config file!\n");
-                // TODO: Write to logger the error
             }
 
         }catch (Exception e) { // Generic Exception
-            System.err.println("Error finding key: ( " + key + " ) from config file!\n");
-            e.printStackTrace();
-            // TODO: Write to logger the error
+            logger.error("Error finding key: ( " + key + " ) from config file!\n" + e);
         }
 
     }

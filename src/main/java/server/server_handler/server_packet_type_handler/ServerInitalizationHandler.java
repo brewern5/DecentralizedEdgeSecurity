@@ -16,9 +16,14 @@
  */
 package server.server_handler.server_packet_type_handler;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import server.server_connections.server_connection_manager.*;
 
 public class ServerInitalizationHandler extends ServerPacketHandler{
+
+    private static final Logger logger = LogManager.getLogger(ServerInitalizationHandler.class);
 
     public ServerInitalizationHandler(ServerConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
@@ -62,8 +67,7 @@ public class ServerInitalizationHandler extends ServerPacketHandler{
             packetResponse.addCustomKeyValuePair("id", recievedPacket.getId());
 
         } catch(Exception e) {
-            System.err.println("Error Handling packet");
-            e.printStackTrace();
+            logger.error("Error Handling packet\n"+e);
             // Generates the response to be put into the failure packet
             packetResponse = new ServerHandlerResponse(false, e, "Error Handling Packet.");
         }

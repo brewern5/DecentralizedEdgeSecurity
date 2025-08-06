@@ -178,10 +178,10 @@ public abstract class ServerSender {
 
                 // Print out the packet 
                 logger.info(
-                    "Response Recieved:\n"
-                     + "Sender ID:\t" + responsePacket.getId() 
-                    + "\nPacket Type:\t" + responsePacket.getPacketType() 
-                    + "\nPayload:\t" + responsePacket.getPayload()  
+                    "Response Recieved:"
+                    + "\n\tSender ID:\t" + responsePacket.getId() 
+                    + "\n\tPacket Type:\t" + responsePacket.getPacketType() 
+                    + "\n\tPayload:\t" + responsePacket.getPayload()  
                 );
 
                 // If the packet type is a ACK packet - then it is a good connection made and the server will close this socket.
@@ -194,8 +194,8 @@ public abstract class ServerSender {
 
                 LinkedHashMap<String, String> payload = responsePacket.getPayload();
 
-                // If the Payload has an ID value
-                if(!payload.get("id").isEmpty()) {
+                // If the packet being sent TODO: CREATE SOME BETTER FORM OF HANDLING HERE 
+                if(payload.get("id") != null) {
                     payload.forEach( (k, v) -> {
                         if(k.equals("id")) {
                             EdgeServer.setServerId(v);
@@ -211,10 +211,10 @@ public abstract class ServerSender {
                 }
             } catch(IllegalArgumentException illegalArg) {
                 // The exception if the packet is empty or has no termination 
-                logger.error("Error: " + illegalArg.getStackTrace());
+                logger.error("Error: " + illegalArg);
             } catch(IllegalStateException illegalState) {
                 // The exception if the packet is not of the type ACK
-                logger.error("Error: " + illegalState.getStackTrace());
+                logger.error("Error: " + illegalState);
             } finally {
                 // Always close the ports no matter the success status. 
                 output.close();          //
@@ -226,13 +226,11 @@ public abstract class ServerSender {
             return ackReceived;
                 
         } catch(SocketTimeoutException e) {
-            logger.error("Failed waiting on a response from coordinator at " + this.ip + ":" + this.sendingPort + "\n" + e.getStackTrace());
-            e.printStackTrace();
+            logger.error("Failed waiting on a response from coordinator at " + this.ip + ":" + this.sendingPort + "\n" + e);
         } catch(IOException e) {
-            logger.error("Failed to connect to coordinator at " + this.ip + ":" + this.sendingPort + "\n" + e.getStackTrace());
-            e.printStackTrace();
+            logger.error("Failed to connect to coordinator at " + this.ip + ":" + this.sendingPort + "\n" + e);
         } catch (Exception e) {
-            logger.error("Unknown Error! " + e.getStackTrace());
+            logger.error("Unknown Error! " + e);
         }
 
         // Return false as if this section is reached, the packet was not sent properly meaning an error occurred early i

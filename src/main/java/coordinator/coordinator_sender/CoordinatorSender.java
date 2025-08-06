@@ -46,12 +46,17 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import coordinator.coordinator_lib.RuntimeTypeAdapterFactory;
 
 import coordinator.coordinator_packet.*;
 import coordinator.coordinator_packet.coordinator_packet_class.*;
 
 public abstract class CoordinatorSender {
+
+    private static final Logger logger = LogManager.getLogger(CoordinatorSender.class);
 
     // A timer for retry and for other time based sending
     protected final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -147,13 +152,12 @@ public abstract class CoordinatorSender {
             try{
                 if(!response.endsWith("||END||") || response == null){
                     throw new IllegalArgumentException(
-                        "\nPayload not properly terminated. " 
+                        "Payload not properly terminated. " 
                         + "\n\tPossible Causes:\n\t\t" 
                         + "- Incomplete Packet\n\t\t"
-                        +"- Unsafe Packet\n"
+                        +"- Unsafe Packet"
                     );
                 }
-                System.out.println("\tResponse recieved\n");
 
                 // If true, the packet will remove the delimiter so it can properly deserialize the Json (Since ||END|| is not json)
                 response = response.substring(
@@ -173,10 +177,11 @@ public abstract class CoordinatorSender {
                 responsePacket = buildGsonWithPacketSubtype(packetType, response);
 
                 // Print out the packet 
-                System.out.println(
-                    "Sender ID: \t" + responsePacket.getId() 
-                    + "\nPacket Type: \t" + responsePacket.getPacketType() 
-                    + "\nPayload: \t" + responsePacket.getPayload()  
+                logger.info(
+                    "Response Recieved:"
+                    + "\n\tSender ID: \t" + responsePacket.getId() 
+                    + "\n\tPacket Type: \t" + responsePacket.getPacketType() 
+                    + "\n\tPayload: \t" + responsePacket.getPayload()  
                 );
 
                 // If the packet type is a ACK packet - then it is a good connection made and the server will close this socket.
@@ -185,17 +190,15 @@ public abstract class CoordinatorSender {
                         "Expected ACK packet, but received: " 
                         + responsePacket.getPacketType()
                     );
+                } else {
+                    ackReceived = true; // Break out of while loop to contiune initalization
                 }
-
-                ackReceived = true; // Break out of while loop to contiune initalization
             } catch(IllegalArgumentException illegalArg) {
                 // The exception if the packet is empty or has no termination 
-                 System.err.println("Error: " + illegalArg.getMessage());
-                illegalArg.printStackTrace();
+                logger.error("Error: " + illegalArg);
             } catch(IllegalStateException illegalState) {
                 // The exception if the packet is not of the type ACK
-                System.err.println("Error: " + illegalState.getMessage());
-                illegalState.printStackTrace();
+                logger.error("Error: " + illegalState);
             } finally {
                 // Always close the ports no matter the success status. 
                 output.close();          //
@@ -207,14 +210,11 @@ public abstract class CoordinatorSender {
             return ackReceived;
                 
         } catch(SocketTimeoutException e) {
-            System.err.println("Failed waiting on a response from coordinator at " + this.ip + ":" + this.sendingPort);
-            e.printStackTrace();
+            logger.error("Failed waiting on a response from coordinator at " + this.ip + ":" + this.sendingPort + "\n" + e);
         } catch(IOException e) {
-            System.err.println("Failed to connect to coordinator at " + this.ip + ":" + this.sendingPort);
-            e.printStackTrace();
+            logger.error("Failed to connect to coordinator at " + this.ip + ":" + this.sendingPort + "\n" + e);
         } catch (Exception e) {
-            e.printStackTrace();
-            // TODO: Log critical error
+            logger.error("Unknown Error! \n\t" + e);
         }
 
         // Return false as if this section is reached, the packet was not sent properly meanign an error

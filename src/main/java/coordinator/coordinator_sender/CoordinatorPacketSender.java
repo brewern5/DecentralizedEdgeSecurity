@@ -6,9 +6,14 @@
 
 package coordinator.coordinator_sender;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import coordinator.coordinator_packet.CoordinatorPacket;
 
 public class CoordinatorPacketSender extends CoordinatorSender{
+
+    private static final Logger logger = LogManager.getLogger(CoordinatorPacketSender.class);
 
     protected int maxRetries = 3;
     protected int attempts = 0;
@@ -29,14 +34,14 @@ public class CoordinatorPacketSender extends CoordinatorSender{
          while (!ackRecieved){
             // If the attempt limit is reached the server will shutdown
             if (attempts == maxRetries) {
-                System.err.println("Attempt limit reached trying to recieve ACK");
+                logger.error("Attempt limit reached trying to recieve ACK!");
                 return;
             }
             // Retry the connection - must reopen the socket to create a new connection
             else if (attempts < maxRetries && !ackRecieved) {
                 // Wait to retry and increment attempts after 1 second
                 scheduler.schedule(() -> {
-                    System.out.println("Failed to recieve ACK - retrying...");
+                    logger.warn("Failed to recieve ACK - retrying...");
                     }, 1, java.util.concurrent.TimeUnit.SECONDS
                 );
                 //  Since 'GetSendPacket' is an abstract class - this method know it needs it,

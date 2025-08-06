@@ -10,12 +10,18 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
 import java.net.InetAddress;            // Used for grabbing the machine's IP address
 import java.net.UnknownHostException;   // Error for trying to grab IP address
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Properties;            // Utility for getting properties from any .properties file
 
 public class CoordinatorConfig {
+
+    private static final Logger logger = LogManager.getLogger(CoordinatorConfig.class);
 
     private static Properties properties = new Properties();      // Generate the properties object
 
@@ -26,10 +32,9 @@ public class CoordinatorConfig {
             properties.load(in);
             in.close();
         } catch (IOException e){
-            e.printStackTrace();
+            logger.error("Error reading in file!\n" + e);
         }
     }
-
 
     /**
      *   Grabs the machines IP and will return the IP.
@@ -48,7 +53,6 @@ public class CoordinatorConfig {
 
         return ipAddress;       // Will return a null value if no IP is found 
     }
-    
 
     /**
      *  Will try and grab available port for the machine.    
@@ -63,9 +67,8 @@ public class CoordinatorConfig {
             // Try and get the port by the key sent to this method
             port = Integer.parseInt(properties.getProperty(key));
 
-        } catch (Error e){
-            System.err.println("Error getting port from config file!\n");
-            e.printStackTrace();
+        } catch (Exception e){
+            logger.error("Error getting port from config file!\n" + e);
         }
         return port;
     }
@@ -76,10 +79,8 @@ public class CoordinatorConfig {
         try{
             // Try and grab the IP by the key
             IP = properties.getProperty(key);
-        } catch (Error e) {
-            System.err.println("Error getting " + key + "'s IP from config file!\n");
-            e.printStackTrace();
-            // TODO: Write to logger the error
+        } catch (Exception e) {
+            logger.error("Error getting " + key + "'s IP from config file!\n" + e);
         }
         return IP;
     }
@@ -105,13 +106,12 @@ public class CoordinatorConfig {
                 try(OutputStream outputStream = new FileOutputStream("config/coordinator_config/coordinatorConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
-                    System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
-                    ioe.printStackTrace();
-                    // TODO: Write to logger the error
+                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + ioe);
+                } catch(Exception e) {
+                    logger.error("Unhandled Exception!\n" + e);
                 }
 
-                System.out.println("\nOverwrote:\n\t Key: ( " + key + " )\n\t Value: ( " + value + " )");
-                // TODO: Write to logger a warning
+                logger.warn("Overwrote:\t Key: ( " + key + " )\t Value: ( " + value + " )");
             } 
             else if(properties.getProperty(key) == null){
 
@@ -121,21 +121,18 @@ public class CoordinatorConfig {
                 try(OutputStream outputStream = new FileOutputStream("config/coordinator_config/coordinatorConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
-                    System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
-                    ioe.printStackTrace();
-                    // TODO: Write to logger the error
+                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + ioe);
+                } catch(Exception e) {
+                    logger.error("Unknown Error adding contents to file!\n" + e);
                 }
             }
             else {
                 // Error handling the key/value and or the file itself.
                 throw new Exception("Unknown Error handling Key/Value for the config file!\n");
-                // TODO: Write to logger the error
             }
 
         }catch (Exception e) { // Generic Exception
-            System.err.println("Error finding key: ( " + key + " ) from config file!\n");
-            e.printStackTrace();
-            // TODO: Write to logger the error
+            logger.error("Error finding key: ( " + key + " ) from config file!\n" + e);
         }
     }
 }
