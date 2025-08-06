@@ -13,6 +13,7 @@ package server.server_listener;
 import java.io.*;
 import java.net.*;
 
+import server.server_handler.ServerCoordinatorHandler;
 import server.server_handler.ServerNodeHandler;
 
 public class ServerListener implements Runnable {
@@ -22,10 +23,13 @@ public class ServerListener implements Runnable {
     private int port;   
     private int timeout;
 
+    private String type;
+
     // Constructor
-    public ServerListener(int port, int timeout) throws IOException {
+    public ServerListener(int port, int timeout, String type) throws IOException {
         this.port = port;
         this.timeout = timeout;
+        this.type = type;
         this.listenerSocket = new ServerSocket(port);
         this.listenerSocket.setSoTimeout(timeout);
     }
@@ -42,11 +46,19 @@ public class ServerListener implements Runnable {
 
         while(on){
             try {
-                connected = listenerSocket.accept();
-                Thread handlerThread = new Thread(
-                    new ServerNodeHandler(connected)
-                ); // sends the message to a handler
-                handlerThread.start(); // Begins the new thread
+                if(type.equals("node")) {
+                    connected = listenerSocket.accept();
+                    Thread handlerThread = new Thread(
+                        new ServerNodeHandler(connected)
+                    ); // sends the message to a handler
+                    handlerThread.start(); // Begins the new thread
+                } else if (type.equals("coordinator")) {
+                    connected = listenerSocket.accept();
+                    Thread handlerThread = new Thread(
+                        new ServerCoordinatorHandler(connected)
+                    ); // sends the message to a handler
+                    handlerThread.start(); // Begins the new thread
+                }
             } catch (SocketTimeoutException sto) {
                 // You need this exception handling here because it will brick at trying to start the connection
                 // Did not add any handling to this exception as it would constatly throw an error, so this just prevents it from clogging up the console

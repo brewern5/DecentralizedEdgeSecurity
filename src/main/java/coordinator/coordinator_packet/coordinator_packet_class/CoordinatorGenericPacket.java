@@ -10,21 +10,20 @@ package coordinator.coordinator_packet.coordinator_packet_class;
 
 import java.util.LinkedHashMap;
 
-import coordinator.coordinator_packet.CoordinatorPacket;
-import coordinator.coordinator_packet.CoordinatorPacketType;
+import coordinator.coordinator_packet.*;
 
 public class CoordinatorGenericPacket extends CoordinatorPacket {
 
     // No payload
-    public CoordinatorGenericPacket(CoordinatorPacketType packetType, String sender) {
+    public CoordinatorGenericPacket(CoordinatorPacketType packetType, String id) {
         this.packetType = packetType;
-        this.sender = sender;
+        this.id = id;
         this.payload = new LinkedHashMap<String, String>();
     }
     // Constructor for setting a payload
-    public CoordinatorGenericPacket(CoordinatorPacketType packetType, String sender, LinkedHashMap<String, String> payload) {
+    public CoordinatorGenericPacket(CoordinatorPacketType packetType, String id, LinkedHashMap<String, String> payload) {
         this.packetType = packetType;
-        this.sender = sender;
+        this.id = id;
         this.payload = payload;
 
         payload.forEach( (key, value) -> {
@@ -32,9 +31,9 @@ public class CoordinatorGenericPacket extends CoordinatorPacket {
         });
     }
     // Contructor with multiple value strings with no key
-    public CoordinatorGenericPacket(CoordinatorPacketType packetType, String sender, String... value) {
+    public CoordinatorGenericPacket(CoordinatorPacketType packetType, String id, String... value) {
         this.packetType = packetType;
-        this.sender = sender;
+        this.id = id;
         this.payload = new LinkedHashMap<String, String>();
 
         for(String val : value) {

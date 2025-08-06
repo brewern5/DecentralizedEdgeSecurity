@@ -17,10 +17,12 @@ package coordinator.coordinator_handler.coordinator_packet_type_handler;
 
 import coordinator.coordinator_config.CoordinatorConfig;
 
+import coordinator.coordinator_connections.*;
+import server.server_handler.server_packet_type_handler.ServerHandlerResponse;
+
 public class CoordinatorInitalizationHandler extends CoordinatorPacketHandler{
 
-    // Allows writting to the config file
-    private CoordinatorConfig config = new CoordinatorConfig();
+    private CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
 
     /* This method will be called from the 'PacketHandler' SuperClass's "handle" method.
      * This particular method will seperate the handled KeyValue pairs and seperate them
@@ -31,11 +33,34 @@ public class CoordinatorInitalizationHandler extends CoordinatorPacketHandler{
     public CoordinatorHandlerResponse process() {
 
         try{
-            // Lambda function - HashMap has a ForEach function that receives the all the keys(k) and their corresponding values(v) and will loop through each one individually and send it to the config
-            PayloadKeyValuePairs.forEach( (k, v) -> { config.writeToConfig(k, v); });
+
+            // Get all the values from the payload
+            String[] values = recievedPacket.getAllPayloadValues();
+
+            // If there are either less or more than 1 value, throw error - we need only one value
+            if(values.length < 1 || values.length > 1){
+                throw new Exception("Expected Payload length of 1. Recieved length of " + values.length);
+            }
+
+            int port;
+
+            try{
+                port = Integer.parseInt(values[0]);
+            } catch (NumberFormatException e){
+                throw new Exception("Invalid Format!"); // Keeping this genericand vauge on purpose!
+            }
+
+            // Relying on the fact the client should send the port here!
+            connectionManager.getConnectionInfoById(recievedPacket.getId()).setPort(port);
+
+            // Try and create the sender for the node now that it has a port assigned
+            connectionManager.getConnectionInfoById(recievedPacket.getId()).createSender();
 
             // Generates the success response to be put into the ack packet 
-            packetResponse = new CoordinatorHandlerResponse(true, "Preferred Port Recieved");
+            packetResponse = new CoordinatorHandlerResponse(true);
+
+            // Add the ID to the payload
+            packetResponse.addCustomKeyValuePair("id", recievedPacket.getId());
 
         } catch(Exception e) {
             System.err.println("Error Handling packet");

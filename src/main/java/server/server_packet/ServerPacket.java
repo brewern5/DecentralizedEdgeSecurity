@@ -19,18 +19,19 @@ import java.util.Arrays;
 
 import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
 
+import server.edge_server.EdgeServer;
+
 public abstract class ServerPacket {
 
     protected int payloadPairCounter = 0;
 
+    protected String id = EdgeServer.getServerId();
+
     protected ServerPacketType packetType;     // Enum for easy constant assignment
-    protected String sender;
     protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();     
 
     // No-args constructor
     public ServerPacket() {} 
-
-    /*          Accessor/setter methods         */
 
     /*
      * 
@@ -44,17 +45,19 @@ public abstract class ServerPacket {
     public void setPacketType(ServerPacketType packetType) {
         this.packetType = packetType;
     }
+
     /*
      * 
-     *      Sender Methods
+     *      ID methods
      * 
      */
 
-    public String getSender() {
-        return sender;
+    public String getId() {
+        return id;
     }
-    public void setSender(String sender) {
-        this.sender = sender;
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     /*
@@ -130,5 +133,4 @@ public abstract class ServerPacket {
         return new Gson().toJson(this) + "||END||";
     }
 
-    
 }

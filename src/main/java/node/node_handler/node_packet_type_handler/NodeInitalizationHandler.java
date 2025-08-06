@@ -15,9 +15,15 @@
  */
 package node.node_handler.node_packet_type_handler;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import node.node_config.NodeConfig;
 
 public class NodeInitalizationHandler extends NodePacketHandler{
+
+    // Each class can have its own logger instance
+    private static final Logger logger = LogManager.getLogger(NodeInitalizationHandler.class);
 
     // Allows writting to the config file
     private NodeConfig config = new NodeConfig();
@@ -38,8 +44,7 @@ public class NodeInitalizationHandler extends NodePacketHandler{
             packetResponse = new NodeHandlerResponse(true, "Preferred Port Recieved");
 
         } catch(Exception e) {
-            System.err.println("Error Handling packet");
-            e.printStackTrace();
+            logger.error("Error Handling packet! " + e.getStackTrace());
             // Generates the response to be put into the failure packet
             packetResponse = new NodeHandlerResponse(false, e, "Error Handling Packet.");
         }

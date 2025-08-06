@@ -15,16 +15,16 @@ import server.server_packet.*;
 public class ServerGenericPacket extends ServerPacket {
 
     // No payload
-    public ServerGenericPacket(ServerPacketType packetType, String sender) {
+    public ServerGenericPacket(ServerPacketType packetType, String id) {
         this.packetType = packetType;
-        this.sender = sender;
-        this.payload = new LinkedHashMap<>();
+        this.id = id;
+        this.payload = new LinkedHashMap<String, String>();
     }
     
     // Constructor for setting a payload
-    public ServerGenericPacket(ServerPacketType packetType, String sender, LinkedHashMap<String, String> payload) {
+    public ServerGenericPacket(ServerPacketType packetType, String id, LinkedHashMap<String, String> payload) {
         this.packetType = packetType;
-        this.sender = sender;
+        this.id = id;
         this.payload = payload;
 
         payload.forEach( (key, value) -> {
@@ -33,10 +33,10 @@ public class ServerGenericPacket extends ServerPacket {
     }
 
     // Contructor with multiple value strings with no key
-    public ServerGenericPacket(ServerPacketType packetType, String sender, String... value) {
+    public ServerGenericPacket(ServerPacketType packetType, String id, String... value) {
         this.packetType = packetType;
-        this.sender = sender;
-        this.payload = new LinkedHashMap<>();
+        this.id = id;
+        this.payload = new LinkedHashMap<String, String>();
 
         for(String val : value) {
             payload.put("message" + payloadPairCounter, val);

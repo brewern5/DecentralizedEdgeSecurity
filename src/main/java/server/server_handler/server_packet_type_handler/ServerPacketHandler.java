@@ -1,6 +1,7 @@
-/*      Author: Nathaniel Brewer
+/*      
+ *      Author: Nathaniel Brewer
  * 
- *      THis is an abstract class created to be the catalyst for handling
+ *      This is an abstract class created to be the catalyst for handling
  *      all the packet types. This allows for overwritting the 
  *      handling method.
  *      
@@ -14,25 +15,38 @@ package server.server_handler.server_packet_type_handler;
 
 import java.util.*;
 
-import server.server_packet.ServerPacket;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import server.server_connections.server_connection_manager.*;
+import server.server_packet.*;
 
 public abstract class ServerPacketHandler {
 
+    // Gets sent into the constructor for the child class (E.g. new ServerMessageHandler(ServerCoordinatorConnectionManager.getInstance()))
+    protected static ServerConnectionManager connectionManager;
+
+    private static final Logger logger = LogManager.getLogger(ServerPacketHandler.class);
+
     // Stores the recieved payload into a map (key Value) so the 
-    protected LinkedHashMap<String, String> PayloadKeyValuePairs = new LinkedHashMap<>(); // Protected means any class inside this package can access this variable
+    protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();
 
     // This is the object that will be instantiated if the packet is handled succesfuly or an error gets thrown
     protected ServerHandlerResponse packetResponse;
+
+    // The recieved Packet
+    protected ServerPacket recievedPacket;
     
     // Tears the packet apart and seperates the head from the body
     public ServerHandlerResponse handle(ServerPacket recievedPacket){
 
+        this.recievedPacket = recievedPacket;
+
         // Print out the packet 
-        System.out.println(
-            "Sender: \t" + recievedPacket.getSender() 
-            + "\n\nPacket Type: \t" + recievedPacket.getPacketType() 
-            + "\n\nPayload: \t" + recievedPacket.getPayload()  
-            + "\n\n"
+        logger.info(
+            "\n\tID: \t" + recievedPacket.getId() 
+            + "\n\tPacket Type: \t" + recievedPacket.getPacketType() 
+            + "\n\tPayload: \t" + recievedPacket.getPayload()
         );
 
         // Grab the payload from the packet
@@ -46,6 +60,30 @@ public abstract class ServerPacketHandler {
                  "Error handling payload for PacketType " + recievedPacket.getPacketType()
             );
         }
+        // Check to see if the packet has an ID, if it is not an INITALIZATION packet
+        if(recievedPacket.getId() == null && recievedPacket.getPacketType() != ServerPacketType.INITIALIZATION) {
+            return new ServerHandlerResponse(
+                false, 
+                new Exception("Unknown Node."),
+                 "Error handling payload for PacketType " + recievedPacket.getPacketType()
+            );
+        } 
+
+        // Process the packet first, this will get the port out of the packet
+        if(recievedPacket.getPacketType() == ServerPacketType.INITIALIZATION) {
+            return process();
+        }
+
+        try{ 
+            // This gets the connected senders ID from storage and updates the last activity since it is clearly sending packets
+            connectionManager.getConnectionInfoById(recievedPacket.getId()).updateLastActivity();
+        } catch (NullPointerException e) {
+            logger.error("ID: " + recievedPacket.getId() + " was not found!\n" + e.getStackTrace());
+             // TODO: if the ID is not found in the connectionManager send a re-INIT packet to assign an ID
+        }
+            // TODO: 
+        //connectionManager.updateById(recievedPacket.getId(), payload);
+
         return process();
     }
 

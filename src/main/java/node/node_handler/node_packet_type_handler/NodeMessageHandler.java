@@ -14,14 +14,15 @@
  */
 package node.node_handler.node_packet_type_handler;
 
-import node.node_config.NodeConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class NodeMessageHandler extends NodePacketHandler{
 
-    private int messageCounter = 0;
+    // Each class can have its own logger instance
+    private static final Logger logger = LogManager.getLogger(NodeMessageHandler.class);
 
-    // Allows writting to the config file
-    private NodeConfig config = new NodeConfig();
+    private int messageCounter = 0;
 
     /* This method will be called from the 'PacketHandler' SuperClass's "handle" method.
      * This particular method will seperate the handled KeyValue pairs and seperate them
@@ -34,7 +35,7 @@ public class NodeMessageHandler extends NodePacketHandler{
         try{
             // Lambda function - HashMap has a ForEach function that receives the all the keys(k) and their corresponding values(v) and will loop through each one individually and send it to the config
             PayloadKeyValuePairs.forEach( (k, v) -> { 
-                System.out.println("Message " + messageCounter + ":\n\t\t" + v );
+                logger.info("Message" + messageCounter + ":\n\t\t" + v );
                 messageCounter++;
             });
 
@@ -42,8 +43,7 @@ public class NodeMessageHandler extends NodePacketHandler{
             packetResponse = new NodeHandlerResponse(true, "Recieved");
 
         } catch(Exception e) {
-            System.err.println("Error Handling packet");
-            e.printStackTrace();
+            logger.error("Error Handling packet" + e.getStackTrace());
             // Generates the response to be put into the failure packet
             packetResponse = new NodeHandlerResponse(false, e, "Error Handling Packet.");
         }

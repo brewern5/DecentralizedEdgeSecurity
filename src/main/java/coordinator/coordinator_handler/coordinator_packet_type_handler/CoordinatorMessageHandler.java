@@ -14,14 +14,9 @@
  */
 package coordinator.coordinator_handler.coordinator_packet_type_handler;
 
-import coordinator.coordinator_config.CoordinatorConfig;
-
 public class CoordinatorMessageHandler extends CoordinatorPacketHandler{
 
     private int messageCounter = 0;
-
-    // Allows writting to the config file
-    private CoordinatorConfig config = new CoordinatorConfig();
 
     /* This method will be called from the 'PacketHandler' SuperClass's "handle" method.
      * This particular method will seperate the handled KeyValue pairs and seperate them

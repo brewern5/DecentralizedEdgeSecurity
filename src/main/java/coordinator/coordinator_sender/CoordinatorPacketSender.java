@@ -29,14 +29,14 @@ public class CoordinatorPacketSender extends CoordinatorSender{
          while (!ackRecieved){
             // If the attempt limit is reached the server will shutdown
             if (attempts == maxRetries) {
-                System.err.println("\n\nAttempt limit reached trying to recieve ACK");
+                System.err.println("Attempt limit reached trying to recieve ACK");
                 return;
             }
             // Retry the connection - must reopen the socket to create a new connection
             else if (attempts < maxRetries && !ackRecieved) {
                 // Wait to retry and increment attempts after 1 second
                 scheduler.schedule(() -> {
-                    System.out.println("\nFailed to recieve ACK - retrying...\n\n");
+                    System.out.println("Failed to recieve ACK - retrying...");
                     }, 1, java.util.concurrent.TimeUnit.SECONDS
                 );
                 //  Since 'GetSendPacket' is an abstract class - this method know it needs it,

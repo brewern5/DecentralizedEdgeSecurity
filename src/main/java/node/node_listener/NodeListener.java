@@ -11,9 +11,15 @@ import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import node.node_handler.NodeServerHandler;
 
 public class NodeListener implements Runnable {
+
+    // Each class can have its own logger instance
+    private static final Logger logger = LogManager.getLogger(NodeListener.class);
     
     private Socket connected;
     private ServerSocket listenerSocket;
@@ -30,8 +36,7 @@ public class NodeListener implements Runnable {
     @Override
     public void run(){  
 
-        System.out.println("Listening on port " + port);
-        System.out.flush(); 
+        logger.info("Listening on port " + port);
 
         boolean on = true;
         while(on){
@@ -41,8 +46,7 @@ public class NodeListener implements Runnable {
                 handlerThread.start(); // Begins the new thread
             } catch (SocketTimeoutException sto) {
             } catch (IOException ioe) {
-                System.err.println("IOException!\n");
-                ioe.printStackTrace();
+                logger.error("I/O Exception! " + ioe.getStackTrace());
             }
         }
     }
@@ -69,15 +73,16 @@ public class NodeListener implements Runnable {
         try {
             listenerSocket.setSoTimeout(timeout);
         } catch (Exception e) {
-            System.err.println("Error setting new timeout on socket: ( " + port + " )");
+            logger.error("Error setting new timeout on socket: ( " + port + " ) " + e.getStackTrace());
         }
     }
 
     public boolean closeSocket() {
         try{
             listenerSocket.close();
+            logger.warn("Listening Socket Closed on port " + port + "!");
         } catch(Exception e) {
-            System.err.println("Error Closing socket on port: ( " + port + " )");
+            logger.error("Error Closing socket on port" + port + "! " + e.getStackTrace());
             return false;
         }
         return true;

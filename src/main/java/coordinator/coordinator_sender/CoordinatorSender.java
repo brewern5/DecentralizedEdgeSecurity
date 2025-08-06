@@ -147,13 +147,13 @@ public abstract class CoordinatorSender {
             try{
                 if(!response.endsWith("||END||") || response == null){
                     throw new IllegalArgumentException(
-                        "\n\nPayload not properly terminated. " 
+                        "\nPayload not properly terminated. " 
                         + "\n\tPossible Causes:\n\t\t" 
                         + "- Incomplete Packet\n\t\t"
                         +"- Unsafe Packet\n"
                     );
                 }
-                System.out.println("\t\t\tResponse recieved\n");
+                System.out.println("\tResponse recieved\n");
 
                 // If true, the packet will remove the delimiter so it can properly deserialize the Json (Since ||END|| is not json)
                 response = response.substring(
@@ -174,15 +174,17 @@ public abstract class CoordinatorSender {
 
                 // Print out the packet 
                 System.out.println(
-                    "Sender: \t" + responsePacket.getSender() 
-                    + "\n\nPacket Type: \t" + responsePacket.getPacketType() 
-                    + "\n\nPayload: \t" + responsePacket.getPayload()  
-                    + "\n\n"
+                    "Sender ID: \t" + responsePacket.getId() 
+                    + "\nPacket Type: \t" + responsePacket.getPacketType() 
+                    + "\nPayload: \t" + responsePacket.getPayload()  
                 );
 
                 // If the packet type is a ACK packet - then it is a good connection made and the server will close this socket.
                 if (responsePacket.getPacketType() != CoordinatorPacketType.ACK) {
-                    throw new IllegalStateException("\n\nExpected ACK packet, but received: " + responsePacket.getPacketType());
+                    throw new IllegalStateException(
+                        "Expected ACK packet, but received: " 
+                        + responsePacket.getPacketType()
+                    );
                 }
 
                 ackReceived = true; // Break out of while loop to contiune initalization

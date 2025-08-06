@@ -1,4 +1,5 @@
-/*      Author: Nathaniel Brewer
+/*      
+ *   Author: Nathaniel Brewer
  * 
  *      This is the handler for the Packet Type INITALIZATION. This extends the Abstract
  *      class 'Packet handler'
@@ -10,33 +11,55 @@
  *      The recieved packet will be instansiated inside the CoordinatorServerHandler and 
  *      then sent here when the payload will be handled accordingly
  * 
- *      TODO: figure out response packet handling
  * 
  *      Response packet will be generated in the CoordinatorServerHandler
  */
 package server.server_handler.server_packet_type_handler;
 
-import server.server_config.ServerConfig;
+import server.server_connections.server_connection_manager.*;
 
 public class ServerInitalizationHandler extends ServerPacketHandler{
 
-    // Allows writting to the config file
-    private ServerConfig config = new ServerConfig();
+    public ServerInitalizationHandler(ServerConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+    }
 
     /* This method will be called from the 'PacketHandler' SuperClass's "handle" method.
      * This particular method will seperate the handled KeyValue pairs and seperate them
      * into a key and a value. In this instance it is the Servers preferred recieving port.
-     * Once recieved and handled, this method will put the Key Value into the config file
      */
     @Override
     public ServerHandlerResponse process() {
 
         try{
-            // Lambda function - HashMap has a ForEach function that receives the all the keys(k) and their corresponding values(v) and will loop through each one individually and send it to the config
-            PayloadKeyValuePairs.forEach( (k, v) -> { config.writeToConfig(k, v); });
+
+            // Get all the values from the payload
+            String[] values = recievedPacket.getAllPayloadValues();
+
+            // If there are either less or more than 1 value, throw error - we need only one value
+            if(values.length < 1 || values.length > 1) {
+                throw new Exception("Expected Payload length of 1. Recieved length of " + values.length);
+            }
+
+            int port;
+
+            try{
+                port = Integer.parseInt(values[0]);
+            } catch (NumberFormatException e){
+                throw new Exception("Invalid Format!"); // Keeping this genericand vauge on purpose!
+            }
+
+            // Relying on the fact the client should send the port here!
+            connectionManager.getConnectionInfoById(recievedPacket.getId()).setPort(port);
+
+            // Try and create the sender for the node now that it has a port assigned
+            connectionManager.getConnectionInfoById(recievedPacket.getId()).createSender();
 
             // Generates the success response to be put into the ack packet 
-            packetResponse = new ServerHandlerResponse(true, "Preferred Port Recieved");
+            packetResponse = new ServerHandlerResponse(true);
+
+            // Add the ID to the payload
+            packetResponse.addCustomKeyValuePair("id", recievedPacket.getId());
 
         } catch(Exception e) {
             System.err.println("Error Handling packet");

@@ -31,18 +31,27 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import server.edge_server.EdgeServer;
+
+import server.server_connections.server_connection_manager.*;
 import server.server_handler.server_packet_type_handler.*;
 
 import server.server_lib.RuntimeTypeAdapterFactory;
 
 import server.server_packet.server_packet_class.*;
-import server.server_packet.ServerPacket;
-import server.server_packet.ServerPacketType;
+import server.server_packet.*;
 
 public class ServerCoordinatorHandler implements Runnable {
 
+    private static final Logger logger = LogManager.getLogger(ServerCoordinatorHandler.class);
+
     private Socket coordinatorSocket;
     private String coordinatorIP;
+
+    private ServerConnectionManager coordinatorConnectionManager = ServerCoordinatorConnectionManager.getInstance();
 
     private ServerPacket coordinatorPacket;
 
@@ -85,7 +94,7 @@ public class ServerCoordinatorHandler implements Runnable {
 
         responsePacket = new ServerGenericPacket(
             ServerPacketType.ACK,       // Packet type
-            "Server",            // Sender
+            EdgeServer.getServerId(),            // Sender
             packetResponse.combineMaps()   // Payload
         );
         respond();
@@ -97,7 +106,7 @@ public class ServerCoordinatorHandler implements Runnable {
         // Construct a new failure packet
         responsePacket = new ServerGenericPacket(
             ServerPacketType.ERROR,    // Packet type
-            "Server",  // Sender
+            EdgeServer.getServerId(),  // Sender
             packetResponse.combineMaps()  // Payload
         );
         // Send the packet
@@ -140,13 +149,12 @@ public class ServerCoordinatorHandler implements Runnable {
         System.out.println(
             "Coordinator connected: " 
             + coordinatorSocket.getInetAddress().toString() 
-            + "\n\tFrom port: "
+            + ":"
             + coordinatorSocket.getPort()
         );
 
         // Handle client events
         try{
-
             // This is what decodes the incoming packet
             BufferedReader reader = new BufferedReader(
                 new InputStreamReader(
@@ -197,39 +205,6 @@ public class ServerCoordinatorHandler implements Runnable {
 
                 // Checks the packet type to determine how it needs to handle it
                 switch (packetType) {
-                    case INITIALIZATION:
-
-                        // Builds the packet to be handled
-                        coordinatorPacket = buildGsonWithPacketSubtype(packetType, json);
-
-                        System.out.println(
-                            "\nRecieved:\n\n" 
-                            + coordinatorPacket.toJson() 
-                            + "\n\n"
-                        );
-
-                        // Create the packetType based handler
-                        packetHandler = new ServerInitalizationHandler();
-
-                        // Allow for the packet response to be created based on the handling response
-                        packetResponse = packetHandler.handle(coordinatorPacket); 
-
-                        // If good send ack
-                        if(packetResponse.getSuccess() == true){
-
-                            // Construct the ack packet
-                            ack(packetResponse);
-                        }
-                        else if(packetResponse.getSuccess() == false){
-                            System.err.println("Error Handling Packet of Type: \tINITIALIZATION\n\nDetails:");
-
-                            // Detail the errors
-                            packetResponse.printMessages();
-                          
-                            // Construct the failure packet based on the response
-                            failure(packetResponse);
-                        }
-                        break;
                     case AUTH:
                         // TODO: Handle authentication logic
                         break;
@@ -237,10 +212,10 @@ public class ServerCoordinatorHandler implements Runnable {
                         // Builds the packet to be handled
                         coordinatorPacket = buildGsonWithPacketSubtype(packetType, json);
 
-                        System.out.println("\nRecieved:\n\n" + coordinatorPacket.toJson() + "\n\n");
+                        logger.info("Recieved:" + coordinatorPacket.toJson());
 
                         // Create the packetType based handler
-                        packetHandler = new ServerMessageHandler();
+                        packetHandler = new ServerMessageHandler(coordinatorConnectionManager);
 
                         // Allow for the packet response to be created based on the handling response
                         packetResponse = packetHandler.handle(coordinatorPacket); 
@@ -252,7 +227,7 @@ public class ServerCoordinatorHandler implements Runnable {
                             ack(packetResponse);
                         }
                         else if(packetResponse.getSuccess() == false){
-                            System.err.println("Error Handling Packet of Type: \t MESSAGE \n\n Details:");
+                            logger.error("Error Handling Packet of Type: \t MESSAGE \n\t Details:");
 
                             // Detail the errors
                             packetResponse.printMessages();

@@ -12,31 +12,43 @@
 
 package coordinator.coordinator_handler.coordinator_packet_type_handler;
 
-import java.util.*;
+import java.util.LinkedHashMap;
 
-import coordinator.coordinator_packet.CoordinatorPacket;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import coordinator.coordinator_connections.*;
+
+import coordinator.coordinator_packet.*;
 
 public abstract class CoordinatorPacketHandler {
+
+    protected static CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
+
+    private static final Logger logger = LogManager.getLogger(CoordinatorPacketHandler.class);
 
     // Stores the recieved payload into a map (key Value) so the 
     protected LinkedHashMap<String, String> PayloadKeyValuePairs = new LinkedHashMap<>(); // Protected means any class inside this package can access this variable
 
     // This is the object that will be instantiated if the packet is handled succesfuly or an error gets thrown
     protected CoordinatorHandlerResponse packetResponse;
+
+    protected CoordinatorPacket recievedPacket;
     
     // Tears the packet apart and seperates the head from the body
     public CoordinatorHandlerResponse handle(CoordinatorPacket recievedPacket){
 
+        this.recievedPacket = recievedPacket;
+
         // Print out the packet 
-        System.out.println(
-            "Sender: \t" + recievedPacket.getSender() 
-            + "\n\nPacket Type: \t" + recievedPacket.getPacketType() 
-            + "\n\nPayload: \t" + recievedPacket.getPayload()  
-            + "\n\n"
+        logger.info(
+            "\n\tID: \t" + recievedPacket.getId() 
+            + "\n\tPacket Type: \t" + recievedPacket.getPacketType() 
+            + "\n\tPayload: \t" + recievedPacket.getPayload()  
         );
 
         // Grab the payload from the packet
-         LinkedHashMap<String, String> payload = recievedPacket.getPayload();
+        LinkedHashMap<String, String> payload = recievedPacket.getPayload();
 
         // If the payload is empty , then an error will be sent back to the original packet sender
         if(payload.isEmpty()){
@@ -46,6 +58,26 @@ public abstract class CoordinatorPacketHandler {
                  "Error handling payload for PacketType " + recievedPacket.getPacketType()
             );
         }
+
+        // Check to see if the packet has an ID, if it is not an INITALIZATION packet
+        if(recievedPacket.getId() == null && recievedPacket.getPacketType() != CoordinatorPacketType.INITIALIZATION) {
+            return new CoordinatorHandlerResponse(
+                false, 
+                new Exception("No payload Sent."),
+                 "Error handling payload for PacketType " + recievedPacket.getPacketType()
+            );
+        } 
+
+        // TODO: if the ID is not found in the connectionManager send a re-INIT packet to assign an ID
+
+        // Process the packet first, this will get the port out of the packet
+        if(recievedPacket.getPacketType() == CoordinatorPacketType.INITIALIZATION) {
+            return process();
+        }
+
+        // This gets the connected senders ID from storage and updates the last activity since it is clearly sending packets
+        connectionManager.getConnectionInfoById(recievedPacket.getId()).updateLastActivity();
+
         return process();
     }
 

@@ -1,4 +1,5 @@
-/*      Author: Nathaniel Brewer     
+/*      
+ *      Author: Nathaniel Brewer     
  *      
  *      This object will define the success/failure message of handling a packet
  *      of any type. 
@@ -35,6 +36,12 @@ public class ServerHandlerResponse {
     private int messageCounter = 0;
     private int exceptionCounter = 0;
 
+    public ServerHandlerResponse(boolean success) {
+        this.success = success;
+        this.exceptions = new LinkedHashMap<>(); 
+        this.messages = new LinkedHashMap<>();
+    }
+
     // Since there may be multiple messages, I am using Varargs since we do not know how many messages may be sent (if there is multiple)
     public ServerHandlerResponse(boolean success, String... message){
         this.success = success;
@@ -58,6 +65,18 @@ public class ServerHandlerResponse {
             this.messages.put("Message" + messageCounter, msg);
             messageCounter++;
         }
+    }
+
+    // Store exceptions in the message map if available
+    public LinkedHashMap<String, String> combineMaps() {
+
+        // Will check for empty exceptions map, if not empty then it will add to 
+        if(!exceptions.isEmpty()){
+            exceptions.forEach( (key, value) -> {
+                messages.put(key, value);
+            });
+        }
+        return messages;
     }
 
     // Used for errors - will print to the console to describe issues
@@ -92,6 +111,12 @@ public class ServerHandlerResponse {
         this.success = success;
     }
 
+    /*
+     * 
+     *      Adders
+     * 
+     */
+
     // If any new messages arrive in the stack, before this is sent back to the original sender, they will be added here
     public void addMessage(String... message){
         storePayload(message);
@@ -100,11 +125,20 @@ public class ServerHandlerResponse {
     // Stores a string-ified version of the exeption inside the response message
     public void addException(Exception... exception) {
         for (Exception exc : exception) {
-            this.messages.put("Exception" + exceptionCounter, exc.toString());
+            this.exceptions.put("Exception" + exceptionCounter, exc.toString());
             exceptionCounter++;
         }
     }
 
+    public void addCustomKeyValuePair(String key, String value) {
+        messages.put(key, value);
+    }
+
+    /*
+     * 
+     *      Getters
+     *  
+     */
     // Standard get methods
     public boolean getSuccess(){
         return success;
@@ -119,15 +153,4 @@ public class ServerHandlerResponse {
         return exceptions;
     }
 
-    // Store exceptions in the message map if available
-    public LinkedHashMap<String, String> combineMaps() {
-
-        // Will check for empty exceptions map, if not empty then it will add to 
-        if(!exceptions.isEmpty()){
-            exceptions.forEach( (key, value) -> {
-                messages.put(key, value);
-            });
-        }
-        return messages;
-    }
 }

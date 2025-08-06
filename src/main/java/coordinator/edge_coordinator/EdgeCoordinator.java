@@ -19,19 +19,32 @@
 package coordinator.edge_coordinator;
 
 import java.net.UnknownHostException;
+
 import java.util.Scanner;
+import java.util.UUID;
+import java.util.HashMap;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import coordinator.coordinator_config.CoordinatorConfig;
 
 import coordinator.coordinator_listener.CoordinatorListener;
 
-import coordinator.coordinator_packet.CoordinatorPacket;
-import coordinator.coordinator_packet.CoordinatorPacketType;
+import coordinator.coordinator_packet.*;
 import coordinator.coordinator_packet.coordinator_packet_class.*;
 
 import coordinator.coordinator_sender.CoordinatorPacketSender;
 
+import coordinator.coordinator_connections.*;
+
 public class EdgeCoordinator {
+
+    private static final Logger logger = LogManager.getLogger(EdgeCoordinator.class);
+
+    private static volatile String coordinatorId = null;
+
+    private static CoordinatorConnectionManager connectionManager;
 
     private static String IP;
 
@@ -48,9 +61,14 @@ public class EdgeCoordinator {
         // Create a config object to access the properties file
         CoordinatorConfig config = new CoordinatorConfig();
 
+        // Give the Coordinator an ID
+        setCoordinatorId(UUID.randomUUID().toString());
+
+        connectionManager = CoordinatorConnectionManager.getInstance();
+
         // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
-            System.out.println("\t\tEDGE COORDINATOR\n\n");
+            System.out.println("\t\tEDGE COORDINATOR");
             // Get the IP address for this coordinator
             IP = config.grabIP(); 
         } catch (UnknownHostException e) {
@@ -66,7 +84,6 @@ public class EdgeCoordinator {
                  5000
             );  
 
-
         } catch (Exception e) {
             System.err.println(
                 "Error creating Listening Socket on port " 
@@ -75,21 +92,28 @@ public class EdgeCoordinator {
             e.printStackTrace();
             // TODO: try to grab new port if this one is unavailable
         }
-
-        try{
-
-            // Create the sender to the server
-            serverSender = new CoordinatorPacketSender(
-                config.grabIP(), 
-                config.getPortByKey("Server.listeningPort")
-            );
-
-        } catch (Exception e) {
-             System.err.println("Error creating Sending Socket");
-            e.printStackTrace();
-        }
-
     }
+
+    /*
+     * 
+     *      ID assignment 
+     * 
+     */
+
+    // Thread-safe setter for ID assignment
+    public static synchronized void setCoordinatorId(String id) {
+        coordinatorId = id;
+        logger.info("Coordinator ID assigned: " + id);
+    }
+
+    public static String getCoordinatorId() {
+        return coordinatorId;
+    }
+    /*
+     * 
+     *          MAIN
+     * 
+     */
     public static void main(String[] args) {
 
         init();         // Begins the initalization process 
@@ -112,10 +136,37 @@ public class EdgeCoordinator {
             if(!message.isEmpty()) {
                 CoordinatorPacket messagePacket = new CoordinatorGenericPacket(
                     CoordinatorPacketType.MESSAGE,
-                    "Coordinator",
+                    getCoordinatorId(),
                     message
                 );
-                serverSender.send(messagePacket);
+
+                String[] serverIdArray = connectionManager.getAllIds();
+
+                HashMap<Integer, String> servers = new HashMap<>();
+
+                boolean hasNum = false;
+
+                int trys = 0;
+
+                while(!hasNum) {
+                    servers.clear();
+                    System.out.println("Chose the Server to send to based on the Number next to it!");
+                    for(int i = 1; i < serverIdArray.length + 1; i++) {
+                        System.out.println(i + " : " + serverIdArray[i-1]);
+                        servers.put(i, serverIdArray[i-1]);
+                    }
+                    int serverNum = in.nextInt();
+                    if(!servers.get(serverNum).isEmpty()) {
+                        connectionManager.getConnectionInfoById(servers.get(serverNum))
+                            .sendToNode(messagePacket);
+                        hasNum = true;
+                    }
+                    else if(trys > 2){
+                        System.out.println("Try again next time loser!");
+                        hasNum = true;
+                    }
+                    trys++;
+                }
             }
         }
         in.close();

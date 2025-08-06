@@ -23,8 +23,7 @@ import org.apache.logging.log4j.Logger;
 
 import node.node_listener.NodeListener;
 
-import node.node_packet.NodePacket;
-import node.node_packet.NodePacketType;
+import node.node_packet.*;
 import node.node_packet.node_packet_class.*;
 
 import node.node_sender.NodePacketSender;
@@ -33,7 +32,7 @@ import node.node_config.NodeConfig;
 
 public class EdgeNode {
 
-    private static String nodeID;
+    private static volatile String nodeId = null;
 
     private static String IP;
 
@@ -74,7 +73,7 @@ public class EdgeNode {
             
             NodePacket initPacket = new NodeGenericPacket(
                 NodePacketType.INITIALIZATION, 
-                "EdgeNode",                            
+                getNodeID(),                            
                 payload        
             );
             
@@ -106,6 +105,28 @@ public class EdgeNode {
         }
     }
 
+    /*
+     * 
+     *      ID assignment 
+     * 
+     */
+
+    // Thread-safe setter for ID assignment
+    public static synchronized void setNodeID(String id) {
+        nodeId = id;
+        logger.info("Node ID assigned: " + id);
+    }
+
+    public static String getNodeID() {
+        return nodeId;
+    }
+
+    /*
+     * 
+     *      Main Loop
+     * 
+     */
+
     public static void main(String[] args) {
 
         init();         // Begins the initalization process 
@@ -126,7 +147,7 @@ public class EdgeNode {
             if(!message.isEmpty()) {
                 NodePacket messagePacket = new NodeGenericPacket(
                     NodePacketType.MESSAGE,
-                    "Node",
+                    getNodeID(),
                     message
                 );
 

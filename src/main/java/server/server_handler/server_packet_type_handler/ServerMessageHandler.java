@@ -14,14 +14,15 @@
  */
 package server.server_handler.server_packet_type_handler;
 
-import server.server_config.ServerConfig;
+import server.server_connections.server_connection_manager.ServerConnectionManager;
 
 public class ServerMessageHandler extends ServerPacketHandler{
 
-    private int messageCounter = 0;
+    public ServerMessageHandler(ServerConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+    }
 
-    // Allows writting to the config file
-    private ServerConfig config = new ServerConfig();
+    private int messageCounter = 0;
 
     /* This method will be called from the 'PacketHandler' SuperClass's "handle" method.
      * This particular method will seperate the handled KeyValue pairs and seperate them
@@ -32,8 +33,8 @@ public class ServerMessageHandler extends ServerPacketHandler{
     public ServerHandlerResponse process() {
 
         try{
-            // Lambda function - HashMap has a ForEach function that receives the all the keys(k) and their corresponding values(v) and will loop through each one individually and send it to the config
-            PayloadKeyValuePairs.forEach( (k, v) -> { 
+            // Lambda function - HashMap has a ForEach function that receives the all the keys(k) and their corresponding values(v) and will loop through each one individually
+            payload.forEach( (k, v) -> { 
                 System.out.println("Message " + messageCounter + ":\n\t\t" + v );
                 messageCounter++;
             });

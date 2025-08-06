@@ -29,6 +29,7 @@
  */
 package node.node_sender;
 
+import java.util.LinkedHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -46,12 +47,19 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import node.edge_node.EdgeNode;
 import node.node_lib.RuntimeTypeAdapterFactory;
 
 import node.node_packet.*;
 import node.node_packet.node_packet_class.*;
 
 public abstract class NodeSender {
+
+    // Each class can have its own logger instance
+    private static final Logger logger = LogManager.getLogger(NodeSender.class);
 
     // A timer for retry and for other time based sending
     protected final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -86,14 +94,15 @@ public abstract class NodeSender {
         this.socket.setSoTimeout(1000);
     };
 
-    // This is needed in order to construct the packet class from Gson, it will throw an error
-    // without this package since the packet lass is a abstract. 
-    // This allows the Gson structure to build the packet without throwing that error
-    // This is a dynamic way of creating the packet, since we cannot register different subtypes 
-    // since RuntimeTypeAdapterFactory will allow for two unique subtypes with the same base class time
-    // e.g. .registerSubtype(ServerGenericPacket.class, ERROR.name())
-    // and  .registerSubtype(ServerGenericPacket.class, ACK.name())
-    // Will throw an "IllegalArgumentException: types and labels must be unique" exception
+   /*    This is needed in order to construct the packet class from Gson, it will throw an error
+    *    without this package since the packet lass is a abstract. 
+    *    This allows the Gson structure to build the packet without throwing that error
+    *    This is a dynamic way of creating the packet, since we cannot register different subtypes 
+    *    since RuntimeTypeAdapterFactory will allow for two unique subtypes with the same base class time
+    *    e.g. .registerSubtype(ServerGenericPacket.class, ERROR.name())
+    *    and  .registerSubtype(ServerGenericPacket.class, ACK.name())
+    *   Will throw an "IllegalArgumentException: types and labels must be unique" exception
+    */
 
     public NodePacket buildGsonWithPacketSubtype(NodePacketType type, String json) {
         RuntimeTypeAdapterFactory<NodePacket> packetAdapterFactory =
@@ -115,7 +124,7 @@ public abstract class NodeSender {
         try{
             startSocket();  
 
-            //If the acknowledgement is not recieved then it will call upon retry (if the child class uses a retry method)
+            // If the acknowledgement is not recieved then it will call upon retry (if the child class uses a retry method)
             boolean ackReceived = false;
 
             // This is where the node will wait for a proper Ack from the coordinator - if not received, will retry 3 times
@@ -149,13 +158,12 @@ public abstract class NodeSender {
                 }
                 else if(!response.endsWith("||END||")) {
                     throw new IllegalArgumentException(
-                        "\n\nPayload not properly terminated. "
-                        + "\n\tPossible Causes:\n\t\t" 
-                        + "- Incomplete Packet\n\t\t"
-                        + "- Unsafe Packet\n"
+                        "Payload not properly terminated. "
+                        + "\tPossible Causes:\n\t" 
+                        + "- Incomplete Packet\n\t"
+                        + "- Unsafe Packet"
                     );
                 }
-                System.out.println("\t\t\tResponse recieved\n");
 
                 // If true, the packet will remove the delimiter so it can properly deserialize the Json (Since ||END|| is not json)
                 response = response.substring(
@@ -175,32 +183,41 @@ public abstract class NodeSender {
                 responsePacket = buildGsonWithPacketSubtype(packetType, response);
 
                 // Print out the packet 
-                System.out.println(
-                    "Sender: \t" + responsePacket.getSender() 
-                    + "\n\nPacket Type: \t" + responsePacket.getPacketType() 
-                    + "\n\nPayload: \t" + responsePacket.getPayload()  
-                    + "\n\n"
+                logger.info(
+                    "Response Recieved:\n" 
+                    + "Sender ID: \t" + responsePacket.getId() 
+                    + "\nPacket Type: \t" + responsePacket.getPacketType() 
+                    + "\nPayload: \t" + responsePacket.getPayload()  
                 );
+
+                LinkedHashMap<String, String> payload = responsePacket.getPayload();
+
+                // If the Payload has an ID value
+                if(!payload.get("id").isEmpty()) {
+                    payload.forEach( (k, v) -> {
+                        if(k.equals("id")) {
+                            EdgeNode.setNodeID(v);
+                        }
+                    });
+                }
 
                 // If the packet type is a ACK packet - then it is a good connection made and the coordinator will close this socket.
                 if (responsePacket.getPacketType() != NodePacketType.ACK) {
-                    throw new IllegalStateException("\n\nExpected ACK packet, but received: " + responsePacket.getPacketType());
+                    throw new IllegalStateException("Expected ACK packet, but received: " + responsePacket.getPacketType());
+                } else {
+                    ackReceived = true; // Break out of while loop to contiune initalization
                 }
 
-                ackReceived = true; // Break out of while loop to contiune initalization
+
             } catch(IllegalArgumentException illegalArg) {
                 // The exception if the packet is empty or has no termination 
-                 System.err.println("Error: " + illegalArg.getMessage());
-                illegalArg.printStackTrace();
+                logger.error("Error: " + illegalArg.getStackTrace());
             } catch(IllegalStateException illegalState) {
                 // The exception if the packet is not of the type ACK
-                System.err.println("Error: " + illegalState.getMessage());
-                illegalState.printStackTrace();
+                logger.error("Error: " + illegalState.getStackTrace());
             } catch(Exception e) {
-                System.err.println("Unknown Error!");
-                e.printStackTrace();
-            }
-                finally {
+                logger.error("Unknown Error! " + e.getStackTrace());
+            } finally {
                 // Always close the ports no matter the success status. 
                 output.close();          //
                 input.close();          // Close the port, we cannot reuse the same socket connection if a retry is needed
@@ -211,16 +228,12 @@ public abstract class NodeSender {
             return ackReceived;
                 
         } catch(SocketTimeoutException e) {
-            System.err.println("Failed waiting on a response from coordinator at " + this.ip + ":" + this.sendingPort);
-            e.printStackTrace();
+            logger.error("Failed waiting on a response from coordinator at " + this.ip + ":" + this.sendingPort + " " + e.getStackTrace());
         } catch(IOException e) {
-            System.err.println("Failed to connect to coordinator at " + this.ip + ":" + this.sendingPort);
-            e.printStackTrace();
+            logger.error("Failed to connect to coordinator at " + this.ip + ":" + this.sendingPort + " " + e.getStackTrace());
         } catch (Exception e) {
-            e.printStackTrace();
-            // TODO: Log critical error
+            logger.error("Unknown Error! " + e.getStackTrace());
         }
-
         // Return false as if this section is reached, the packet was not sent properly meanign an error
         return false;
     }

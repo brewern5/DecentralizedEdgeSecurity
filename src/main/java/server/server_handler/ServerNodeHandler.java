@@ -27,20 +27,27 @@ import java.io.PrintWriter;
 
 import java.net.Socket;
 
+import java.util.UUID;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import server.edge_server.EdgeServer;
+
+import server.server_connections.*;
+import server.server_connections.server_connection_manager.*;
 import server.server_handler.server_packet_type_handler.*;
 
 import server.server_lib.RuntimeTypeAdapterFactory;
 
-import server.server_packet.ServerPacket;
-import server.server_packet.ServerPacketType;
+import server.server_packet.*;
 import server.server_packet.server_packet_class.*;
 
 public class ServerNodeHandler implements Runnable {
+
+    private static ServerConnectionManager nodeConnectionManager = ServerNodeConnectionManager.getInstance();
 
     private Socket nodeSocket;
     private String nodeIP;
@@ -86,9 +93,9 @@ public class ServerNodeHandler implements Runnable {
     private void ack(ServerHandlerResponse packetResponse) {
 
         responsePacket = new ServerGenericPacket(
-                ServerPacketType.ACK,        // Packet type
-                "Server",             // Sender
-                packetResponse.combineMaps()    // Payload
+            ServerPacketType.ACK,        // Packet type
+            EdgeServer.getServerId(),             // Sender
+            packetResponse.combineMaps()    // Payload
         );
         respond();
     }
@@ -98,9 +105,9 @@ public class ServerNodeHandler implements Runnable {
         
         // Construct a new failure packet
         responsePacket = new ServerGenericPacket(
-                ServerPacketType.ERROR,            // Packet type
-                "Server",                   // Sender
-                packetResponse.combineMaps() // Payload
+            ServerPacketType.ERROR,            // Packet type
+            EdgeServer.getServerId(),                   // Sender
+            packetResponse.combineMaps() // Payload
         );
         // Send the packet
         respond();
@@ -201,10 +208,25 @@ public class ServerNodeHandler implements Runnable {
                         // Builds the packet to be handled
                         nodePacket = buildGsonWithPacketSubtype(packetType, json);
 
-                        System.out.println("\nRecieved:\n\n" + nodePacket.toJson() + "\n\n");
+                        System.out.println("Recieved:\n" + nodePacket.toJson());
+
+                        // Assign an id to the node - this will be sent back to the node
+                        String nodeId = UUID.randomUUID().toString();
+
+                        nodeConnectionManager.addConnection(
+                            new ServerConnectionInfo(
+                                nodeId, 
+                                nodeIP,
+                                0,  // TEMP, this will be updated inside the InitalizationHandler
+                                ServerPriority.CRITICAL
+                            )
+                        );
+
+                        // Set the ID so we can use it in the handler
+                        nodePacket.setId(nodeId);
 
                         // Create the packetType based handler
-                        packetHandler = new ServerInitalizationHandler();
+                        packetHandler = new ServerInitalizationHandler(nodeConnectionManager);
 
                         // Allow for the packet response to be created based on the handling response
                         packetResponse = packetHandler.handle(nodePacket); 
@@ -235,7 +257,7 @@ public class ServerNodeHandler implements Runnable {
                         System.out.println("\nRecieved:\n\n" + nodePacket.toJson() + "\n\n");
 
                         // Create the packetType based handler
-                        packetHandler = new ServerMessageHandler();
+                        packetHandler = new ServerMessageHandler(nodeConnectionManager);
 
                         // Allow for the packet response to be created based on the handling response
                         packetResponse = packetHandler.handle(nodePacket); 

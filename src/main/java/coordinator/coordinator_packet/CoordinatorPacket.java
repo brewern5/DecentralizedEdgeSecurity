@@ -18,17 +18,24 @@ import java.util.Arrays;
 
 import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
 
+import coordinator.edge_coordinator.EdgeCoordinator;
+
 public abstract class CoordinatorPacket {
 
     protected int payloadPairCounter = 0;
+
+    protected String id = EdgeCoordinator.getCoordinatorId();
     
     protected CoordinatorPacketType packetType;     // Enum for easy constant assignment
-    protected String sender;
     protected LinkedHashMap<String, String> payload;
 
     public CoordinatorPacket() {} // No-args constructor
 
-    /*          Accessor/setter methods         */
+    /*
+     * 
+     *      Packet Type Methods 
+     * 
+     */
 
     public CoordinatorPacketType getPacketType() {
         return packetType;
@@ -37,12 +44,24 @@ public abstract class CoordinatorPacket {
         this.packetType = packetType;
     }
 
-    public String getSender() {
-        return sender;
+    /*
+     * 
+     *      ID Methods
+     * 
+     */
+
+    public String getId() {
+        return id;
     }
-    public void setSender(String sender) {
-        this.sender = sender;
+    public void setId(String id) {
+        this.id = id;
     }
+
+    /*
+     * 
+     *      Payload methods
+     * 
+     */
 
     public LinkedHashMap<String, String> getPayload() {
         return payload;
@@ -58,17 +77,7 @@ public abstract class CoordinatorPacket {
         }
     }   
 
-    // converts the packet to a jsonified key/value String 
-    public String toJson() {
-        return new Gson().toJson(this);
-    }
-
-    // adds a clear end of message line that will be handled 
-    public String toDelimitedString() {
-        return new Gson().toJson(this) + "||END||";
-    }
-
-        public void addKeyValueToPayload(String key, String value) {
+    public void addKeyValueToPayload(String key, String value) {
         payload.put(key, value);
     }
 
@@ -102,5 +111,21 @@ public abstract class CoordinatorPacket {
 
     public String getValueByKey(String key) {
         return payload.get(key);
+    }
+
+    /*
+     * 
+     *      Stringify Methods
+     * 
+     */
+
+    // converts the packet to a jsonified key/value String 
+    public String toJson() {
+        return new Gson().toJson(this);
+    }
+
+    // adds a clear end of message line that will be handled 
+    public String toDelimitedString() {
+        return new Gson().toJson(this) + "||END||";
     }
 }

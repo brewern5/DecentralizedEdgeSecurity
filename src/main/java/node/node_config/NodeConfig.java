@@ -10,12 +10,19 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.net.InetAddress;            // Used for grabbing the machine's IP address
 import java.net.UnknownHostException;   // Error for trying to grab IP address
 
 import java.util.Properties;            // Utility for getting properties from any .properties file
 
 public class NodeConfig {
+
+    // Each class can have its own logger instance
+    private static final Logger logger = LogManager.getLogger(NodeConfig.class);
 
     private static Properties properties = new Properties();      // Generate the properties object
 
@@ -25,7 +32,7 @@ public class NodeConfig {
             properties.load(in);
             in.close();
         } catch (IOException e){
-            e.printStackTrace();
+            logger.error("Error opening properties file!" + e.getStackTrace());
         }
     }
 
@@ -42,7 +49,10 @@ public class NodeConfig {
         InetAddress localHost = InetAddress.getLocalHost();     // Grabs the IP and will convert it to a Java object
         ipAddress = localHost.getHostAddress();                 // Generates the IP as a string to pass it back to the edge node using it
 
-        writeToConfig("Server.IP", ipAddress);          // Since the IP will be machine dependant at the moment, just grab the machine IP
+        writeToConfig("Node.IP", ipAddress);          // Since the IP will be machine dependant at the moment, just grab the machine IP
+        
+        // TODO: REMOVE THIS WHEN IN VM
+        writeToConfig("Server.IP", ipAddress);
 
         return ipAddress;       // Will return a null value if no IP is found 
     }
@@ -53,9 +63,7 @@ public class NodeConfig {
         try{
             IP = properties.getProperty(key);
         } catch (Error e) {
-            System.err.println("Error getting " + key + "'s IP from config file!\n");
-            e.printStackTrace();
-            // TODO: Write to logger the error
+            logger.error("Error getting " + key + "'s IP from config file!" + e.getStackTrace());
         }
         return IP;
     }
@@ -73,9 +81,8 @@ public class NodeConfig {
         try{
             port = Integer.parseInt(properties.getProperty(key));
 
-        } catch (Error e){
-            System.err.println("Error getting port from config file!\n");
-            e.printStackTrace();
+        } catch (Exception e){
+            logger.error("Error getting port from config file!" + e.getStackTrace());
         }
         return port;
     }
@@ -100,13 +107,10 @@ public class NodeConfig {
                 try(OutputStream outputStream = new FileOutputStream("config/node_config/nodeConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
-                    System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
-                    ioe.printStackTrace();
-                    // TODO: Write to logger the error
+                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file! " + ioe.getStackTrace());
                 }
 
-                System.out.println("\nOverwrote:\n\t Key: ( " + key + " )\n\t Value: ( " + value + " )");
-                // TODO: Write to logger a warning
+                logger.info("Overwrote:\t Key:( " + key + " ) Value: ( " + value + " )");
             } 
             else if(properties.getProperty(key) == null){
 
@@ -117,22 +121,16 @@ public class NodeConfig {
                     properties.store(outputStream, null);
                 
                 } catch(IOException ioe) {
-                    System.err.println("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n");
-                    ioe.printStackTrace();
-                    // TODO: Write to logger the error
+                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file! " + ioe.getStackTrace());
                 }
             }
             else {
                 // Error handling the key/value and or the file itself.
-                throw new Exception("Unknown Error handling Key/Value for the config file!\n");
-                // TODO: Write to logger the error
+                logger.error("Unknown Error handling Key/Value for the config file!");
             }
 
         }catch (Exception e) { // Generic Exception
-            System.err.println("Error finding key: ( " + key + " ) from config file!\n");
-            e.printStackTrace();
-            // TODO: Write to logger the error
+            logger.error("Error finding key: ( " + key + " ) from config file!"+ e.getStackTrace());
         }
-
     }
 }

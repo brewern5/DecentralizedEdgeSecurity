@@ -14,6 +14,9 @@ package node.node_handler.node_packet_type_handler;
 
 import java.util.LinkedHashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import node.node_packet.NodePacket;
 
 public abstract class NodePacketHandler {
@@ -23,16 +26,18 @@ public abstract class NodePacketHandler {
 
     // This is the object that will be instantiated if the packet is handled succesfuly or an error gets thrown
     protected NodeHandlerResponse packetResponse;
+
+    // Each class can have its own logger instance
+    private static final Logger logger = LogManager.getLogger(NodePacketHandler.class);
     
     // Tears the packet apart and seperates the head from the body
     public NodeHandlerResponse handle(NodePacket recievedPacket){
 
         // Print out the packet 
-        System.out.println(
-            "Sender: \t" + recievedPacket.getSender() 
-            + "\n\nPacket Type: \t" + recievedPacket.getPacketType() 
-            + "\n\nPayload: \t" + recievedPacket.getPayload()  
-            + "\n\n"
+        logger.info(
+            "Packet recieved from ID: " + recievedPacket.getId() 
+            + "\nPacket Type: \t" + recievedPacket.getPacketType() 
+            + "\nPayload: \t" + recievedPacket.getPayload()
         );
 
         // Grab the payload from the packet

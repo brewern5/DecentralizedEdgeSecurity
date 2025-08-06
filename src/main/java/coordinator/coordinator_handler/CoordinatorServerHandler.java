@@ -27,23 +27,30 @@ import java.io.PrintWriter;
 
 import java.net.Socket;
 
+import java.util.UUID;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import coordinator.coordinator_connections.*;
+
 import coordinator.coordinator_handler.coordinator_packet_type_handler.*;
 
 import coordinator.coordinator_lib.RuntimeTypeAdapterFactory;
 
-import coordinator.coordinator_packet.CoordinatorPacket;
+import coordinator.coordinator_packet.*;
 import coordinator.coordinator_packet.coordinator_packet_class.*;
-import coordinator.coordinator_packet.CoordinatorPacketType;
+
+import coordinator.edge_coordinator.EdgeCoordinator;
 
 public class CoordinatorServerHandler implements Runnable {
 
+    private static CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
+
     private Socket serverSocket;
-    private String serverIP;
+    private String serverIp;
 
     private CoordinatorPacket serverPacket;
 
@@ -86,9 +93,9 @@ public class CoordinatorServerHandler implements Runnable {
     private void ack(CoordinatorHandlerResponse packetResponse) {
 
         responsePacket = new CoordinatorGenericPacket(
-                CoordinatorPacketType.ACK,
-                "Coordinator",
-                packetResponse.combineMaps()
+            CoordinatorPacketType.ACK,
+            EdgeCoordinator.getCoordinatorId(),
+            packetResponse.combineMaps()
         );
         respond();
     }
@@ -98,9 +105,9 @@ public class CoordinatorServerHandler implements Runnable {
         
         // Construct a new failure packet
         responsePacket = new CoordinatorGenericPacket(
-                CoordinatorPacketType.ERROR,    // Packet type
-                "Coordinator",  // Sender
-                packetResponse.combineMaps()  // Payload
+            CoordinatorPacketType.ERROR,    // Packet type
+            EdgeCoordinator.getCoordinatorId(),  // Sender
+            packetResponse.combineMaps()  // Payload
         );
         // Send the packet
         respond();
@@ -171,6 +178,7 @@ public class CoordinatorServerHandler implements Runnable {
                     new Exception("Payload not terminated."), 
                     "Incomplete Packet")
                 );
+                return; // Early exit
             }
 
             // Reads the packet as json
@@ -183,8 +191,8 @@ public class CoordinatorServerHandler implements Runnable {
                 CoordinatorHandlerResponse packetResponse; // The response from the handling of the packet.    
                 
                 // Grabs the server IP in order to be saved in config file
-                serverIP = serverSocket.getInetAddress().toString();
-                serverIP = serverIP.substring(1); // Removes the forward slash
+                serverIp = serverSocket.getInetAddress().toString();
+                serverIp = serverIp.substring(1); // Removes the forward slash
 
                 // Pre-parses the Json in order to grab the packetType to use for the switch statement
                 JsonObject jsonObj = JsonParser.parseString(json).getAsJsonObject();
@@ -200,7 +208,21 @@ public class CoordinatorServerHandler implements Runnable {
                         // Builds the packet to be handled
                         serverPacket = buildGsonWithPacketSubtype(packetType, json);
 
-                        System.out.println("\nRecieved:\n\n" + serverPacket.toJson() + "\n\n");
+                        System.out.println("Recieved:\n" + serverPacket.toJson());
+
+                        // Assign an id to the node - this will be sent back to the node
+                        String serverId = UUID.randomUUID().toString();
+
+                        connectionManager.addConnection(
+                            new CoordinatorConnectionInfo(
+                                serverId,
+                                serverIp,
+                                0,  // TEMP, this will be updated inside the INITALIZATION Handler
+                                CoordinatorPriority.CRITICAL
+                            )
+                        );
+
+                        serverPacket.setId(serverId);
 
                         // Create the packetType based handler
                         packetHandler = new CoordinatorInitalizationHandler();

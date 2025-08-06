@@ -23,13 +23,19 @@ public abstract class NodePacket {
 
     protected int payloadPairCounter = 0;
 
+    protected String id = null;
+
     protected NodePacketType packetType;     // Enum for easy constant assignment
-    protected String sender;
-    protected LinkedHashMap<String, String> payload;    
+
+    protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();    
 
     public NodePacket() {} // No-args constructor
 
-    /*          Accessor/setter methods         */
+    /*
+     * 
+     *      Packet Type Methods
+     * 
+     */
 
     public NodePacketType getPacketType() {
         return packetType;
@@ -38,12 +44,24 @@ public abstract class NodePacket {
         this.packetType = packetType;
     }
 
-    public String getSender() {
-        return sender;
+    /*
+     * 
+     *      ID methods
+     * 
+     */
+
+    public String getId() {
+        return id;
     }
-    public void setSender(String sender) {
-        this.sender = sender;
+    public void setId(String id) {
+        this.id = id;
     }
+
+    /*
+     * 
+     *      Payload methods
+     * 
+     */
 
     public LinkedHashMap<String, String> getPayload() {
         return payload;
@@ -58,16 +76,6 @@ public abstract class NodePacket {
             payloadPairCounter++;
         }
     }   
-
-    // converts the packet to a key/value String
-    public String toJson() {
-        return new Gson().toJson(this);
-    }
-
-    // adds a clear end of message line that will be handled 
-    public String toDelimitedString() {
-        return new Gson().toJson(this) + "||END||";
-    }
 
     public void addKeyValueToPayload(String key, String value) {
         payload.put(key, value);
@@ -103,5 +111,21 @@ public abstract class NodePacket {
 
     public String getValueByKey(String key) {
         return payload.get(key);
+    }
+
+    /*
+     * 
+     *      Stringify Methods
+     * 
+     */
+
+    // converts the packet to a key/value String
+    public String toJson() {
+        return new Gson().toJson(this);
+    }
+
+    // adds a clear end of message line that will be handled 
+    public String toDelimitedString() {
+        return new Gson().toJson(this) + "||END||";
     }
 }

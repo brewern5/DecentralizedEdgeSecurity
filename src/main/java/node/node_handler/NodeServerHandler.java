@@ -31,6 +31,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import node.edge_node.EdgeNode;
 import node.node_handler.node_packet_type_handler.*;
 
 import node.node_lib.RuntimeTypeAdapterFactory;
@@ -49,6 +53,9 @@ public class NodeServerHandler implements Runnable {
 
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private NodePacket responsePacket;
+
+    // Each class can have its own logger instance
+    private static final Logger logger = LogManager.getLogger(NodeServerHandler.class);
 
     // Constructor
     public NodeServerHandler(Socket socket) {
@@ -86,7 +93,7 @@ public class NodeServerHandler implements Runnable {
 
         responsePacket = new NodeGenericPacket(
             NodePacketType.ACK,         
-            "Node",              
+            EdgeNode.getNodeID(),              
             packetResponse.getMessageMap() 
         );
         respond();
@@ -98,7 +105,7 @@ public class NodeServerHandler implements Runnable {
         // Construct a new failure packet
         responsePacket = new NodeGenericPacket(
             NodePacketType.ERROR,   
-            "Node",  
+            EdgeNode.getNodeID(),  
             packetResponse.getMessageMap() 
         );
         // Send the packet
@@ -127,8 +134,7 @@ public class NodeServerHandler implements Runnable {
             // Send the jsonified packet as a response
             output.println(json);
         } catch (IOException e) {
-            System.err.println("Error sending response packet of type: " + responsePacket.getPacketType());
-            e.printStackTrace();
+            logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + " " + e.getStackTrace());
         }
     }
     /*
@@ -140,23 +146,21 @@ public class NodeServerHandler implements Runnable {
     @Override
     public void run() {
 
-        System.out.println(
+        logger.info(
             "Server connected: " 
             + serverSocket.getInetAddress().toString() 
-            + "\n\tFrom port: "
+            + "\tFrom port: "
             + serverSocket.getPort()
         );
 
         // Handle client events
         try{
-
             // This is what decodes the incoming packet
             reader = new BufferedReader(
                 new InputStreamReader(
                     serverSocket.getInputStream()
                 )
             );
-            
             // Stores the payload as a string to check (and potentially remove) the delimiter
             String payload = reader.readLine();
 
@@ -174,7 +178,6 @@ public class NodeServerHandler implements Runnable {
                     "Incomplete Packet")
                 );
             }
-
             // Reads the packet as json
             String json = payload;
 
@@ -210,12 +213,11 @@ public class NodeServerHandler implements Runnable {
 
                         // If good send ack
                         if(packetResponse.getSuccess() == true){
-
                             // Construct the ack packet
                             ack(packetResponse);
                         }
                         else if(packetResponse.getSuccess() == false){
-                            System.err.println("Error Handling Packet of Type: \tINITIALIZATION\n\nDetails:");
+                            logger.error("Error Handling Packet of Type: \tINITIALIZATION. Details:");
 
                             // Detail the errors
                             packetResponse.printMessages();
@@ -231,7 +233,7 @@ public class NodeServerHandler implements Runnable {
                         // Builds the packet to be handled
                         serverPacket = buildGsonWithPacketSubtype(packetType, json);
 
-                        System.out.println("\nRecieved:\n\n" + serverPacket.toJson() + "\n\n");
+                        logger.info("Recieved: " + serverPacket.toJson());
 
                         // Create the packetType based handler
                         packetHandler = new NodeMessageHandler();
@@ -241,12 +243,11 @@ public class NodeServerHandler implements Runnable {
 
                         // If good send ack
                         if(packetResponse.getSuccess() == true){
-
                             // Construct the ack packet
                             ack(packetResponse);
                         }
                         else if(packetResponse.getSuccess() == false){
-                            System.err.println("Error Handling Packet of Type: \t MESSAGE \n\n Details:");
+                            logger.error("Error Handling Packet of Type: \tMESSAGE. Details:");
 
                             // Detail the errors
                             packetResponse.printMessages();
@@ -282,14 +283,14 @@ public class NodeServerHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("I/O Error! " + e.getStackTrace());
         } finally {
             try {
                 if( reader != null){ reader.close(); }
                 if( serverSocket != null && !serverSocket.isClosed()) { serverSocket.close(); }
+                logger.info("Closing handler thread.");
             } catch (IOException e) {
-                System.err.println("Error closing socket!");
-                e.printStackTrace();
+                logger.error("Error closing socket!" + e.getStackTrace());
             }
         }
     }
