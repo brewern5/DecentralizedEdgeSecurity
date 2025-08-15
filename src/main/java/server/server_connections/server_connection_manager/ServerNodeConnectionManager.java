@@ -8,6 +8,9 @@
 
 package server.server_connections.server_connection_manager;
 
+import server.server_connections.ServerPriority;
+import server.server_packet.*;
+
 public class ServerNodeConnectionManager extends ServerConnectionManager {
 
     // Step 1: (For my sanity) create an instance variable
@@ -20,4 +23,24 @@ public class ServerNodeConnectionManager extends ServerConnectionManager {
         }
         return instance;
     }
+
+    @Override
+    public boolean sendKeepAlive(ServerPacket keepAliveProbe) {
+
+        activeConnections.forEach((id, connection) -> {
+            if(connection.getPriority() == ServerPriority.CRITICAL){
+
+                boolean keptAlive;
+
+                keptAlive = connection.send(keepAliveProbe);
+
+                // If the packet fails to send
+                if(!keptAlive) {
+                    terminateConnection(id);
+                }
+            }
+        });
+        return true;
+    }
+
 }

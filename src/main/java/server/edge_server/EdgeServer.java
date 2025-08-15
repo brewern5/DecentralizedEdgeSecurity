@@ -33,6 +33,7 @@ import server.server_config.ServerConfig;
 import server.server_listener.ServerListener;
 
 import server.server_packet.server_packet_class.*;
+import server.server_services.ServerKeepAliveService;
 import server.server_packet.*;
 
 import server.server_connections.*;
@@ -68,7 +69,7 @@ public class EdgeServer {
 
         // try to generate the IP from the machines IP - Throws UnknownHostException if it cannot determine
         try{
-                        IP = config.grabIP();
+            IP = config.grabIP();
             logger.info("\t\tEDGE SERVER\n\"Starting Server at " + IP + ".");
         } catch (UnknownHostException e) {
             logger.error("Error: Unable to determine local host IP address.\n" + e);
@@ -141,26 +142,18 @@ public class EdgeServer {
             );
             // TODO: try to grab new port if this one is unavailable
         }
-
         /*
-         * 
          *      Try and create Timers
-         * 
          */
-
         try {
             initializeTimers();
         } catch (Exception e) {
             logger.error("Error creating Timers: \n" + e.getStackTrace());
         }
     }
-
     /*
-     * 
      *      ID assignment 
-     * 
      */
-
     // Thread-safe setter for ID assignment
     public static synchronized void setServerId(String id) {
         serverId = id;
@@ -171,22 +164,35 @@ public class EdgeServer {
         return serverId;
     }
 
+    /* Creates the timers for KeepAlive sending and keep alive checking */ 
     private static void initializeTimers() {
+        // Creates the timer for 
         timerScheduler = Executors.newScheduledThreadPool(2, r -> {
             Thread t = new Thread(r, "EdgeServer-Timer");
-            t.setDaemon(true);
+            //t.setDaemon(true);
             return t;
         });
 
         // Schedules the sending for the keepAlive packet every 30 seconds
         timerScheduler.scheduleAtFixedRate(() -> {
+            try {
+                coordinatorConnectionManager.sendKeepAlive(
+                    ServerKeepAliveService.createKeepAlivePacket(
+                        getServerId(),
+                        IP,
+                        nodeConnectionManager
+                    )
+                );
+            } catch(Exception e) {
+                logger.error("Exception in keep-alive timer: ", e);
+            }
             
-        }, 30, 30, TimeUnit.SECONDS);
+        }, 5, 30, TimeUnit.SECONDS);
         logger.info("Timer for sending keep Alive packets created!");
 
         // Schedules overdue packet check every 20 seconds
         timerScheduler.scheduleAtFixedRate(() -> {
-            nodeConnectionManager.checkExpiredConnections();
+            //nodeConnectionManager.checkExpiredConnections();
         }, 20, 20, TimeUnit.SECONDS);
         logger.info("Timer for checking Expired connections created!");
     }
@@ -195,10 +201,12 @@ public class EdgeServer {
 
         init();         // Begins the initalization process 
 
-        Thread coordinatorThread = new Thread(coordinatorListener); // Starts listening for messages on the top
+        // Starts listening for messages on from the coordinator
+        Thread coordinatorThread = new Thread(coordinatorListener); 
         coordinatorThread.start();
 
-        Thread serverThread = new Thread(nodeListener);  // Starts listening for messages on the bottom
+        // Starts listening for messages from the Node
+        Thread serverThread = new Thread(nodeListener);
         serverThread.start();
 
         // DEMO

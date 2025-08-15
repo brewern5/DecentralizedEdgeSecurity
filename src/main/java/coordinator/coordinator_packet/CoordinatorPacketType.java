@@ -17,7 +17,7 @@ public enum CoordinatorPacketType {
     AUTH,             // Authentication packets
     MESSAGE,          // Generic text/data message
     COMMAND,          // Control commands (start, stop, etc.)
-    HEARTBEAT,        // Keep-alive or ping
+    KEEP_ALIVE,        // Keep-alive or ping
     STATUS,           // Status update (health, load, etc.)
     DATA,             // Bulk or sensor data
     ERROR,            // Error or exception reporting

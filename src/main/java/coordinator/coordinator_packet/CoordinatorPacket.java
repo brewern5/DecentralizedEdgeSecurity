@@ -32,9 +32,7 @@ public abstract class CoordinatorPacket {
     public CoordinatorPacket() {} // No-args constructor
 
     /*
-     * 
      *      Packet Type Methods 
-     * 
      */
 
     public CoordinatorPacketType getPacketType() {
@@ -45,9 +43,7 @@ public abstract class CoordinatorPacket {
     }
 
     /*
-     * 
      *      ID Methods
-     * 
      */
 
     public String getId() {
@@ -58,9 +54,7 @@ public abstract class CoordinatorPacket {
     }
 
     /*
-     * 
      *      Payload methods
-     * 
      */
 
     public LinkedHashMap<String, String> getPayload() {
@@ -114,9 +108,7 @@ public abstract class CoordinatorPacket {
     }
 
     /*
-     * 
      *      Stringify Methods
-     * 
      */
 
     // converts the packet to a jsonified key/value String 

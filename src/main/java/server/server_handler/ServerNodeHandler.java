@@ -273,6 +273,7 @@ public class ServerNodeHandler implements Runnable {
                             ack(packetResponse);
                         }
                         else if(packetResponse.getSuccess() == false){
+
                             logger.error("Error Handling Packet of Type: \t MESSAGE \n\t Details:");
 
                             // Detail the errors
@@ -285,8 +286,8 @@ public class ServerNodeHandler implements Runnable {
                     case COMMAND:
                         // TODO: Handle command logic
                         break;
-                    case HEARTBEAT:
-                        // TODO: Handle heartbeat logic
+                    case KEEP_ALIVE:
+                        // TODO: Handle keep alive logic
                         break;
                     case STATUS:
                         // TODO: Handle status logic

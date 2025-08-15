@@ -69,9 +69,7 @@ public class CoordinatorServerHandler implements Runnable {
     }
 
     /*
-     *  
      *          Packet Reconstruction
-     * 
      */
 
     private CoordinatorPacket buildGsonWithPacketSubtype(CoordinatorPacketType type, String json) {
@@ -87,11 +85,8 @@ public class CoordinatorServerHandler implements Runnable {
         return tempGson.fromJson(json, CoordinatorPacket.class);
     }
 
-    /*          End Packet Reconstruction
-     * 
-     * 
+    /*   
      *          Responses
-     * 
      */
 
     // This is a good response, it will be sent back to the server to ensure a packet was recieved 
@@ -118,11 +113,8 @@ public class CoordinatorServerHandler implements Runnable {
         respond();
     }
 
-    /*          End Responses
-     * 
-     * 
+    /* 
      *          Respond
-     * 
      */
 
     // Takes an already initalized response packet and returns to sender
@@ -284,8 +276,27 @@ public class CoordinatorServerHandler implements Runnable {
                     case COMMAND:
                         // TODO: Handle command logic
                         break;
-                    case HEARTBEAT:
-                        // TODO: Handle heartbeat logic
+                    case KEEP_ALIVE:
+                        serverPacket = buildGsonWithPacketSubtype(packetType, json);
+
+                        logger.info("Recieved:\n" + serverPacket.toJson());
+
+                        packetHandler = new CoordinatorKeepAliveHandler();
+
+                        packetResponse = packetHandler.handle(serverPacket);
+
+                        if(packetResponse.getSuccess() == true) {
+                            ack(packetResponse);
+                        }
+                        else if(packetResponse.getSuccess() == false){
+                            logger.error("Error Handling Packet of Type: \t MESSAGE \n Details:");
+
+                            // Detail the errors
+                            packetResponse.printMessages();
+                          
+                            // Construct the failure packet based on the response
+                            failure(packetResponse);
+                        }
                         break;
                     case STATUS:
                         // TODO: Handle status logic

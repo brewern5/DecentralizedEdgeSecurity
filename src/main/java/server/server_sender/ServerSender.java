@@ -72,7 +72,7 @@ public abstract class ServerSender {
      */
 
 
-    public abstract void retry(ServerPacket packet);
+    public abstract boolean retry(ServerPacket packet);
 
     /*
      * 
@@ -135,6 +135,7 @@ public abstract class ServerSender {
             // Sends the packet through the socket to the Coordinator
             output.println(json);
             output.flush();
+            logger.info("Sending packet of type: {}", packet.getPacketType());
 
             // Will be where the response is read from
             BufferedReader input = new BufferedReader(

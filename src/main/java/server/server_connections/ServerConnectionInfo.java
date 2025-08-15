@@ -27,6 +27,8 @@ public class ServerConnectionInfo {
     private String ip;
     private int port;
 
+    private Boolean hasSender = false;
+
     // This is when the expiration happens, which is twice the send time of each KeepAlive packet.
     private int keepAliveTimeoutSeconds = 60;
 
@@ -52,9 +54,7 @@ public class ServerConnectionInfo {
     }
 
     /*
-     * 
      *      Main Methods
-     * 
      */
     
     public boolean isExpired() {
@@ -71,22 +71,33 @@ public class ServerConnectionInfo {
         // Create sender for this node
         try {
             this.sender = new ServerPacketSender(ip, port);
+            hasSender = true;
             logger.info("Sender Created for Node: " + id + " - " + ip +":" + port);
         } catch (Exception e) {
             logger.error("Failed to create sender for node " + id + ":" + port + "\n" + e);
         }
     }
 
-    public void send(ServerPacket packet) {
+    public boolean send(ServerPacket packet) {
         if (sender != null) {
-            sender.send(packet);
-        }
+            boolean sent = sender.send(packet);
+            if(!sent) {
+                boolean retry = sender.retry(packet);
+                if(!retry){
+                    return false;
+                }
+
+            }
+            return true;
+        } 
+        logger.error("Sender was not created for Node: {}! Cannot send packet", id);
+            // TODO: Exception handling
+        return false;
+        
     }
 
     /*
-     * 
      *      Getters
-     * 
      */
     public String getId() {
         return id;
@@ -98,6 +109,14 @@ public class ServerConnectionInfo {
 
     public int getPort() {
         return port;
+    }
+
+    public ServerPriority getPriority() {
+        return priority;
+    }
+
+    public boolean getSenderStatus() {
+        return hasSender;
     }
 
     public int getKeepAliveTimeout() {
@@ -145,4 +164,15 @@ public class ServerConnectionInfo {
         this.lastActivity = LocalDateTime.now();
     }
 
+    /*
+     *      Stringify
+     */
+
+     public String asString() {
+        String asString;
+
+        asString= "ID - "+id+" | IP - "+ip+":"+port+"";
+
+        return asString;
+     }
 }

@@ -238,7 +238,7 @@ public class ServerCoordinatorHandler implements Runnable {
                     case COMMAND:
                         // TODO: Handle command logic
                         break;
-                    case HEARTBEAT:
+                    case KEEP_ALIVE:
                         // TODO: Handle heartbeat logic
                         break;
                     case STATUS:

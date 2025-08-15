@@ -16,10 +16,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import server.edge_server.EdgeServer;
 import server.server_connections.ServerConnectionInfo;
 import server.server_connections.ServerPriority;
 
+import server.server_packet.*;
+
+import server.server_services.ServerKeepAliveService;
+
 public abstract class ServerConnectionManager {
+
+    /*
+     *      Abstraction methods
+     */
+
+    public abstract boolean sendKeepAlive(ServerPacket packet);
 
     protected final Map<String, ServerConnectionInfo> activeConnections = new ConcurrentHashMap<>();
 
@@ -31,30 +42,29 @@ public abstract class ServerConnectionManager {
         Iterator<Map.Entry<String , ServerConnectionInfo>> iterator =
             activeConnections.entrySet().iterator();
 
-        
         while(iterator.hasNext()) {
             // Check if each entry is expired, if it is, check the priority to see if it needs to be removed or kept alive
             Map.Entry<String, ServerConnectionInfo> entry = iterator.next();
             if(entry.getValue().isExpired()){
                 if(entry.getValue().getServerPriortiy() == ServerPriority.CRITICAL){
-                    // TODO: KEEP ALIVE
+                    entry.getValue().send(
+                        ServerKeepAliveService.createKeepAliveProbe(
+                            EdgeServer.getServerId(),
+                            entry.getValue().getId()
+                        )
+                    );
                 }
                 else {
                     terminateConnection(entry.getValue().getId());
+                    logger.warn("Connection with Node: {} has been terminated!", entry.getValue().getId());
                 }
             }
         }
     }
 
     /*
-     * 
      *      Response to expiry
-     * 
      */
-
-    public void keepAlive(){
-
-    }
 
     public void terminateConnection(String id) {
         ServerConnectionInfo remove = activeConnections.get(id);
@@ -65,9 +75,7 @@ public abstract class ServerConnectionManager {
     }
 
     /*
-     * 
      *      Mutators
-     * 
      */
 
     // Can allow for multiple connections to be added at once(if needed)
@@ -87,9 +95,7 @@ public abstract class ServerConnectionManager {
     }
 
     /*
-     * 
      *      Getters
-     * 
      */
     public ServerConnectionInfo getConnectionInfoById(String id) {
         return activeConnections.get(id);
@@ -101,5 +107,19 @@ public abstract class ServerConnectionManager {
 
     public String[] getAllIds() {
         return activeConnections.keySet().toArray(new String[0]);
+    }
+
+    public int getActiveConnectionCount() {
+
+        int connectionCount = 0;
+
+        Iterator<Map.Entry<String , ServerConnectionInfo>> iterator =
+            activeConnections.entrySet().iterator();
+
+        while(iterator.hasNext()){
+            connectionCount++;
+        }
+
+        return connectionCount;
     }
 }
