@@ -33,7 +33,7 @@ public class CoordinatorMessageHandler extends CoordinatorPacketHandler{
 
         try{
             // Lambda function - HashMap has a ForEach function that receives the all the keys(k) and their corresponding values(v) and will loop through each one individually and send it to the config
-            PayloadKeyValuePairs.forEach( (k, v) -> { 
+            payloadKeyValuePairs.forEach( (k, v) -> { 
                 System.out.println("Message " + messageCounter + ":\n\t\t" + v );
                 messageCounter++;
             });

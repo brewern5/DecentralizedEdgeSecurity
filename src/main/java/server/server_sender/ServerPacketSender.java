@@ -17,7 +17,7 @@ public class ServerPacketSender extends ServerSender{
 
     protected int maxRetries = 3;
     protected int attempts = 0;
-    protected boolean ackRecieved = false;
+    protected boolean ackRecieved;
     
     //
     public ServerPacketSender(String ip, int sendingPort) { 
@@ -31,6 +31,7 @@ public class ServerPacketSender extends ServerSender{
      * 
     */
     public boolean retry(ServerPacket packet) {
+        ackRecieved = false;
         while (!ackRecieved){
             // If the attempt limit is reached the server will shutdown
             if (attempts == maxRetries) {
@@ -47,9 +48,7 @@ public class ServerPacketSender extends ServerSender{
                     Thread.currentThread().interrupt();
                     break;
                 }
-                logger.warn("Failed to recieve ACK - retrying...");
-                //  Since 'GetSendPacket' is an abstract class - this method know it needs it,
-                //  but it's children will define it based on their needs.       
+                logger.warn("Failed to recieve ACK - retrying...");      
                 ackRecieved = send(packet);
             }
             // Inc attemps

@@ -28,7 +28,7 @@ public abstract class CoordinatorPacketHandler {
     private static final Logger logger = LogManager.getLogger(CoordinatorPacketHandler.class);
 
     // Stores the recieved payload into a map (key Value) so the 
-    protected LinkedHashMap<String, String> PayloadKeyValuePairs = new LinkedHashMap<>(); // Protected means any class inside this package can access this variable
+    protected LinkedHashMap<String, String> payloadKeyValuePairs = new LinkedHashMap<>(); // Protected means any class inside this package can access this variable
 
     // This is the object that will be instantiated if the packet is handled succesfuly or an error gets thrown
     protected CoordinatorHandlerResponse packetResponse;

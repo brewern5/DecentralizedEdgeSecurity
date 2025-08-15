@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import server.edge_server.EdgeServer;
+
 import server.server_connections.ServerConnectionInfo;
 import server.server_connections.ServerPriority;
 
@@ -46,17 +47,24 @@ public abstract class ServerConnectionManager {
             // Check if each entry is expired, if it is, check the priority to see if it needs to be removed or kept alive
             Map.Entry<String, ServerConnectionInfo> entry = iterator.next();
             if(entry.getValue().isExpired()){
-                if(entry.getValue().getServerPriortiy() == ServerPriority.CRITICAL){
-                    entry.getValue().send(
+                
+                if(entry.getValue().getPriority() == ServerPriority.CRITICAL){
+
+                    ServerPacket keepAliveProbe =  
                         ServerKeepAliveService.createKeepAliveProbe(
                             EdgeServer.getServerId(),
                             entry.getValue().getId()
-                        )
-                    );
+                        );
+
+                    boolean sendSuccess = entry.getValue().send( keepAliveProbe );
+                    if(!sendSuccess) {
+                        logger.warn("Connection with Node: {} has been terminated due to failed retry!", entry.getValue().getId());
+                        terminateConnection(entry.getValue().getId());
+                    }
                 }
                 else {
+                    logger.warn("Connection with Node: {} has been terminated due to priority status!", entry.getValue().getId()); 
                     terminateConnection(entry.getValue().getId());
-                    logger.warn("Connection with Node: {} has been terminated!", entry.getValue().getId());
                 }
             }
         }

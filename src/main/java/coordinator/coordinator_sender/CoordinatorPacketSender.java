@@ -30,12 +30,13 @@ public class CoordinatorPacketSender extends CoordinatorSender{
      *  This can and more than likely will be overwritten with certain PacketTypes that may not want to retry.
      * 
     */
-    public void retry(CoordinatorPacket packet) {
+    public boolean retry(CoordinatorPacket packet) {
          while (!ackRecieved){
             // If the attempt limit is reached the server will shutdown
             if (attempts == maxRetries) {
                 logger.error("Attempt limit reached trying to recieve ACK!");
-                return;
+                attempts = 0;
+                return ackRecieved;
             }
             // Retry the connection - must reopen the socket to create a new connection
             else if (attempts < maxRetries && !ackRecieved) {
@@ -51,5 +52,7 @@ public class CoordinatorPacketSender extends CoordinatorSender{
             // Inc attemps
             attempts++;
         }
+        attempts = 0;
+        return ackRecieved;
     }  
 }

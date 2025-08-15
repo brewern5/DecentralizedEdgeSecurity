@@ -123,10 +123,6 @@ public class ServerConnectionInfo {
         return keepAliveTimeoutSeconds;
     }
 
-    public ServerPriority getServerPriortiy() {
-        return priority;
-    }
-
     public LocalDateTime getInitialConnectionTime() {
         return initalConnectionTime;
     }
@@ -168,11 +164,11 @@ public class ServerConnectionInfo {
      *      Stringify
      */
 
-     public String asString() {
+    public String asString() {
         String asString;
 
         asString= "ID - "+id+" | IP - "+ip+":"+port+"";
 
         return asString;
-     }
+    }
 }

@@ -76,7 +76,7 @@ public abstract class CoordinatorSender {
      */
 
     // The packetSender will declare this
-    public abstract void retry(CoordinatorPacket packet);
+    public abstract boolean retry(CoordinatorPacket packet);
 
     /*
      * 

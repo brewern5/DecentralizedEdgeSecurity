@@ -51,6 +51,8 @@ public class ServerCoordinatorHandler implements Runnable {
     private Socket coordinatorSocket;
     private String coordinatorIP;
 
+    private BufferedReader reader;
+
     private ServerConnectionManager coordinatorConnectionManager = ServerCoordinatorConnectionManager.getInstance();
 
     private ServerPacket coordinatorPacket;
@@ -64,9 +66,7 @@ public class ServerCoordinatorHandler implements Runnable {
     }
 
     /*
-     *  
      *          Packet Reconstruction
-     * 
      */
 
     private ServerPacket buildGsonWithPacketSubtype(ServerPacketType type, String json) {
@@ -82,11 +82,8 @@ public class ServerCoordinatorHandler implements Runnable {
         return tempGson.fromJson(json, ServerPacket.class);
     }
 
-    /*          End Packet Reconstruction
-     * 
-     * 
+    /*     
      *          Responses
-     * 
      */
 
     // This is a good response, it will be sent back to the server to ensure a packet was recieved 
@@ -113,11 +110,8 @@ public class ServerCoordinatorHandler implements Runnable {
         respond();
     }
 
-    /*          End Responses
-     * 
-     * 
+    /*
      *          Respond
-     * 
      */
 
     // Takes an already initalized response packet and returns to sender
@@ -141,7 +135,6 @@ public class ServerCoordinatorHandler implements Runnable {
     /*
      *                      Main run loop
      */
-
     @Override
     public void run() {
 
@@ -155,7 +148,7 @@ public class ServerCoordinatorHandler implements Runnable {
         // Handle client events
         try{
             // This is what decodes the incoming packet
-            BufferedReader reader = new BufferedReader(
+            reader = new BufferedReader(
                 new InputStreamReader(
                     coordinatorSocket.getInputStream()
                 )
@@ -180,7 +173,6 @@ public class ServerCoordinatorHandler implements Runnable {
                     )
                 );
             }
-
             // Reads the packet as json
             String json = payload;
 
@@ -221,7 +213,6 @@ public class ServerCoordinatorHandler implements Runnable {
 
                         // If good send ack
                         if(packetResponse.getSuccess() == true){
-
                             // Construct the ack packet
                             ack(packetResponse);
                         }
@@ -235,40 +226,47 @@ public class ServerCoordinatorHandler implements Runnable {
                             failure(packetResponse);
                         }
                         break;
-                    case COMMAND:
-                        // TODO: Handle command logic
-                        break;
                     case KEEP_ALIVE:
-                        // TODO: Handle heartbeat logic
-                        break;
-                    case STATUS:
-                        // TODO: Handle status logic
-                        break;
-                    case DATA:             
-                        // TODO: Bulk or sensor data
-                        break;
-                    case ERROR:            
-                        // TODO: Error or exception reporting
-                        break;
-                    case ACK:              
-                        // TODO: handle Acknowledgement of receipt
-                        break;
-                    case DISCONNECT:
-                        // TODO: handle disconnect cases
+                        // Builds the packet to be handled
+                        coordinatorPacket = buildGsonWithPacketSubtype(packetType, json);
+
+                        logger.info("Recieved:\n\t" + coordinatorPacket.toJson());
+
+                        // Create the packetType based handler
+                        packetHandler = new ServerKeepAliveHandler(coordinatorConnectionManager);
+
+                        // Allow for the packet response to be created based on the handling response
+                        packetResponse = packetHandler.handle(coordinatorPacket); 
+
+                        // If good send ack
+                        if(packetResponse.getSuccess() == true){
+                            // Construct the ack packet
+                            ack(packetResponse);
+                        }
+                        else if(packetResponse.getSuccess() == false){
+                            logger.error("Error Handling Packet of Type: \t MESSAGE \n\t Details:");
+                            // Detail the errors
+                            packetResponse.printMessages();
+                          
+                            // Construct the failure packet based on the response
+                            failure(packetResponse);
+                        }
                         break;
                     default:
                         // TODO: Handle unknown or unsupported packet types
                         break;
                 }
             }
-            reader.close();
-
-            // TODO: check some other things before closing the sockets
-            coordinatorSocket.close();
-        
-        
         } catch (IOException e) {
-            e.printStackTrace();
+             logger.error("I/O Error! " + e);
+        } finally {
+            try {
+                if( reader != null){ reader.close(); }
+                if( coordinatorSocket != null && !coordinatorSocket.isClosed()) { coordinatorSocket.close(); }
+                logger.info("Closing handler thread.");
+            } catch (IOException e) {
+                logger.error("Error closing socket!" + e);
+            }
         }
     }
 }

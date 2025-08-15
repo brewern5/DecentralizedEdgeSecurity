@@ -44,7 +44,7 @@ public class NodeInitalizationHandler extends NodePacketHandler{
             packetResponse = new NodeHandlerResponse(true, "Preferred Port Recieved");
 
         } catch(Exception e) {
-            logger.error("Error Handling packet! " + e.getStackTrace());
+            logger.error("Error Handling packet! " + e);
             // Generates the response to be put into the failure packet
             packetResponse = new NodeHandlerResponse(false, e, "Error Handling Packet.");
         }

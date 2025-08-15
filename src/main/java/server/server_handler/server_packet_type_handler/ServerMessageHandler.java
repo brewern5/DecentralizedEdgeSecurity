@@ -39,7 +39,7 @@ public class ServerMessageHandler extends ServerPacketHandler{
 
         try{
             // Lambda function - HashMap has a ForEach function that receives the all the keys(k) and their corresponding values(v) and will loop through each one individually
-            payload.forEach( (k, v) -> { 
+            payloadKeyValuePairs.forEach( (k, v) -> { 
                 //System.out.println("Message " + messageCounter + ":\n\t\t" + v );
                 messageCounter++;
             });

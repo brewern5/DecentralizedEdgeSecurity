@@ -35,12 +35,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import node.edge_node.EdgeNode;
+
 import node.node_handler.node_packet_type_handler.*;
 
 import node.node_lib.RuntimeTypeAdapterFactory;
 
 import node.node_packet.*;
 import node.node_packet.node_packet_class.NodeGenericPacket;
+
+import node.node_connections.*;
 
 public class NodeServerHandler implements Runnable {
 
@@ -54,6 +57,8 @@ public class NodeServerHandler implements Runnable {
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private NodePacket responsePacket;
 
+    private NodeConnectionManager serverConnectionManager = NodeConnectionManager.getInstance();
+
     // Each class can have its own logger instance
     private static final Logger logger = LogManager.getLogger(NodeServerHandler.class);
 
@@ -61,13 +66,9 @@ public class NodeServerHandler implements Runnable {
     public NodeServerHandler(Socket socket) {
         this.serverSocket = socket;
     }
-
     /*
-     * 
      *          Packet Recreation
-     * 
      */
-
     private NodePacket buildGsonWithPacketSubtype(NodePacketType type, String json) {
         RuntimeTypeAdapterFactory<NodePacket> packetAdapterFactory =
         RuntimeTypeAdapterFactory
@@ -80,14 +81,9 @@ public class NodeServerHandler implements Runnable {
 
         return tempGson.fromJson(json, NodePacket.class);
     }
-
-    /*          End Packet Recreation
-     *
-     * 
+    /*
      *          Responses 
-     * 
      */
-
     // This is a good response, it will be sent back to the server to ensure a packet was recieved 
     private void ack(NodeHandlerResponse packetResponse) {
 
@@ -112,16 +108,12 @@ public class NodeServerHandler implements Runnable {
         respond();
     }
 
-    /*          End Reponses
-     *
-     *
+    /*
      *          Respond
-     * 
      */
 
     // Takes an already initalized response packet and returns to sender
     private void respond() {
-
         // Puts the contents of the packet to JSON with a non-JSON compatable delimiter at the end to be handled prior to pakcet content hanlding
         String json = responsePacket.toDelimitedString();
 
@@ -134,15 +126,12 @@ public class NodeServerHandler implements Runnable {
             // Send the jsonified packet as a response
             output.println(json);
         } catch (IOException e) {
-            logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + " " + e.getStackTrace());
+            logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + " " + e);
         }
     }
     /*
-     *
      *          Main run loop
-     * 
      */
-
     @Override
     public void run() {
 
@@ -201,31 +190,6 @@ public class NodeServerHandler implements Runnable {
 
                 // Checks the packet type to determine how it needs to handle it
                 switch (packetType) {
-                    case INITIALIZATION:
-                        // Builds the packet to be handled
-                        serverPacket = buildGsonWithPacketSubtype(packetType, json);
-
-                        // Create the packetType based handler
-                        packetHandler = new NodeInitalizationHandler();
-
-                        // Allow for the packet response to be created based on the handling response
-                        packetResponse = packetHandler.handle(serverPacket); 
-
-                        // If good send ack
-                        if(packetResponse.getSuccess() == true){
-                            // Construct the ack packet
-                            ack(packetResponse);
-                        }
-                        else if(packetResponse.getSuccess() == false){
-                            logger.error("Error Handling Packet of Type: \tINITIALIZATION. Details:");
-
-                            // Detail the errors
-                            packetResponse.printMessages();
-                          
-                            // Construct the failure packet based on the response
-                            failure(packetResponse);
-                        }
-                        break;
                     case AUTH:
                         // TODO: Handle authentication logic
                         break;
@@ -256,26 +220,23 @@ public class NodeServerHandler implements Runnable {
                             failure(packetResponse);
                         }
                         break;
-                    case COMMAND:
-                        // TODO: Handle command logic
-                        break;
-                    case HEARTBEAT:
-                        // TODO: Handle heartbeat logic
-                        break;
-                    case STATUS:
-                        // TODO: Handle status logic
-                        break;
-                    case DATA:             
-                        // TODO: Bulk or sensor data
-                        break;
-                    case ERROR:            
-                        // TODO: Error or exception reporting
-                        break;
-                    case ACK:              
-                        // TODO: handle Acknowledgement of receipt
-                        break;
-                    case DISCONNECT:
-                        // TODO: handle disconnect cases
+                    case KEEP_ALIVE:
+                        // Builds the packet to be handled
+                        serverPacket = buildGsonWithPacketSubtype(packetType, json);
+
+                        logger.info("Recieved: " + serverPacket.toJson());
+
+                        // Create the packetType based handler
+                        packetHandler = new NodeKeepAliveHandler();
+
+                        // Allow for the packet response to be created based on the handling response
+                        packetResponse = packetHandler.handle(serverPacket); 
+
+                        // If good send ack
+                        if(packetResponse.getSuccess() == true){
+                            // Construct the ack packet
+                            ack(packetResponse);
+                        }
                         break;
                     default:
                         // TODO: Handle unknown or unsupported packet types
@@ -283,14 +244,14 @@ public class NodeServerHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
-            logger.error("I/O Error! " + e.getStackTrace());
+            logger.error("I/O Error! " + e);
         } finally {
             try {
                 if( reader != null){ reader.close(); }
                 if( serverSocket != null && !serverSocket.isClosed()) { serverSocket.close(); }
                 logger.info("Closing handler thread.");
             } catch (IOException e) {
-                logger.error("Error closing socket!" + e.getStackTrace());
+                logger.error("Error closing socket!" + e);
             }
         }
     }

@@ -20,6 +20,9 @@ package coordinator.edge_coordinator;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import java.util.Scanner;
 import java.util.UUID;
@@ -34,9 +37,7 @@ import coordinator.coordinator_listener.CoordinatorListener;
 
 import coordinator.coordinator_packet.*;
 import coordinator.coordinator_packet.coordinator_packet_class.*;
-
-import coordinator.coordinator_sender.CoordinatorPacketSender;
-
+import node.node_services.NodeKeepAliveService;
 import coordinator.coordinator_connections.*;
 
 public class EdgeCoordinator {
@@ -45,16 +46,16 @@ public class EdgeCoordinator {
 
     private static volatile String coordinatorId = null;
 
-    private static CoordinatorConnectionManager connectionManager;
+    private static CoordinatorConnectionManager serverConnectionManager;
 
     private static String IP;
 
     private static CoordinatorListener serverListener;  // The socket that will be listening to requests from the Edge server.
-    private static CoordinatorPacketSender serverSender;  // The socket that will send messages to edge server
+
+    private static ScheduledExecutorService timerScheduler;
 
     /*
      *  Initalizes the Node Coordinator - This will be the first thing that runs when the Node Coordinator is started up
-     * 
      */
 
     public static void init() {
@@ -65,7 +66,7 @@ public class EdgeCoordinator {
         // Give the Coordinator an ID
         setCoordinatorId(UUID.randomUUID().toString());
 
-        connectionManager = CoordinatorConnectionManager.getInstance();
+        serverConnectionManager = CoordinatorConnectionManager.getInstance();
 
         // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
@@ -94,12 +95,18 @@ public class EdgeCoordinator {
         } catch (Exception e) {
             logger.error("Unknown Error creating listener ports!\n" + e);
         }
+        /*
+         *      Try and Create timers
+         */
+        try {
+            initializeTimers();
+        } catch (Exception e) {
+            logger.error("Error creating Timers: \n" + e);
+        }
     }
 
     /*
-     * 
      *      ID assignment 
-     * 
      */
 
     // Thread-safe setter for ID assignment
@@ -108,13 +115,32 @@ public class EdgeCoordinator {
         logger.info("Coordinator ID assigned: " + id);
     }
 
-    public static String getCoordinatorId() {
+    public static synchronized String getCoordinatorId() {
         return coordinatorId;
     }
+
+        /*
+     *      Timer creation
+     */
+    private static void initializeTimers() {
+        // Creates the timer for 
+        timerScheduler = Executors.newScheduledThreadPool(2, r -> {
+            Thread t = new Thread(r, "EdgeCoordinator-Timer");
+            //t.setDaemon(true);
+            return t;
+        });
+        // Schedules overdue packet check every 20 seconds
+        timerScheduler.scheduleAtFixedRate(() -> {
+            try{
+                serverConnectionManager.checkExpiredConnections();
+            } catch (Exception e){
+                logger.error("Exception in expiry timer: ", e);
+            }
+        }, 20, 20, TimeUnit.SECONDS);
+        logger.info("Timer for checking Expired connections created!");
+    }
     /*
-     * 
      *          MAIN
-     * 
      */
     public static void main(String[] args) {
 
@@ -142,7 +168,7 @@ public class EdgeCoordinator {
                     message
                 );
 
-                String[] serverIdArray = connectionManager.getAllIds();
+                String[] serverIdArray = serverConnectionManager.getAllIds();
 
                 HashMap<Integer, String> servers = new HashMap<>();
 
@@ -159,8 +185,8 @@ public class EdgeCoordinator {
                     }
                     int serverNum = in.nextInt();
                     if(!servers.get(serverNum).isEmpty()) {
-                        connectionManager.getConnectionInfoById(servers.get(serverNum))
-                            .sendToNode(messagePacket);
+                        serverConnectionManager.getConnectionInfoById(servers.get(serverNum))
+                            .send(messagePacket);
                         hasNum = true;
                     }
                     else if(trys > 2){

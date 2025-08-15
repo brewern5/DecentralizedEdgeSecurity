@@ -32,7 +32,7 @@ public class NodeConfig {
             properties.load(in);
             in.close();
         } catch (IOException e){
-            logger.error("Error opening properties file!" + e.getStackTrace());
+            logger.error("Error opening properties file!" + e);
         }
     }
 
@@ -63,7 +63,7 @@ public class NodeConfig {
         try{
             IP = properties.getProperty(key);
         } catch (Error e) {
-            logger.error("Error getting " + key + "'s IP from config file!" + e.getStackTrace());
+            logger.error("Error getting " + key + "'s IP from config file!" + e);
         }
         return IP;
     }
@@ -82,7 +82,7 @@ public class NodeConfig {
             port = Integer.parseInt(properties.getProperty(key));
 
         } catch (Exception e){
-            logger.error("Error getting port from config file!" + e.getStackTrace());
+            logger.error("Error getting port from config file!" + e);
         }
         return port;
     }
@@ -107,7 +107,7 @@ public class NodeConfig {
                 try(OutputStream outputStream = new FileOutputStream("config/node_config/nodeConfig.properties")){
                     properties.store(outputStream, null);
                 } catch(IOException ioe) {
-                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file! " + ioe.getStackTrace());
+                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file! " + ioe);
                 }
 
                 logger.info("Overwrote:\t Key:( " + key + " ) Value: ( " + value + " )");
@@ -121,7 +121,7 @@ public class NodeConfig {
                     properties.store(outputStream, null);
                 
                 } catch(IOException ioe) {
-                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file! " + ioe.getStackTrace());
+                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file! " + ioe);
                 }
             }
             else {
@@ -130,7 +130,7 @@ public class NodeConfig {
             }
 
         }catch (Exception e) { // Generic Exception
-            logger.error("Error finding key: ( " + key + " ) from config file!"+ e.getStackTrace());
+            logger.error("Error finding key: ( " + key + " ) from config file!"+ e);
         }
     }
 }

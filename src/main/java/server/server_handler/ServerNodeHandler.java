@@ -208,7 +208,6 @@ public class ServerNodeHandler implements Runnable {
                 // Checks the packet type to determine how it needs to handle it
                 switch (packetType) {
                     case INITIALIZATION:
-
                         // Builds the packet to be handled
                         nodePacket = buildGsonWithPacketSubtype(packetType, json);
 
@@ -283,26 +282,33 @@ public class ServerNodeHandler implements Runnable {
                             failure(packetResponse);
                         }
                         break;
-                    case COMMAND:
-                        // TODO: Handle command logic
-                        break;
                     case KEEP_ALIVE:
-                        // TODO: Handle keep alive logic
-                        break;
-                    case STATUS:
-                        // TODO: Handle status logic
-                        break;
-                    case DATA:             
-                        // TODO: Bulk or sensor data
-                        break;
-                    case ERROR:            
-                        // TODO: Error or exception reporting
-                        break;
-                    case ACK:              
-                        // TODO: handle Acknowledgement of receipt
-                        break;
-                    case DISCONNECT:
-                        // TODO: handle disconnect cases
+                        // Builds the packet to be handled
+                        nodePacket = buildGsonWithPacketSubtype(packetType, json);
+
+                        logger.info("Recieved:\n\t" + nodePacket.toJson());
+
+                        // Create the packetType based handler
+                        packetHandler = new ServerKeepAliveHandler(nodeConnectionManager);
+
+                        // Allow for the packet response to be created based on the handling response
+                        packetResponse = packetHandler.handle(nodePacket); 
+
+                        // If good send ack
+                        if(packetResponse.getSuccess() == true){
+                            // Construct the ack packet
+                            ack(packetResponse);
+                        }
+                        else if(packetResponse.getSuccess() == false){
+
+                            logger.error("Error Handling Packet of Type: \t MESSAGE \n\t Details:");
+
+                            // Detail the errors
+                            packetResponse.printMessages();
+                          
+                            // Construct the failure packet based on the response
+                            failure(packetResponse);
+                        }
                         break;
                     default:
                         // TODO: Handle unknown or unsupported packet types

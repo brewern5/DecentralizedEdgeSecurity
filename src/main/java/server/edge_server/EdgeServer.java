@@ -54,7 +54,7 @@ public class EdgeServer {
     private static ServerConnectionManager coordinatorConnectionManager;
 
     // Timer components
-    private static ScheduledExecutorService timerScheduler; // The timer that will send out to keepAlives to the coordinator
+    private static ScheduledExecutorService timerScheduler; // The timer that will send out to keepAlives to the coordinator and check Node expiry
 
     /*
      *  Initalize the Edge Server
@@ -70,7 +70,7 @@ public class EdgeServer {
         // try to generate the IP from the machines IP - Throws UnknownHostException if it cannot determine
         try{
             IP = config.grabIP();
-            logger.info("\t\tEDGE SERVER\n\"Starting Server at " + IP + ".");
+            logger.info("\t\tEDGE SERVER\nStarting Server at " + IP + ".");
         } catch (UnknownHostException e) {
             logger.error("Error: Unable to determine local host IP address.\n" + e);
         }
@@ -84,13 +84,16 @@ public class EdgeServer {
                 new ServerConnectionInfo(
                     "1",  // TEMP Will update when get the ack respones
                     config.getIPByKey("Coordinator.IP"), 
-                    config.getPortByKey("Coordinator.sendingPort"),
+                    config.getPortByKey("Coordinator.listeningPort"),
                     ServerPriority.CRITICAL
                 )
             );
 
             LinkedHashMap<String, String> payload = new LinkedHashMap<>();
-            payload.put("Server.listeningPort", "5003");
+            payload.put(
+                "Server.listeningPort",
+                String.valueOf(config.getPortByKey("Server.coordinatorListeningPort"))
+            );
 
             // Create the initalization packet
             ServerPacket initPacket = new ServerGenericPacket(
@@ -103,8 +106,7 @@ public class EdgeServer {
             coordinatorConnectionManager.getConnectionInfoById("1").send(initPacket);
             
         } catch (Exception e) {
-            e.printStackTrace();
-            // TODO: Log critical error
+            logger.error("Error Sending Initalization Packet: " + e);
         }
 
         /*
@@ -114,14 +116,14 @@ public class EdgeServer {
         // Instantiate a listening port for the coordinator
         try {
             coordinatorListener = new ServerListener(
-                config.getPortByKey("CoordinatorListener.listeningPort"), 
+                config.getPortByKey("Server.coordinatorListeningPort"), 
                 5000,
                 "coordinator"
             );
         } catch (Exception e) {
             logger.error(
                 "Error creating Listening Socket on port " 
-                + config.getPortByKey("CoordinatorListener.listeningPort")
+                + config.getPortByKey("Server.coordinatorListeningPort")
                 + "\n" + e
             );
             // TODO: try to grab new port if this one is unavailable
@@ -130,14 +132,14 @@ public class EdgeServer {
         // Instantiate a listening port for the Nodes
         try {
             nodeListener = new ServerListener(
-                config.getPortByKey("NodeListener.listeningPort"),
+                config.getPortByKey("Server.nodeListeningPort"),
                  1000,
                  "node"
             );
         } catch (Exception e) {
             logger.error(
                 "Error creating Listening Socket on port " 
-                + config.getPortByKey("NodeListener.listeningPort")
+                + config.getPortByKey("Server.nodeListeningPort")
                 + "\n" + e
             );
             // TODO: try to grab new port if this one is unavailable
@@ -148,7 +150,7 @@ public class EdgeServer {
         try {
             initializeTimers();
         } catch (Exception e) {
-            logger.error("Error creating Timers: \n" + e.getStackTrace());
+            logger.error("Error creating Timers: \n" + e);
         }
     }
     /*
@@ -172,27 +174,37 @@ public class EdgeServer {
             //t.setDaemon(true);
             return t;
         });
-
         // Schedules the sending for the keepAlive packet every 30 seconds
         timerScheduler.scheduleAtFixedRate(() -> {
             try {
-                coordinatorConnectionManager.sendKeepAlive(
+                boolean keepAliveSent;
+
+                keepAliveSent = coordinatorConnectionManager.sendKeepAlive(
                     ServerKeepAliveService.createKeepAlivePacket(
                         getServerId(),
                         IP,
                         nodeConnectionManager
                     )
                 );
+
+                if(!keepAliveSent){
+                    logger.error("Keep alive was not sent!");
+                    //TODO: something to stop the keep alive sender
+                }
+
             } catch(Exception e) {
                 logger.error("Exception in keep-alive timer: ", e);
             }
-            
         }, 5, 30, TimeUnit.SECONDS);
         logger.info("Timer for sending keep Alive packets created!");
 
         // Schedules overdue packet check every 20 seconds
         timerScheduler.scheduleAtFixedRate(() -> {
-            //nodeConnectionManager.checkExpiredConnections();
+            try{
+                nodeConnectionManager.checkExpiredConnections();
+            } catch (Exception e){
+                logger.error("Exception in expiry timer: ", e);
+            }
         }, 20, 20, TimeUnit.SECONDS);
         logger.info("Timer for checking Expired connections created!");
     }
@@ -211,7 +223,6 @@ public class EdgeServer {
 
         // DEMO
         Scanner in = new Scanner(System.in);
-
         boolean on = true;
         while (on) {
             try{
@@ -233,6 +244,7 @@ public class EdgeServer {
                 System.out.println("Send message to Node or to Coordinator?");
                 String recipient = in.nextLine();
 
+                // Send message to the Node
                 if(recipient.equals("node") || recipient.equals("Node")) {
 
                     String[] nodeIdArray = nodeConnectionManager.getAllIds();
@@ -240,7 +252,6 @@ public class EdgeServer {
                     HashMap<Integer, String> nodes = new HashMap<>();
 
                     boolean hasNum = false;
-
                     int trys = 0;
 
                     while(!hasNum) {
@@ -264,9 +275,7 @@ public class EdgeServer {
                         }
                         trys++;
                     }
-
                 } else if(recipient.equals("coordinator") || recipient.equals("Coordinator")) {
-                    //coordinatorSender.send(messagePacket);
                     coordinatorConnectionManager.getConnectionInfoById("1").send(messagePacket);
                 }
                 else {

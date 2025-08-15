@@ -29,7 +29,7 @@ public abstract class ServerPacketHandler {
     private static final Logger logger = LogManager.getLogger(ServerPacketHandler.class);
 
     // Stores the recieved payload into a map (key Value) so the 
-    protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();
+    protected LinkedHashMap<String, String> payloadKeyValuePairs = new LinkedHashMap<>();
 
     // This is the object that will be instantiated if the packet is handled succesfuly or an error gets thrown
     protected ServerHandlerResponse packetResponse;
@@ -78,7 +78,7 @@ public abstract class ServerPacketHandler {
             // This gets the connected senders ID from storage and updates the last activity since it is clearly sending packets
             connectionManager.getConnectionInfoById(recievedPacket.getId()).updateLastActivity();
         } catch (NullPointerException e) {
-            logger.error("ID: " + recievedPacket.getId() + " was not found!\n" + e.getStackTrace());
+            logger.error("ID: " + recievedPacket.getId() + " was not found!\n" + e);
              // TODO: if the ID is not found in the connectionManager send a re-INIT packet to assign an ID
         }
             // TODO: 
@@ -88,9 +88,7 @@ public abstract class ServerPacketHandler {
     }
 
     /*
-     * 
      *      Abstract methods    -    these methods will need to be overwritten by subclasses
-     * 
      */
 
     // Will process the data and handle it according to what packet type is overwritting this method

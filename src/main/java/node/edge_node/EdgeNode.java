@@ -17,6 +17,9 @@ import java.net.UnknownHostException;
 
 import java.util.LinkedHashMap;
 import java.util.Scanner;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,9 +29,11 @@ import node.node_listener.NodeListener;
 import node.node_packet.*;
 import node.node_packet.node_packet_class.*;
 
-import node.node_sender.NodePacketSender;
-
 import node.node_config.NodeConfig;
+
+import node.node_connections.*;
+
+import node.node_services.*;
 
 public class EdgeNode {
 
@@ -37,16 +42,18 @@ public class EdgeNode {
     private static String IP;
 
     private static NodeListener serverListener;            // The socket that will be listening to requests from the Edge server.
-    private static NodePacketSender serverSender;          // The socket that will send messages to edge server
 
     // Each class can have its own logger instance
     private static final Logger logger = LogManager.getLogger(EdgeNode.class);
 
+    private static NodeConnectionManager serverConnectionManager; // Manage the connection between the server and the node
+
+    // Timer components
+    private static ScheduledExecutorService timerScheduler; //the timer that will send out the keepAlives to server
+
     /*
      *  Initalizes the Edge Node
-     * 
      */
-
     public static void init() {
 
         NodeConfig config = new NodeConfig();
@@ -62,28 +69,39 @@ public class EdgeNode {
 
         // Try to connect to the server
         try {
-            // Create the main sender for the packets sent to the Coordinator and stores the relevant socket information
-            serverSender = new NodePacketSender(
-                config.getIPByKey("Server.IP"), 
-                config.getPortByKey("Server.listeningPort")
+            serverConnectionManager = NodeConnectionManager.getInstance();
+
+            serverConnectionManager.addConnection(
+                new NodeConnectionInfo(
+                    "1",
+                    config.getIPByKey("Server.IP"),
+                    config.getPortByKey("Server.listeningPort"),
+                    NodePriority.CRITICAL
+                )
             );
 
             LinkedHashMap<String, String> payload = new LinkedHashMap<>();
-            payload.put("Node.listeningPort", "6001");
-            
+            payload.put(
+                "Node.listeningPort", 
+                String.valueOf(config.getPortByKey("Node.listeningPort"))
+            );
+
+            // Create the initalization packet
             NodePacket initPacket = new NodeGenericPacket(
                 NodePacketType.INITIALIZATION, 
-                getNodeID(),                            
-                payload        
-            );
-            
-            logger.debug("Sending initalization packet. Packet: " + initPacket.toJson());
+                getNodeID(),                   
+                payload
+            );  
 
-            // Sends the packet through the sender
-            serverSender.send(initPacket);
+            serverConnectionManager.getConnectionInfoById("1").createSender();
+            boolean sent = serverConnectionManager.getConnectionInfoById("1").send(initPacket);
+
+            if(!sent) {
+                logger.error("INITALIZATION PACKET WAS NOT SENT!");
+            }
 
         } catch(Exception e){
-            logger.error("Error Sending Initalization Packet: " + e.getStackTrace());
+            logger.error("Error Sending Initalization Packet: " + e);
         }
 
         /*
@@ -99,32 +117,67 @@ public class EdgeNode {
             logger.error(
                 "Error creating Listening Socket on port " 
                 + config.getPortByKey("Node.listeningPort")
-                + e.getStackTrace()
+                + e
             );
             // TODO: try to grab new port if this one is unavailable
         }
+        /*
+         *      Try and Create timers
+         */
+        try {
+            initializeTimers();
+        } catch (Exception e) {
+            logger.error("Error creating Timers: \n" + e);
+        }
     }
-
     /*
-     * 
      *      ID assignment 
-     * 
      */
-
     // Thread-safe setter for ID assignment
     public static synchronized void setNodeID(String id) {
         nodeId = id;
         logger.info("Node ID assigned: " + id);
     }
 
-    public static String getNodeID() {
+    public static synchronized String getNodeID() {
         return nodeId;
     }
 
     /*
-     * 
+     *      Timer creation
+     */
+    private static void initializeTimers() {
+        // Creates the timer for 
+        timerScheduler = Executors.newScheduledThreadPool(2, r -> {
+            Thread t = new Thread(r, "EdgeNode-Timer");
+            //t.setDaemon(true);
+            return t;
+        });
+        // Schedules the sending for the keepAlive packet every 30 seconds
+        timerScheduler.scheduleAtFixedRate(() -> {
+            try {
+                boolean keepAliveSent;
+
+                keepAliveSent = serverConnectionManager.sendKeepAlive(
+                    NodeKeepAliveService.createKeepAlivePacket(
+                        getNodeID(),
+                        IP
+                    )
+                );
+
+                if(!keepAliveSent){
+                    logger.error("Keep alive was not sent!");
+                    //TODO: something to stop the keep alive sender
+                }
+
+            } catch(Exception e) {
+                logger.error("Exception in keep-alive timer: ", e);
+            }
+        }, 5, 30, TimeUnit.SECONDS);
+    }
+
+    /*
      *      Main Loop
-     * 
      */
 
     public static void main(String[] args) {
@@ -151,7 +204,7 @@ public class EdgeNode {
                     message
                 );
 
-                serverSender.send(messagePacket);
+                serverConnectionManager.getConnectionInfoById("1").send(messagePacket);
             }
         }       
         in.close();

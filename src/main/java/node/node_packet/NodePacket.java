@@ -32,9 +32,7 @@ public abstract class NodePacket {
     public NodePacket() {} // No-args constructor
 
     /*
-     * 
      *      Packet Type Methods
-     * 
      */
 
     public NodePacketType getPacketType() {
@@ -45,9 +43,7 @@ public abstract class NodePacket {
     }
 
     /*
-     * 
      *      ID methods
-     * 
      */
 
     public String getId() {
@@ -58,9 +54,7 @@ public abstract class NodePacket {
     }
 
     /*
-     * 
      *      Payload methods
-     * 
      */
 
     public LinkedHashMap<String, String> getPayload() {
@@ -114,9 +108,7 @@ public abstract class NodePacket {
     }
 
     /*
-     * 
      *      Stringify Methods
-     * 
      */
 
     // converts the packet to a key/value String

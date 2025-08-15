@@ -9,39 +9,41 @@
  *      try to be kept alive.
  * 
  */
-package coordinator.coordinator_connections;
+package node.node_connections;
 
 import java.time.LocalDateTime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import coordinator.coordinator_sender.CoordinatorPacketSender;
+import node.node_sender.NodePacketSender;
 
-import coordinator.coordinator_packet.*;
+import node.node_packet.*;
 
-public class CoordinatorConnectionInfo {
+public class NodeConnectionInfo {
 
     private String id;
     
     private String ip;
     private int port;
 
+    private Boolean hasSender= false;
+
     // This is when the expiration happens, which is twice the send time of each KeepAlive packet.
     private int keepAliveTimeoutSeconds = 60;
 
-    private CoordinatorPriority priority;
+    private NodePriority priority;
 
     private LocalDateTime lastActivity;
     private LocalDateTime initalConnectionTime;
 
         // Gives each node connection it's own sender that will be created whenever 
-    private CoordinatorPacketSender sender; 
+    private NodePacketSender sender; 
 
-    private static final Logger logger = LogManager.getLogger(CoordinatorConnectionInfo.class);
+    private static final Logger logger = LogManager.getLogger(NodeConnectionInfo.class);
 
     // Constructor
-    public CoordinatorConnectionInfo(String id, String ip, int port, CoordinatorPriority priority) {
+    public NodeConnectionInfo(String id, String ip, int port, NodePriority priority) {
         this.id = id;
         this.ip = ip;
         this.port = port;
@@ -54,13 +56,12 @@ public class CoordinatorConnectionInfo {
     /*
      *      Main Methods
      */
-    
     public boolean isExpired() {
         return lastActivity.plusSeconds(keepAliveTimeoutSeconds)
             .isBefore(LocalDateTime.now());
     }
 
-        public void createSender() {
+    public void createSender() {
 
         if(port == 0) {
             logger.error("Port is not set for Server " + id +"!");
@@ -68,14 +69,14 @@ public class CoordinatorConnectionInfo {
         }
         // Create sender for this node
         try {
-            this.sender = new CoordinatorPacketSender(ip, port);
+            this.sender = new NodePacketSender(ip, port);
             logger.info("Sender Created for Server: " + id + " - " + ip +":" + port);
         } catch (Exception e) {
             logger.error("Failed to create sender for Server " + id + ":" + port + "\n" + e);
         }
     }
 
-    public boolean send(CoordinatorPacket packet) {
+    public boolean send(NodePacket packet) {
         if (sender != null) {
             boolean sent = sender.send(packet);
             if(!sent){
@@ -92,9 +93,7 @@ public class CoordinatorConnectionInfo {
     }
 
     /*
-     * 
      *      Getters
-     * 
      */
     public String getId() {
         return id;
@@ -108,8 +107,12 @@ public class CoordinatorConnectionInfo {
         return port;
     }
 
-    public CoordinatorPriority getPriority() {
+    public NodePriority getServerPriortiy() {
         return priority;
+    }
+
+    public boolean getSenderStatus() {
+        return hasSender;
     }
 
     public int getKeepAliveTimeout() {
@@ -125,9 +128,7 @@ public class CoordinatorConnectionInfo {
     }
 
     /*
-     * 
      *      Setters
-     * 
      */
     public void setId(String id) {
         this.id = id;
@@ -145,12 +146,24 @@ public class CoordinatorConnectionInfo {
         this.keepAliveTimeoutSeconds = keepAliveTimeoutSeconds;
     }
 
-    public void setPriority(CoordinatorPriority priority) {
+    public void setPriority(NodePriority priority) {
         this.priority = priority;
     }
 
     public void updateLastActivity() {
         this.lastActivity = LocalDateTime.now();
+    }
+
+    /*
+     *      Stringify
+     */
+
+     public String asString() {
+        String asString;
+
+        asString= "ID - "+id+" | IP - "+ip+":"+port+"";
+
+        return asString;
     }
 
 }

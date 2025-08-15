@@ -16,6 +16,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import coordinator.coordinator_connections.CoordinatorPriority;
+import coordinator.coordinator_packet.CoordinatorPacket;
+
+import coordinator.coordinator_services.CoordinatorKeepAliveService;
+
+import coordinator.edge_coordinator.*;
+
 public class CoordinatorConnectionManager {
 
     // Each class can have its own logger instance
@@ -43,15 +50,25 @@ public class CoordinatorConnectionManager {
         Iterator<Map.Entry<String , CoordinatorConnectionInfo>> iterator =
             activeConnections.entrySet().iterator();
 
-        
         while(iterator.hasNext()) {
             // Check if each entry is expired, if it is, check the priority to see if it needs to be removed or kept alive
             Map.Entry<String, CoordinatorConnectionInfo> entry = iterator.next();
             if(entry.getValue().isExpired()){
-                if(entry.getValue().getServerPriortiy() == CoordinatorPriority.CRITICAL){
-                    // TODO: KEEP ALIVE
+                if(entry.getValue().getPriority() == CoordinatorPriority.CRITICAL){
+                     CoordinatorPacket keepAliveProbe =  
+                        CoordinatorKeepAliveService.createKeepAliveProbe(
+                            EdgeCoordinator.getCoordinatorId(),
+                            entry.getValue().getId()
+                        );
+
+                    boolean sendSuccess = entry.getValue().send( keepAliveProbe );
+                    if(!sendSuccess) {
+                        logger.warn("Connection with Node: {} has been terminated due to failed retry!", entry.getValue().getId());
+                        terminateConnection(entry.getValue().getId());
+                    }
                 }
                 else {
+                    logger.warn("Connection with Node: {} has been terminated due to priority status!", entry.getValue().getId());
                     terminateConnection(entry.getValue().getId());
                 }
             }
@@ -59,13 +76,25 @@ public class CoordinatorConnectionManager {
     }
 
     /*
-     * 
      *      Response to expiry
-     * 
      */
 
-    public void keepAlive(){
+    public boolean sendKeepAlive(CoordinatorPacket keepAliveProbe) {
 
+        activeConnections.forEach((id, connection) -> {
+            if(connection.getPriority() == CoordinatorPriority.CRITICAL){
+
+                boolean keptAlive;
+
+                keptAlive = connection.send(keepAliveProbe);
+
+                // If the packet fails to send
+                if(!keptAlive) {
+                    terminateConnection(id);
+                }
+            }
+        });
+        return true;
     }
 
     public void terminateConnection(String id) {
@@ -77,9 +106,7 @@ public class CoordinatorConnectionManager {
     }
 
     /*
-     * 
      *      Mutators
-     * 
      */
 
     // Can allow for multiple connections to be added at once(if needed)
@@ -99,9 +126,7 @@ public class CoordinatorConnectionManager {
     }
 
     /*
-     * 
      *      Getters
-     * 
      */
     public CoordinatorConnectionInfo getConnectionInfoById(String id) {
         return activeConnections.get(id);

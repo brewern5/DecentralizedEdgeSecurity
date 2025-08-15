@@ -70,20 +70,13 @@ public abstract class NodeSender {
     protected String ip;
     protected int sendingPort;
     
-    /*
-     *      
+    /*     
      *          Abstract methods
-     * 
      */
 
     // The packetSender will declare this
-    public abstract void retry(NodePacket packet);
+    public abstract boolean retry(NodePacket packet);
 
-    /*
-     *      
-     *          End Abstraction
-     * 
-     */
 
     // Starts the socket
     public void startSocket() throws IOException, SocketTimeoutException {
@@ -142,6 +135,7 @@ public abstract class NodeSender {
             // Sends the packet through the socket to the Coordinator
             output.println(json);
             output.flush();
+            logger.info("Sending packet of type {}", packet.getPacketType());
 
             // Will be where the response is read from
             BufferedReader input = new BufferedReader(
@@ -185,15 +179,15 @@ public abstract class NodeSender {
                 // Print out the packet 
                 logger.info(
                     "Response Recieved:\n" 
-                    + "Sender ID: \t" + responsePacket.getId() 
-                    + "\nPacket Type: \t" + responsePacket.getPacketType() 
-                    + "\nPayload: \t" + responsePacket.getPayload()  
+                    + "\n\tSender ID: \t" + responsePacket.getId() 
+                    + "\n\tPacket Type: \t" + responsePacket.getPacketType() 
+                    + "\n\tPayload: \t" + responsePacket.getPayload()  
                 );
 
                 LinkedHashMap<String, String> payload = responsePacket.getPayload();
 
                 // If the Payload has an ID value
-                if(!payload.get("id").isEmpty()) {
+                if(payload.get("id") != null) {
                     payload.forEach( (k, v) -> {
                         if(k.equals("id")) {
                             EdgeNode.setNodeID(v);
@@ -211,12 +205,12 @@ public abstract class NodeSender {
 
             } catch(IllegalArgumentException illegalArg) {
                 // The exception if the packet is empty or has no termination 
-                logger.error("Error: " + illegalArg.getStackTrace());
+                logger.error("Error: " + illegalArg);
             } catch(IllegalStateException illegalState) {
                 // The exception if the packet is not of the type ACK
-                logger.error("Error: " + illegalState.getStackTrace());
+                logger.error("Error: " + illegalState);
             } catch(Exception e) {
-                logger.error("Unknown Error! " + e.getStackTrace());
+                logger.error("Unknown Error! " + e);
             } finally {
                 // Always close the ports no matter the success status. 
                 output.close();          //
@@ -228,11 +222,11 @@ public abstract class NodeSender {
             return ackReceived;
                 
         } catch(SocketTimeoutException e) {
-            logger.error("Failed waiting on a response from coordinator at " + this.ip + ":" + this.sendingPort + " " + e.getStackTrace());
+            logger.error("Failed waiting on a response from coordinator at " + this.ip + ":" + this.sendingPort + " " + e);
         } catch(IOException e) {
-            logger.error("Failed to connect to coordinator at " + this.ip + ":" + this.sendingPort + " " + e.getStackTrace());
+            logger.error("Failed to connect to coordinator at " + this.ip + ":" + this.sendingPort + " " + e);
         } catch (Exception e) {
-            logger.error("Unknown Error! " + e.getStackTrace());
+            logger.error("Unknown Error! " + e);
         }
         // Return false as if this section is reached, the packet was not sent properly meanign an error
         return false;

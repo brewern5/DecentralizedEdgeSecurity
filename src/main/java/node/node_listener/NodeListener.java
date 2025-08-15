@@ -46,7 +46,7 @@ public class NodeListener implements Runnable {
                 handlerThread.start(); // Begins the new thread
             } catch (SocketTimeoutException sto) {
             } catch (IOException ioe) {
-                logger.error("I/O Exception! " + ioe.getStackTrace());
+                logger.error("I/O Exception! " + ioe);
             }
         }
     }
@@ -73,7 +73,7 @@ public class NodeListener implements Runnable {
         try {
             listenerSocket.setSoTimeout(timeout);
         } catch (Exception e) {
-            logger.error("Error setting new timeout on socket: ( " + port + " ) " + e.getStackTrace());
+            logger.error("Error setting new timeout on socket: ( " + port + " ) " + e);
         }
     }
 
@@ -82,7 +82,7 @@ public class NodeListener implements Runnable {
             listenerSocket.close();
             logger.warn("Listening Socket Closed on port " + port + "!");
         } catch(Exception e) {
-            logger.error("Error Closing socket on port" + port + "! " + e.getStackTrace());
+            logger.error("Error Closing socket on port" + port + "! " + e);
             return false;
         }
         return true;

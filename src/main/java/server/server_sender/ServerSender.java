@@ -66,19 +66,10 @@ public abstract class ServerSender {
     protected int sendingPort;
     
     /*
-     *      
      *          Abstract methods
-     * 
      */
-
 
     public abstract boolean retry(ServerPacket packet);
-
-    /*
-     * 
-     *          End Abstraction
-     * 
-     */
 
 
     public void startSocket() throws IOException, SocketTimeoutException {
@@ -89,15 +80,15 @@ public abstract class ServerSender {
         this.socket.setSoTimeout(1000);
     };
 
-    // This is needed in order to construct the packet class from Gson, it will throw an error
-    // without this package since the packet class is abstract. 
-    // This allows the Gson structure to build the packet without throwing that error
-    // This is a dynamic way of creating the packet, since we cannot register different subtypes 
-    // since RuntimeTypeAdapterFactory will not allow for two unique subtypes with the same base class
-    // e.g. .registerSubtype(ServerGenericPacket.class, ERROR.name())
-    // and  .registerSubtype(ServerGenericPacket.class, ACK.name())
-    // Will throw an "IllegalArgumentException: types and labels must be unique" exception
-    // This bypasses that by recieving the type and t
+    /* This is needed in order to construct the packet class from Gson, it will throw an error
+     * without this package since the packet class is abstract. 
+     * This allows the Gson structure to build the packet without throwing that error
+     * This is a dynamic way of creating the packet, since we cannot register different subtypes 
+     * since RuntimeTypeAdapterFactory will not allow for two unique subtypes with the same base class
+     * e.g. .registerSubtype(ServerGenericPacket.class, ERROR.name())
+     * and  .registerSubtype(ServerGenericPacket.class, ACK.name())
+     * Will throw an "IllegalArgumentException: types and labels must be unique" exception
+     */
 
     public ServerPacket buildGsonWithPacketSubtype(ServerPacketType type, String json) {
         RuntimeTypeAdapterFactory<ServerPacket> packetAdapterFactory =
@@ -147,7 +138,6 @@ public abstract class ServerSender {
 
             // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
             try{
-
                 if(response == null){
                     throw new Exception("No Response Packet Received!");
                 }
@@ -185,13 +175,6 @@ public abstract class ServerSender {
                     + "\n\tPayload:\t" + responsePacket.getPayload()  
                 );
 
-                // If the packet type is a ACK packet - then it is a good connection made and the server will close this socket.
-                if (responsePacket.getPacketType() != ServerPacketType.ACK) {
-                    throw new IllegalStateException(
-                        "Expected ACK packet, but received: "
-                        + responsePacket.getPacketType()
-                    );
-                }
 
                 LinkedHashMap<String, String> payload = responsePacket.getPayload();
 
@@ -236,9 +219,5 @@ public abstract class ServerSender {
 
         // Return false as if this section is reached, the packet was not sent properly meaning an error occurred early i
         return false;
-    }
-
-    public static void sendKeepAlivePacket() {
-        
     }
 }
