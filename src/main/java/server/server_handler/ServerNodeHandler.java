@@ -160,7 +160,6 @@ public class ServerNodeHandler implements Runnable {
 
         // Handle client events
         try {
-
             // This is what decodes the incoming packet
             reader = new BufferedReader(
                 new InputStreamReader(
