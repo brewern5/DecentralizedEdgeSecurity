@@ -2,16 +2,95 @@
 
 ## Overview
 
-DecentralizedEdgeSecurity is a research project for building a basic 3-tiered edge network. The current implementation sets up a Coordinator, a Server, and a Node, each running as a separate Java process. These components establish TCP connections and exchange simple messages to demonstrate connectivity between tiers.
+DecentralizedEdgeSecurity is a research project for building a basic 3-tiered edge network implemented in Java with Maven. The system consists of a Coordinator, Server, and Node, each running as separate Java processes that establish TCP connections and exchange JSON-formatted messages to demonstrate connectivity between network tiers.
 
 **Current features:**
-- Coordinator listens for connections from Servers and processes packets using a unified JSON structure.
-- Server connects to the Coordinator, sends an INITIALIZATION packet, and listens for connections from Nodes.
-- Node connects to the Server and exchanges messages using the generic packet format.
-- All components use a flexible packet structure with `packetType`, `sender`, and `payload` fields.
-- Coordinator parses and handles different packet types (e.g., INITIALIZATION, MESSAGE, ACK, etc.), with extensible logic for future types.
-- Basic handshake and acknowledgment logic implemented between tiers.
-- Each component demonstrates proper TCP socket management and thread handling.
+- **Maven-based build system** with proper dependency management
+- **Hierarchical package structure** following Java naming conventions
+- **JSON packet communication** using Gson library for serialization
+- **Multi-threaded architecture** with concurrent connection handling
+- **Extensible packet system** supporting multiple message types
+- **TCP socket management** with proper connection lifecycle handling
+- **Comprehensive logging** using Log4j2 framework
+
+---
+
+## Architecture
+
+### Three-Tier Network Structure
+```
+┌─────────────────┐
+│   Coordinator   │  ← Top Tier (Network Management)
+│   (Port 5001)   │
+└─────────────────┘
+         ↑
+         │ TCP Connection
+         ↓
+┌─────────────────┐
+│     Server      │  ← Middle Tier (Edge Processing)
+│   (Port 5002)   │
+└─────────────────┘
+         ↑
+         │ TCP Connection
+         ↓
+┌─────────────────┐
+│      Node       │  ← Bottom Tier (Edge Device)
+│   (Port 5003)   │
+└─────────────────┘
+```
+
+---
+
+## Project Structure
+
+```
+DecentralizedEdgeSecurity/
+├── pom.xml                    # Maven configuration
+├── run_all.bat               # Build and run script
+├── config/                   # Configuration files
+│   ├── coordinator_config/
+│   ├── node_config/
+│   └── server_config/
+├── src/main/
+│   ├── java/
+│   │   ├── coordinator/      # Coordinator module
+│   │   │   ├── edge_coordinator/
+│   │   │   ├── coordinator_config/
+│   │   │   ├── coordinator_handler/
+│   │   │   ├── coordinator_listener/
+│   │   │   ├── coordinator_packet/
+│   │   │   └── coordinator_sender/
+│   │   ├── server/           # Server module
+│   │   │   ├── edge_server/
+│   │   │   ├── server_config/
+│   │   │   ├── server_handler/
+│   │   │   ├── server_listener/
+│   │   │   ├── server_packet/
+│   │   │   └── server_sender/
+│   │   └── node/             # Node module
+│   │       ├── edge_node/
+│   │       ├── node_config/
+│   │       ├── node_handler/
+│   │       ├── node_listener/
+│   │       ├── node_packet/
+│   │       └── node_sender/
+│   └── resources/
+│       └── log4j2.xml        # Logging configuration
+└── target/                   # Maven build output (auto-generated)
+```
+
+---
+
+## Dependencies
+
+The project uses Maven for dependency management with the following key libraries:
+
+- **Java 17** - Target runtime environment
+- **Gson 2.13.1** - JSON serialization/deserialization
+- **Log4j 2.23.1** - Logging framework
+- **Error Prone Annotations** - Code quality annotations
+
+Dependencies are automatically managed by Maven and stored in `target/classes` after compilation.
 
 ---
 
@@ -128,19 +207,92 @@ When a Server connects to the Coordinator, it sends an INITIALIZATION packet. Th
 
 ## Getting Started
 
+### Prerequisites
+- **Java 17 or higher** installed and configured
+- **Maven 3.6+** for build management
+- **Git** for version control
+
+### Quick Start
+
 1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/yourusername/DecentralizedEdgeSecurity.git
+   ```bash
+   git clone https://github.com/brewern5/DecentralizedEdgeSecurity.git
    cd DecentralizedEdgeSecurity
    ```
 
-2. **Ensure Java 17+ is installed.**
+2. **Build and run the entire system:**
+   ```bash
+   # Windows
+   run_all.bat
+   
+   # Or manually with Maven
+   mvn clean compile
+   mvn dependency:copy-dependencies -DoutputDirectory=lib
+   ```
 
-3. **Build and run all components:**
-   - Use the provided batch script:
-     ```sh
-     run_all.bat
-     ```
-   - This will compile and launch the Coordinator, Server, and Node in separate terminals.
+3. **The script will:**
+   - Clean and compile all Java sources using Maven
+   - Download and copy all dependencies to the `lib/` directory
+   - Launch three separate terminal windows for Coordinator, Server, and Node
+   - Each component will start with proper logging and connection handling
 
-> **Note:** This project is in an early stage and currently demonstrates only basic connectivity and message exchange between the three tiers.
+### Manual Execution
+
+If you prefer to run components individually:
+
+```bash
+# Compile the project
+mvn clean compile
+
+# Run Coordinator
+java -cp target/classes;lib/* coordinator.edge_coordinator.EdgeCoordinator
+
+# Run Server (in new terminal)
+java -cp target/classes;lib/* server.edge_server.EdgeServer
+
+# Run Node (in new terminal)  
+java -cp target/classes;lib/* node.edge_node.EdgeNode
+```
+
+### Configuration
+
+Configuration files are located in the `config/` directory:
+- `coordinator_config/coordinatorConfig.properties`
+- `server_config/serverConfig.properties`  
+- `node_config/nodeConfig.properties`
+
+Each component reads its respective configuration on startup.
+
+---
+
+## Development
+
+### Building from Source
+```bash
+# Clean build
+mvn clean compile
+
+# Run tests (when implemented)
+mvn test
+
+# Package application
+mvn package
+```
+
+### IDE Setup
+The project follows standard Maven conventions and can be imported into any Java IDE:
+- **IntelliJ IDEA**: Open the `pom.xml` file
+- **Eclipse**: Import as Maven project
+- **VS Code**: Open folder with Java Extension Pack
+
+### Package Structure
+All packages follow hierarchical naming:
+- `coordinator.*` - Coordinator module packages
+- `server.*` - Server module packages  
+- `node.*` - Node module packages
+
+---
+
+## Current Status
+
+> **Note:** This project is in active development and demonstrates basic connectivity and message exchange between the three network tiers. Future enhancements will include authentication, encryption, load balancing, and advanced edge computing capabilities.

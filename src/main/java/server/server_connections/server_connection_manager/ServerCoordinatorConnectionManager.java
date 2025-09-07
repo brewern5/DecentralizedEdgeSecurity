@@ -1,0 +1,49 @@
+/*
+ *      Author: Nathaniel Brewer
+ * 
+ *      Since The server is handling information from both the Coordinator and the Nodes
+ *      It needs to have two differnet storages for connections. This is the simpler way 
+ *      than refactoring the Superclass of the handler
+ */
+
+package server.server_connections.server_connection_manager;
+
+import java.util.Iterator;
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import server.server_connections.ServerConnectionInfo;
+import server.server_packet.ServerPacket;
+
+public class ServerCoordinatorConnectionManager extends ServerConnectionManager {
+
+    private static final Logger logger = LogManager.getLogger(ServerCoordinatorConnectionManager.class);
+
+    // Step 1: (For my sanity) create an instance variable
+    private static ServerCoordinatorConnectionManager instance;
+
+    // Step 2: Get instance (if one is not there it is created then returned)
+    public static synchronized ServerConnectionManager getInstance() {
+        if (instance == null) {
+            instance = new ServerCoordinatorConnectionManager();
+        }
+        return instance;
+    }
+
+    @Override
+    public boolean sendKeepAlive(ServerPacket keepAlive) {
+
+        boolean sent = false;
+
+        Iterator<Map.Entry<String , ServerConnectionInfo>> iterator =
+            activeConnections.entrySet().iterator();
+
+        while(iterator.hasNext()){
+            Map.Entry<String, ServerConnectionInfo> entry = iterator.next();
+            sent = entry.getValue().send(keepAlive); 
+        }
+        return sent;
+    }
+}
