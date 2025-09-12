@@ -37,7 +37,6 @@ import coordinator.coordinator_listener.CoordinatorListener;
 
 import coordinator.coordinator_packet.*;
 import coordinator.coordinator_packet.coordinator_packet_class.*;
-import node.node_services.NodeKeepAliveService;
 import coordinator.coordinator_connections.*;
 
 public class EdgeCoordinator {
