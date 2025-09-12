@@ -20,6 +20,4 @@ read -p "Press enter to continue..."
 cd "$BASEDIR"
 
 # Run all in separate terminals
-gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* coordinator.edge_coordinator.EdgeCoordinator; exec bash" &
 gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* server.edge_server.EdgeServer; exec bash" &
-gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* node.edge_node.EdgeNode; exec bash" &
