@@ -2,7 +2,7 @@
  *      Author: Nathaniel Brewer
  * 
  *      This is the SuperClass any packet sender for the node. Since the node will
- *      be sending packets to the coordinator(up) and to the nodes(down), each one
+ *      be sending packets to the server(up) and to the nodes(down), each one
  *      will have their own packet sender object assigned to them, or their own 
  *      "Sender".
  * 
@@ -24,7 +24,7 @@
  *      the child of the class you are current reading this in.
  * 
  * 
- *       will be made with the coordinator
+ *       will be made with the server
  *      (meaning that a init sender)
  */
 package node.node_sender;
@@ -120,7 +120,7 @@ public abstract class NodeSender {
             // If the acknowledgement is not recieved then it will call upon retry (if the child class uses a retry method)
             boolean ackReceived = false;
 
-            // This is where the node will wait for a proper Ack from the coordinator - if not received, will retry 3 times
+            // This is where the node will wait for a proper Ack from the server - if not received, will retry 3 times
             String json = packet.toDelimitedString();     
 
             // Initalized inside nested control structure
@@ -132,7 +132,7 @@ public abstract class NodeSender {
                 true
             );
 
-            // Sends the packet through the socket to the Coordinator
+            // Sends the packet through the socket to the Server
             output.println(json);
             output.flush();
             logger.info("Sending packet of type {}", packet.getPacketType());
@@ -142,7 +142,7 @@ public abstract class NodeSender {
                 new InputStreamReader(this.socket.getInputStream())
             );
 
-            // Retrieves the response packet from the Coordinator
+            // Retrieves the response packet from the Server
             String response = input.readLine();
 
             // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
@@ -195,7 +195,7 @@ public abstract class NodeSender {
                     });
                 }
 
-                // If the packet type is a ACK packet - then it is a good connection made and the coordinator will close this socket.
+                // If the packet type is a ACK packet - then it is a good connection made and the Server will close this socket.
                 if (responsePacket.getPacketType() != NodePacketType.ACK) {
                     throw new IllegalStateException("Expected ACK packet, but received: " + responsePacket.getPacketType());
                 } else {
@@ -222,9 +222,9 @@ public abstract class NodeSender {
             return ackReceived;
                 
         } catch(SocketTimeoutException e) {
-            logger.error("Failed waiting on a response from coordinator at " + this.ip + ":" + this.sendingPort + " " + e);
+            logger.error("Failed waiting on a response from server at " + this.ip + ":" + this.sendingPort + " " + e);
         } catch(IOException e) {
-            logger.error("Failed to connect to coordinator at " + this.ip + ":" + this.sendingPort + " " + e);
+            logger.error("Failed to connect to server at " + this.ip + ":" + this.sendingPort + " " + e);
         } catch (Exception e) {
             logger.error("Unknown Error! " + e);
         }
