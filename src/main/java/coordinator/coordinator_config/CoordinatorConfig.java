@@ -12,7 +12,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import java.net.InetAddress;            // Used for grabbing the machine's IP address
+import java.net.NetworkInterface;
 import java.net.UnknownHostException;   // Error for trying to grab IP address
+import java.net.SocketException;        // Error for trying to grab a port
+import java.net.Inet4Address;      // Used for specifying IPv4 address
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,17 +44,29 @@ public class CoordinatorConfig {
      *   @return a string of the IP if found, if not found then a Null value
      */
 
-    public String grabIP() throws UnknownHostException {
+    public String grabIP() throws UnknownHostException, SocketException {
+
+        String realIP = null;
+
+        for(NetworkInterface ni : java.util.Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if (ni.isLoopback() || !ni.isUp()) continue;
+            for(InetAddress addr : java.util.Collections.list(ni.getInetAddresses())) {
+                if(addr instanceof Inet4Address) {
+                    realIP = addr.getHostAddress();
+                    break;
+                }
+            }
+            if(realIP != null) break;
+        }
 
         // Set the ip to null, to be handled in the caller of this method in case an error occurs
-        String ipAddress = null;
-        
-        InetAddress localHost = InetAddress.getLocalHost();     // Grabs the IP and will convert it to a Java object
-        ipAddress = localHost.getHostAddress();                 // Generates the IP as a string to pass it back to the edge node using it
+        //String ipAddress = null;
+        //InetAddress localHost = InetAddress.getLocalHost();     // Grabs the IP and will convert it to a Java object
+        //ipAddress = localHost.getHostAddress();                 // Generates the IP as a string to pass it back to the edge node using it
 
-        writeToConfig("Coordinator.IP", ipAddress);            // Since the IP will be machine dependant at the moment, just grab the machine IP
+        writeToConfig("Coordinator.IP", realIP);            // Since the IP will be machine dependant at the moment, just grab the machine IP
 
-        return ipAddress;       // Will return a null value if no IP is found 
+        return realIP;       // Will return a null value if no IP is found 
     }
 
     /**

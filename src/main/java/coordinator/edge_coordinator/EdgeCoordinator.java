@@ -19,11 +19,13 @@
 package coordinator.edge_coordinator;
 
 import java.io.IOException;
+
 import java.net.UnknownHostException;
+import java.net.SocketException;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.HashMap;
@@ -74,6 +76,8 @@ public class EdgeCoordinator {
             IP = config.grabIP(); 
         } catch (UnknownHostException e) {
             logger.error("Error: Unable to determine local host IP address.\n" + e);
+        } catch(SocketException e) {
+            logger.error("Error: Could not determine IP address");
         }
 
         // Try to create a serverSocket to listen to requests 
