@@ -16,6 +16,7 @@
  */
 package server.edge_server;
 
+import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.jmx.Server;
 
 import server.server_config.ServerConfig;
 
@@ -50,6 +52,8 @@ public class EdgeServer {
     private static ServerListener coordinatorListener;  // The socket that will be listening to requests from the Edge Coordinator
     private static ServerListener nodeListener;     // The socket that will be listening for Nodes
 
+    private static ServerConfig config;
+
     private static ServerConnectionManager nodeConnectionManager;   // This will manage all connections and check keep alive
     private static ServerConnectionManager coordinatorConnectionManager;
 
@@ -62,8 +66,6 @@ public class EdgeServer {
     // This is the function that will be called first that will have the inital handshake between the Coordinator
     public static void init() {
 
-        ServerConfig config = new ServerConfig();
-
         // Create the connection manager
         nodeConnectionManager = ServerNodeConnectionManager.getInstance();
 
@@ -73,6 +75,8 @@ public class EdgeServer {
             logger.info("\t\tEDGE SERVER\nStarting Server at " + IP + ".");
         } catch (UnknownHostException e) {
             logger.error("Error: Unable to determine local host IP address.\n" + e);
+        } catch (SocketException e) {
+            logger.error("Error: Unable to determine IP Address");
         }
 
         /*          Try to create senders        */
@@ -210,6 +214,18 @@ public class EdgeServer {
     }
 
     public static void main(String[] args) {
+
+        // Create instance ID through command-line args
+
+        String instanceId = args.length > 0 ? args[0] : null; // When starting the server arguments depicting an instance number (i.e. server1, server2)
+
+        if(instanceId != null) {
+            config = new ServerConfig(instanceId);
+            logger.info("Starting Edge Server Instance: " + instanceId);
+        } else {        
+            config = new ServerConfig();
+            logger.info("Starting default server config");
+        }
 
         init();         // Begins the initalization process 
 

@@ -13,6 +13,7 @@
  */
 package node.edge_node;
 
+import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import java.util.LinkedHashMap;
@@ -34,6 +35,7 @@ import node.node_config.NodeConfig;
 import node.node_connections.*;
 
 import node.node_services.*;
+import server.server_config.ServerConfig;
 
 public class EdgeNode {
 
@@ -51,12 +53,12 @@ public class EdgeNode {
     // Timer components
     private static ScheduledExecutorService timerScheduler; //the timer that will send out the keepAlives to server
 
+    private static NodeConfig config;
+
     /*
      *  Initalizes the Edge Node
      */
     public static void init() {
-
-        NodeConfig config = new NodeConfig();
 
         // try/catch to generate the IP from ../config/Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
@@ -65,6 +67,8 @@ public class EdgeNode {
         } catch (UnknownHostException e) {
             logger.error("Error: Unable to determine local host IP address.");
             e.printStackTrace();
+        } catch (SocketException e){
+            logger.error("Error: Unable to determine IP Address");
         }
 
         // Try to connect to the server
@@ -181,6 +185,18 @@ public class EdgeNode {
      */
 
     public static void main(String[] args) {
+
+        // Create instance ID through command-line args
+
+        String instanceId = args.length > 0 ? args[0] : null; // When starting the server arguments depicting an instance number (i.e. server1, server2)
+
+        if(instanceId != null) {
+            config = new NodeConfig(instanceId);
+            logger.info("Starting Edge Node Instance: " + instanceId);
+        } else {        
+            config = new NodeConfig();
+            logger.info("Starting default Node config");
+        }
 
         init();         // Begins the initalization process 
 

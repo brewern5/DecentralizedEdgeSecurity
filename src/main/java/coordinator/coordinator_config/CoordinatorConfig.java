@@ -10,8 +10,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
+import java.net.Inet4Address;
 import java.net.InetAddress;            // Used for grabbing the machine's IP address
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;   // Error for trying to grab IP address
 
 import org.apache.logging.log4j.LogManager;
@@ -41,17 +43,22 @@ public class CoordinatorConfig {
      *   @return a string of the IP if found, if not found then a Null value
      */
 
-    public String grabIP() throws UnknownHostException {
+    public String grabIP() throws UnknownHostException, SocketException {
 
-        // Set the ip to null, to be handled in the caller of this method in case an error occurs
-        String ipAddress = null;
-        
-        InetAddress localHost = InetAddress.getLocalHost();     // Grabs the IP and will convert it to a Java object
-        ipAddress = localHost.getHostAddress();                 // Generates the IP as a string to pass it back to the edge node using it
+        String realIp = null;
 
-        writeToConfig("Coordinator.IP", ipAddress);            // Since the IP will be machine dependant at the moment, just grab the machine IP
+        for(NetworkInterface ni: java.util.Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if(ni.isLoopback() || !ni.isUp()) continue;
+            for(InetAddress addr : java.util.Collections.list(ni.getInetAddresses())) {
+                if(addr instanceof Inet4Address) {
+                    realIp = addr.getHostAddress();
+                    break;
+                }
+            }
+            if(realIp != null) break;
+        }
 
-        return ipAddress;       // Will return a null value if no IP is found 
+        return realIp; 
     }
 
     /**
