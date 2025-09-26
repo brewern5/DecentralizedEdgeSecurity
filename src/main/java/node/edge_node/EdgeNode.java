@@ -13,6 +13,7 @@
  */
 package node.edge_node;
 
+import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import java.util.LinkedHashMap;
@@ -65,6 +66,8 @@ public class EdgeNode {
         } catch (UnknownHostException e) {
             logger.error("Error: Unable to determine local host IP address.");
             e.printStackTrace();
+        } catch (SocketException e) {
+            logger.error("Error: Unable to get IP address");
         }
 
         // Try to connect to the server
