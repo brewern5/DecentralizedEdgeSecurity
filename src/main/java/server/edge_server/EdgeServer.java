@@ -54,6 +54,8 @@ public class EdgeServer {
     private static ServerConnectionManager nodeConnectionManager;   // This will manage all connections and check keep alive
     private static ServerConnectionManager coordinatorConnectionManager;
 
+    private static ServerConfig config;
+
     // Timer components
     private static ScheduledExecutorService timerScheduler; // The timer that will send out to keepAlives to the coordinator and check Node expiry
 
@@ -62,8 +64,6 @@ public class EdgeServer {
      */
     // This is the function that will be called first that will have the inital handshake between the Coordinator
     public static void init() {
-
-        ServerConfig config = new ServerConfig();
 
         // Create the connection manager
         nodeConnectionManager = ServerNodeConnectionManager.getInstance();
@@ -213,6 +213,18 @@ public class EdgeServer {
     }
 
     public static void main(String[] args) {
+
+        // Create instance ID through command-line args
+
+        String instanceId = args.length > 0 ? args[0] : null; // When starting the server arguments depicting an instance number (i.e. server1, server2)
+
+        if(instanceId != null) {
+            config = new ServerConfig(instanceId);
+            logger.info("Starting Edge Server Instance: " + instanceId);
+        } else {        
+            config = new ServerConfig();
+            logger.info("Starting default server config");
+        }
 
         init();         // Begins the initalization process 
 

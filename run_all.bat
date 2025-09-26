@@ -23,8 +23,7 @@ pause
 REM Run all in separate terminals
 cd /d %BASEDIR%\
 
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* coordinator.edge_coordinator.EdgeCoordinator"
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* server.edge_server.EdgeServer"
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* node.edge_node.EdgeNode"
+start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* server.edge_server.EdgeServer server1"
+start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* server.edge_server.EdgeServer server2"
 
 endlocal
