@@ -16,6 +16,7 @@
  */
 package server.edge_server;
 
+import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import java.util.HashMap;
@@ -73,6 +74,8 @@ public class EdgeServer {
             logger.info("\t\tEDGE SERVER\nStarting Server at " + IP + ".");
         } catch (UnknownHostException e) {
             logger.error("Error: Unable to determine local host IP address.\n" + e);
+        } catch (SocketException e) {
+            logger.error("Error: Unable to determine IP Address");
         }
 
         /*          Try to create senders        */

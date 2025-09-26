@@ -10,7 +10,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;            // Used for grabbing the machine's IP address
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;   // Error for trying to grab IP address
 
 import org.apache.logging.log4j.LogManager;
@@ -39,18 +42,22 @@ public class ServerConfig {
      *   @return a string of the IP if found, if not found then a Null value
      */
 
-    public String grabIP() throws UnknownHostException {
+    public String grabIP() throws UnknownHostException, SocketException {
 
-        String ipAddress = null;
-        
-        InetAddress localHost = InetAddress.getLocalHost();     // Grabs the IP and will convert it to a Java object
-        ipAddress = localHost.getHostAddress();                 // Generates the IP as a string to pass it back to the edge node using it
+        String realIp = null;
 
-        writeToConfig("Server.IP", ipAddress);
+        for(NetworkInterface ni: java.util.Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if(ni.isLoopback() || !ni.isUp()) continue;
+            for(InetAddress addr : java.util.Collections.list(ni.getInetAddresses())) {
+                if(addr instanceof Inet4Address) {
+                    realIp = addr.getHostAddress();
+                    break;
+                }
+            }
+            if(realIp != null) break;
+        }
 
-        writeToConfig("Coordinator.IP", ipAddress);
-
-        return ipAddress;       // Will return a null value if no IP is found 
+        return realIp; 
     }
     
 
