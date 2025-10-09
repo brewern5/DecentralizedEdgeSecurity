@@ -19,6 +19,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import coordinator.coordinator_connections.*;
+//  NEW IMPORTS FOR JWT ISSUANCE 
+import coordinator.KeyUtility; 
+import coordinator.JwtService; 
+import coordinator.edge_coordinator.EdgeCoordinator; 
 
 public class CoordinatorInitalizationHandler extends CoordinatorPacketHandler{
 
@@ -58,18 +62,46 @@ public class CoordinatorInitalizationHandler extends CoordinatorPacketHandler{
             // Try and create the sender for the node now that it has a port assigned
             connectionManager.getConnectionInfoById(recievedPacket.getId()).createSender();
 
+            // --- NEW CODE: JWT ISSUANCE (Third-Party Identity) ---
+            try {
+                // 1. Collect required IDs (The received packet ID is the Server ID)
+                String serverId = recievedPacket.getId();
+                
+                // We must retrieve the Coordinator ID, and assign placeholders for Node/Cluster IDs
+                // assuming the packet/connection acts as the primary node for now.
+                String nodeId = serverId;         
+                String clusterId = "CLUSTER_A"; // Placeholder for the shared cluster ID
+
+                // 2. Generate the Token
+                JwtService jwtService = new JwtService();
+                String jwtToken = jwtService.generateToken(
+                    nodeId, serverId, clusterId, null // Passing null for targetNodeId (audience) for general token
+                );
+
+
             // Generates the success response to be put into the ack packet 
             packetResponse = new CoordinatorHandlerResponse(true);
 
             // Add the ID to the payload
             packetResponse.addCustomKeyValuePair("id", recievedPacket.getId());
 
-        } catch(Exception e) {
+            // Attach the generated token to the response payload
+                packetResponse.addCustomKeyValuePair("jwt_token", jwtToken);
+                
+                logger.info("JWT Issued successfully for ID: {}", serverId);
+                
+            } catch (Exception jwtException) {
+                logger.error("Error issuing JWT during initialization for ID {}: {}", recievedPacket.getId(), jwtException);
+                // Fail the initialization if the JWT cannot be issued
+                throw new Exception("JWT issuance failed.", jwtException); 
+            }
+
+            } catch(Exception e) {
             logger.error("Error Handling packet.\n" + e);
             e.printStackTrace();
             // Generates the response to be put into the failure packet
             packetResponse = new CoordinatorHandlerResponse(false, e, "Error Handling Packet.");
-        }
-        return packetResponse;
+            }
+            return packetResponse;
     }
 }
