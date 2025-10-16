@@ -195,6 +195,15 @@ public abstract class NodeSender {
                     });
                 }
 
+                // Set the Cluster Id
+                if(payload.get("clusterId") != null) {
+                    payload.forEach( (k, v) -> {
+                        if(k.equals("clusterId")) {
+                            EdgeNode.setClusterId(v);
+                        }
+                    });
+                }
+
                 // If the packet type is a ACK packet - then it is a good connection made and the Server will close this socket.
                 if (responsePacket.getPacketType() != NodePacketType.ACK) {
                     throw new IllegalStateException("Expected ACK packet, but received: " + responsePacket.getPacketType());

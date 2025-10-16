@@ -16,7 +16,7 @@ public class ServerNodeConnectionManager extends ServerConnectionManager {
     // Step 1: (For my sanity) create an instance variable
     private static ServerNodeConnectionManager instance;
 
-    // Step 3: Get instance (if one is not there it is created then returned)
+    // Step 2: Get instance (if one is not there it is created then returned)
     public static synchronized ServerNodeConnectionManager getInstance() {
         if (instance == null) {
             instance = new ServerNodeConnectionManager();

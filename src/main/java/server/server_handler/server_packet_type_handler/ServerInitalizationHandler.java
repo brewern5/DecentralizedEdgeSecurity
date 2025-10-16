@@ -21,6 +21,8 @@ import org.apache.logging.log4j.Logger;
 
 import server.server_connections.server_connection_manager.*;
 
+import server.server_services.ServerClusterManager;
+
 public class ServerInitalizationHandler extends ServerPacketHandler{
 
     private static final Logger logger = LogManager.getLogger(ServerInitalizationHandler.class);
@@ -63,8 +65,11 @@ public class ServerInitalizationHandler extends ServerPacketHandler{
             // Generates the success response to be put into the ack packet 
             packetResponse = new ServerHandlerResponse(true);
 
-            // Add the ID to the payload
+            // Add the node ID to the payload
             packetResponse.addCustomKeyValuePair("id", recievedPacket.getId());
+
+            // Add the cluster ID to the payload
+            packetResponse.addCustomKeyValuePair("clusterId", clusterId);
 
         } catch(Exception e) {
             logger.error("Error Handling packet\n"+e);

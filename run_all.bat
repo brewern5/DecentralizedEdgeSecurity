@@ -20,11 +20,63 @@ REM All compilation handled by Maven above
 echo Maven compilation complete - all classes ready in target/classes
 pause
 
-REM Run all in separate terminals
+REM Get instance IDs from user input or command line arguments
+echo.
+echo ===== Instance Configuration =====
+echo You can specify instance IDs for the server and node components.
+echo Leave blank to use default configurations.
+echo.
+
+REM Use command line arguments if provided, otherwise prompt for input
+if "%1"=="" (
+    set /p SERVER_INSTANCE="Enter Server Instance ID (e.g., server1, server2, or leave blank for default): "
+) else (
+    set SERVER_INSTANCE=%1
+    echo Using Server Instance ID from command line: %SERVER_INSTANCE%
+)
+
+if "%2"=="" (
+    if "%1"=="" (
+        set /p NODE_INSTANCE="Enter Node Instance ID (e.g., node1, node2, or leave blank for default): "
+    ) else (
+        set /p NODE_INSTANCE="Enter Node Instance ID (e.g., node1, node2, or leave blank for default): "
+    )
+) else (
+    set NODE_INSTANCE=%2
+    echo Using Node Instance ID from command line: %NODE_INSTANCE%
+)
+
+echo.
+if "%SERVER_INSTANCE%"=="" (
+    echo Starting EdgeServer with default configuration
+) else (
+    echo Starting EdgeServer with instance ID: %SERVER_INSTANCE%
+)
+
+if "%NODE_INSTANCE%"=="" (
+    echo Starting EdgeNode with default configuration
+) else (
+    echo Starting EdgeNode with instance ID: %NODE_INSTANCE%
+)
+
+echo Starting EdgeCoordinator with default configuration
+echo.
+pause
+
 cd /d %BASEDIR%\
 
 start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* coordinator.edge_coordinator.EdgeCoordinator"
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* server.edge_server.EdgeServer"
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* node.edge_node.EdgeNode"
+
+if "%SERVER_INSTANCE%"=="" (
+    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* server.edge_server.EdgeServer"
+) else (
+    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* server.edge_server.EdgeServer %SERVER_INSTANCE%"
+)
+
+if "%NODE_INSTANCE%"=="" (
+    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* node.edge_node.EdgeNode"
+) else (
+    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* node.edge_node.EdgeNode %NODE_INSTANCE%"
+)
 
 endlocal

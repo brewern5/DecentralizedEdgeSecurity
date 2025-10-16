@@ -35,11 +35,12 @@ import node.node_config.NodeConfig;
 import node.node_connections.*;
 
 import node.node_services.*;
-import server.server_config.ServerConfig;
 
 public class EdgeNode {
 
     private static volatile String nodeId = null;
+
+    private static volatile String clusterId = null;
 
     private static String IP;
 
@@ -145,6 +146,14 @@ public class EdgeNode {
 
     public static synchronized String getNodeID() {
         return nodeId;
+    }
+
+    public static synchronized void setClusterId(String newClusterId) {
+        clusterId = newClusterId;
+        logger.info("Cluster ID assigned: " + newClusterId);
+    }
+    public static synchronized String getClusterId() {
+        return clusterId;
     }
 
     /*

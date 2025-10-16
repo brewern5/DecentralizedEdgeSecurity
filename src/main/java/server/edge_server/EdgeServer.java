@@ -41,6 +41,8 @@ import server.server_packet.*;
 import server.server_connections.*;
 import server.server_connections.server_connection_manager.*;
 
+import server.server_services.ServerClusterManager;
+
 public class EdgeServer {
 
     private static final Logger logger = LogManager.getLogger(EdgeServer.class);
@@ -58,7 +60,7 @@ public class EdgeServer {
     private static ServerConnectionManager coordinatorConnectionManager;
 
     // Timer components
-    private static ScheduledExecutorService timerScheduler; // The timer that will send out to keepAlives to the coordinator and check Node expiry
+    private static ScheduledExecutorService timerScheduler; // The timer that will send out to keepAlives to the coordinator and check Node expiry   
 
     /*
      *  Initalize the Edge Server
@@ -72,7 +74,7 @@ public class EdgeServer {
         // try to generate the IP from the machines IP - Throws UnknownHostException if it cannot determine
         try{
             IP = config.grabIP();
-            logger.info("\t\tEDGE SERVER\nStarting Server at " + IP + ".");
+            logger.info("\t\tEDGE SERVER\tStarting Server at " + IP);
         } catch (UnknownHostException e) {
             logger.error("Error: Unable to determine local host IP address.\n" + e);
         } catch (SocketException e) {
@@ -155,6 +157,16 @@ public class EdgeServer {
             initializeTimers();
         } catch (Exception e) {
             logger.error("Error creating Timers: \n" + e);
+        }
+
+        /*
+         *     Create cluster ID 
+         */
+
+        try {
+            ServerClusterManager.initializeClusterIdentity();
+        } catch (Exception e) {
+            logger.error("Error creating Cluster ID: " + e);
         }
     }
     /*

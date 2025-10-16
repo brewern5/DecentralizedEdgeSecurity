@@ -21,6 +21,8 @@ import org.apache.logging.log4j.Logger;
 import server.server_connections.server_connection_manager.*;
 import server.server_packet.*;
 
+import server.server_services.ServerClusterManager;
+
 public abstract class ServerPacketHandler {
 
     // Gets sent into the constructor for the child class (E.g. new ServerMessageHandler(ServerCoordinatorConnectionManager.getInstance()))
@@ -33,6 +35,9 @@ public abstract class ServerPacketHandler {
 
     // This is the object that will be instantiated if the packet is handled succesfuly or an error gets thrown
     protected ServerHandlerResponse packetResponse;
+
+    // Cluster ID 
+    protected String clusterId = ServerClusterManager.getClusterId();
 
     // The recieved Packet
     protected ServerPacket recievedPacket;

@@ -58,6 +58,9 @@ public class CoordinatorConfig {
             if(realIp != null) break;
         }
 
+
+        writeToConfig("Coordinator.IP", realIp);
+
         return realIp; 
     }
 

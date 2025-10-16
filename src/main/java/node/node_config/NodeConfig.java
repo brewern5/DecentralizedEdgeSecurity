@@ -13,6 +13,7 @@ import java.io.OutputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.jmx.Server;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;            // Used for grabbing the machine's IP address
@@ -81,6 +82,8 @@ public class NodeConfig {
             }
             if(realIp != null) break;
         }
+
+        writeToConfig("Node.IP", realIp);
 
         return realIp;
     }
