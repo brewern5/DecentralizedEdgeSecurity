@@ -52,12 +52,12 @@ public class EdgeNode {
     // Timer components
     private static ScheduledExecutorService timerScheduler; //the timer that will send out the keepAlives to server
 
+    private static NodeConfig config;
+
     /*
      *  Initalizes the Edge Node
      */
     public static void init() {
-
-        NodeConfig config = new NodeConfig();
 
         // try/catch to generate the IP from ../config/Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
@@ -184,6 +184,17 @@ public class EdgeNode {
      */
 
     public static void main(String[] args) {
+
+        // Create instance ID for the 
+        String instanceId = args.length > 0 ? args[0] : null;
+
+        if(instanceId != null) {
+            config = new NodeConfig(instanceId);
+            logger.info("Starting Node Instance: " + instanceId);
+        } else {
+            config = new NodeConfig();
+            logger.info("Starting Default Node Config.");
+        }
 
         init();         // Begins the initalization process 
 
