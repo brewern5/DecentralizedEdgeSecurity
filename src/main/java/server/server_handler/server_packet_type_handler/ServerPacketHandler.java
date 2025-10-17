@@ -23,9 +23,6 @@ import server.server_packet.*;
 
 public abstract class ServerPacketHandler {
 
-    // Gets sent into the constructor for the child class (E.g. new ServerMessageHandler(ServerCoordinatorConnectionManager.getInstance()))
-    protected static ServerConnectionManager connectionManager;
-
     private static final Logger logger = LogManager.getLogger(ServerPacketHandler.class);
 
     // Stores the recieved payload into a map (key Value) so the 
@@ -37,8 +34,13 @@ public abstract class ServerPacketHandler {
     // The recieved Packet
     protected ServerPacket recievedPacket;
     
+    // Method to dynamically determine which connection manager singleton to use
+    protected abstract ServerConnectionManager getConnectionManager();
+    
     // Tears the packet apart and seperates the head from the body
     public ServerHandlerResponse handle(ServerPacket recievedPacket){
+
+        ServerConnectionManager connectionManager = getConnectionManager();
 
         this.recievedPacket = recievedPacket;
 

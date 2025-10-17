@@ -18,13 +18,28 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import server.server_connections.server_connection_manager.ServerConnectionManager;
+import server.server_connections.server_connection_manager.ServerCoordinatorConnectionManager;
+import server.server_connections.server_connection_manager.ServerNodeConnectionManager;
 
 public class ServerMessageHandler extends ServerPacketHandler{
 
     private static final Logger logger = LogManager.getLogger(ServerMessageHandler.class);
+    
+    // Store the connection manager type or criteria for dynamic selection
+    private final boolean useCoordinatorManager;
 
-    public ServerMessageHandler(ServerConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public ServerMessageHandler(boolean useCoordinatorManager) {
+        this.useCoordinatorManager = useCoordinatorManager;
+    }
+    
+    @Override
+    protected ServerConnectionManager getConnectionManager() {
+        // Dynamically choose which singleton to use based on your criteria
+        if (useCoordinatorManager) {
+            return ServerCoordinatorConnectionManager.getInstance();
+        } else {
+            return ServerNodeConnectionManager.getInstance();
+        }
     }
 
     private int messageCounter = 0;

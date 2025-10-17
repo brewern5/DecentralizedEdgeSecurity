@@ -13,16 +13,27 @@ package server.server_handler.server_packet_type_handler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import server.server_connections.server_connection_manager.ServerConnectionManager;
+import server.server_connections.server_connection_manager.*;
 
 public class ServerKeepAliveHandler extends ServerPacketHandler{
-    
-    private static ServerConnectionManager connectionManager;
 
     private static final Logger logger = LogManager.getLogger(ServerKeepAliveHandler.class);
+    
+    // Store the connection manager type or criteria for dynamic selection
+    private final boolean useCoordinatorManager;
 
-    public ServerKeepAliveHandler(ServerConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public ServerKeepAliveHandler(boolean useCoordinatorManager) {
+        this.useCoordinatorManager = useCoordinatorManager;
+    }
+    
+    @Override
+    protected ServerConnectionManager getConnectionManager() {
+        // Dynamically choose which singleton to use based on your criteria
+        if (useCoordinatorManager) {
+            return ServerCoordinatorConnectionManager.getInstance();
+        } else {
+            return ServerNodeConnectionManager.getInstance();
+        }
     }
 
     @Override

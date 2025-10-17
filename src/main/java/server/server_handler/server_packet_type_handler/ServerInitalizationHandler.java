@@ -24,9 +24,22 @@ import server.server_connections.server_connection_manager.*;
 public class ServerInitalizationHandler extends ServerPacketHandler{
 
     private static final Logger logger = LogManager.getLogger(ServerInitalizationHandler.class);
+    
+    // Store the connection manager type or criteria for dynamic selection
+    private final boolean useCoordinatorManager;
 
-    public ServerInitalizationHandler(ServerConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public ServerInitalizationHandler(boolean useCoordinatorManager) {
+        this.useCoordinatorManager = useCoordinatorManager;
+    }
+    
+    @Override
+    protected ServerConnectionManager getConnectionManager() {
+        // Dynamically choose which singleton to use based on your criteria
+        if (useCoordinatorManager) {
+            return ServerCoordinatorConnectionManager.getInstance();
+        } else {
+            return ServerNodeConnectionManager.getInstance();
+        }
     }
 
     /* This method will be called from the 'PacketHandler' SuperClass's "handle" method.
@@ -55,10 +68,10 @@ public class ServerInitalizationHandler extends ServerPacketHandler{
             }
 
             // Relying on the fact the client should send the port here!
-            connectionManager.getConnectionInfoById(recievedPacket.getId()).setPort(port);
+            getConnectionManager().getConnectionInfoById(recievedPacket.getId()).setPort(port);
 
             // Try and create the sender for the node now that it has a port assigned
-            connectionManager.getConnectionInfoById(recievedPacket.getId()).createSender();
+            getConnectionManager().getConnectionInfoById(recievedPacket.getId()).createSender();
 
             // Generates the success response to be put into the ack packet 
             packetResponse = new ServerHandlerResponse(true);

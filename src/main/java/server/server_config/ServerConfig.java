@@ -86,6 +86,8 @@ public class ServerConfig {
             if(realIp != null) break;
         }
 
+        writeToConfig("Server.IP", realIp);
+
         return realIp; 
     }
     

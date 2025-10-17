@@ -65,16 +65,16 @@ public class ServerConnectionInfo {
     public void createSender() {
 
         if(port == 0) {
-            logger.error("Port is not set for Node " + id +"!");
+            logger.error("Port is not set for: " + id +"!");
             return;
         }
         // Create sender for this node
         try {
             this.sender = new ServerPacketSender(ip, port);
             hasSender = true;
-            logger.info("Sender Created for Node: " + id + " - " + ip +":" + port);
+            logger.info("Sender Created for: " + id + " - at:  " + ip +":" + port);
         } catch (Exception e) {
-            logger.error("Failed to create sender for node " + id + ":" + port + "\n" + e);
+            logger.error("Failed to create sender for: " + id + ":" + port + "\n" + e);
         }
     }
 

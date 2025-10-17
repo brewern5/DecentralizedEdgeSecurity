@@ -205,8 +205,8 @@ public class ServerCoordinatorHandler implements Runnable {
 
                         logger.info("Recieved:" + coordinatorPacket.toJson());
 
-                        // Create the packetType based handler
-                        packetHandler = new ServerMessageHandler(coordinatorConnectionManager);
+                        // Create the packetType based handler (true = use CoordinatorConnectionManager)
+                        packetHandler = new ServerMessageHandler(true);
 
                         // Allow for the packet response to be created based on the handling response
                         packetResponse = packetHandler.handle(coordinatorPacket); 
@@ -232,8 +232,8 @@ public class ServerCoordinatorHandler implements Runnable {
 
                         logger.info("Recieved:\n\t" + coordinatorPacket.toJson());
 
-                        // Create the packetType based handler
-                        packetHandler = new ServerKeepAliveHandler(coordinatorConnectionManager);
+                        // Create the packetType based handler (true = use CoordinatorConnectionManager)
+                        packetHandler = new ServerKeepAliveHandler(true);
 
                         // Allow for the packet response to be created based on the handling response
                         packetResponse = packetHandler.handle(coordinatorPacket); 

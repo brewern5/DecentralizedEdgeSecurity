@@ -227,8 +227,8 @@ public class ServerNodeHandler implements Runnable {
                         // Set the ID so we can use it in the handler
                         nodePacket.setId(nodeId);
 
-                        // Create the packetType based handler
-                        packetHandler = new ServerInitalizationHandler(nodeConnectionManager);
+                        // Create the packetType based handler (false = use NodeConnectionManager)
+                        packetHandler = new ServerInitalizationHandler(false);
 
                         // Allow for the packet response to be created based on the handling response
                         packetResponse = packetHandler.handle(nodePacket); 
@@ -258,8 +258,8 @@ public class ServerNodeHandler implements Runnable {
 
                         logger.info("Recieved:\n\t" + nodePacket.toJson());
 
-                        // Create the packetType based handler
-                        packetHandler = new ServerMessageHandler(nodeConnectionManager);
+                        // Create the packetType based handler (false = use NodeConnectionManager)
+                        packetHandler = new ServerMessageHandler(false);
 
                         // Allow for the packet response to be created based on the handling response
                         packetResponse = packetHandler.handle(nodePacket); 
@@ -287,8 +287,8 @@ public class ServerNodeHandler implements Runnable {
 
                         logger.info("Recieved:\n\t" + nodePacket.toJson());
 
-                        // Create the packetType based handler
-                        packetHandler = new ServerKeepAliveHandler(nodeConnectionManager);
+                        // Create the packetType based handler (false = use NodeConnectionManager)
+                        packetHandler = new ServerKeepAliveHandler(false);
 
                         // Allow for the packet response to be created based on the handling response
                         packetResponse = packetHandler.handle(nodePacket); 
