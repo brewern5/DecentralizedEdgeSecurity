@@ -63,10 +63,18 @@ public class NodeConfig {
             instanceProperties.load(in);
             in.close();
             logger.info("Loaded instance config for: " + instanceId + " from path: " + instanceConfigPath);
+            logger.info("Instance config contains " + instanceProperties.size() + " properties:");
+            for (String key : instanceProperties.stringPropertyNames()) {
+                logger.info("  " + key + " = " + instanceProperties.getProperty(key));
+            }
         } catch(IOException e) {
             logger.error("No instance config found for: " + instanceId + ". using default config instead.");
             instanceProperties = properties;
             instanceConfigPath = null; // Clear the failed path so writeToConfig uses default
+            logger.info("Fallback to default config contains " + instanceProperties.size() + " properties:");
+            for (String key : instanceProperties.stringPropertyNames()) {
+                logger.info("  " + key + " = " + instanceProperties.getProperty(key));
+            }
         }
     }
 
@@ -130,10 +138,13 @@ public class NodeConfig {
 
         int port = 0;
         try{
-            port = Integer.parseInt(instanceProperties.getProperty(key));
+            String portString = instanceProperties.getProperty(key);
+            port = Integer.parseInt(portString);
+            logger.info("Retrieved port for key '" + key + "': " + port + " from " + 
+                       (instanceId != null ? "instance config (ID: " + instanceId + ")" : "default config"));
 
         } catch (Exception e){
-            logger.error("Error getting port from config file!" + e);
+            logger.error("Error getting port from config file for key '" + key + "': " + e);
         }
         return port;
     }
