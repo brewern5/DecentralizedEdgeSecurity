@@ -22,5 +22,5 @@ cd "$BASEDIR"
 # Run all in separate terminals
 
 # Server 1 Nodes
-gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* node.edge_node.EdgeNode node1.1; exec bash" &
-gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* node.edge_node.EdgeNode node1.2; exec bash" &
+gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* node.edge_node.EdgeNode node1-1; exec bash" &
+gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* node.edge_node.EdgeNode node1-2; exec bash" &

@@ -58,7 +58,7 @@ public class NodeConfig {
 
         // Try to open specific instance file - if not it will load the default one
         try {
-            instanceConfigPath = "config/node_config/serverConfig_" + instanceId + ".properties";
+            instanceConfigPath = "config/node_config/nodeConfig_" + instanceId + ".properties";
             FileInputStream in = new FileInputStream(instanceConfigPath);
             instanceProperties.load(in);
             in.close();
