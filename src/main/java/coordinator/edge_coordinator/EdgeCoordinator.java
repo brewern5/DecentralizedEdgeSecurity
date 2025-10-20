@@ -39,6 +39,7 @@ import coordinator.coordinator_listener.CoordinatorListener;
 
 import coordinator.coordinator_packet.*;
 import coordinator.coordinator_packet.coordinator_packet_class.*;
+import node.node_config.NodeConfig;
 import coordinator.coordinator_connections.*;
 
 public class EdgeCoordinator {
@@ -55,14 +56,13 @@ public class EdgeCoordinator {
 
     private static ScheduledExecutorService timerScheduler;
 
+    private static CoordinatorConfig config;
+
     /*
      *  Initalizes the Node Coordinator - This will be the first thing that runs when the Node Coordinator is started up
      */
 
     public static void init() {
-
-        // Create a config object to access the properties file
-        CoordinatorConfig config = new CoordinatorConfig();
 
         // Give the Coordinator an ID
         setCoordinatorId(UUID.randomUUID().toString());
@@ -146,6 +146,17 @@ public class EdgeCoordinator {
      *          MAIN
      */
     public static void main(String[] args) {
+
+        String instanceId = args.length > 0 ? args[0] : null; // Can start multiple instances of the Coordinator that can load the
+
+        if(instanceId != null) {
+            // Start up new instance of a coordinator with a specific config file
+            config = new CoordinatorConfig(instanceId);
+            logger.info("Starting Coordinator Instance with ID: {}", instanceId);
+        } else {
+            config = new CoordinatorConfig();
+            logger.info("Starting default Coordinator Config");
+        }
 
         init();         // Begins the initalization process 
 

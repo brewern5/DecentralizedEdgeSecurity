@@ -25,7 +25,12 @@ public class CoordinatorConfig {
 
     private static final Logger logger = LogManager.getLogger(CoordinatorConfig.class);
 
-    private static Properties properties = new Properties();      // Generate the properties object
+    private static Properties properties = new Properties();      // Generate the default properties object
+    private Properties instanceProperties; // If the coordinator has multiple instances, will load the corrisponding properties file
+    private String instanceId; // ID for the instance 
+    
+    private static String defaultConfigPath = "config/coordinator_config/coordinatorConfig.properties";
+    private String instanceConfigPath;
 
     static {
         try {
@@ -38,6 +43,39 @@ public class CoordinatorConfig {
         }
     }
 
+    // Default coordinator config (No Instance ID)
+    public CoordinatorConfig() {
+        this.instanceProperties = properties;
+        this.instanceId = null;
+    }
+
+    // Instance of Coordinator
+    public CoordinatorConfig(String instanceId) {
+        this.instanceId = instanceId;
+        this.instanceProperties = new Properties();
+
+        // Try to open specific instance file - if not it will load the default one
+        try {
+            instanceConfigPath = "config/coordinator_config/coordinatorConfig_" + instanceId + ".properties";
+            FileInputStream in = new FileInputStream(instanceConfigPath);
+            instanceProperties.load(in);
+            in.close();
+            logger.info("Loaded instance config for: " + instanceId + " from path: " + instanceConfigPath);
+            logger.info("Instance config contains " + instanceProperties.size() + " properties:");
+            for (String key : instanceProperties.stringPropertyNames()) {
+                logger.info("  " + key + " = " + instanceProperties.getProperty(key));
+            }
+        } catch(IOException e) {
+            logger.error("No instance config found for: " + instanceId + ". using default config instead.");
+            instanceProperties = properties;
+            instanceConfigPath = null; // Clear the failed path so writeToConfig uses default
+            logger.info("Fallback to default config contains " + instanceProperties.size() + " properties:");
+            for (String key : instanceProperties.stringPropertyNames()) {
+                logger.info("  " + key + " = " + instanceProperties.getProperty(key));
+            }
+        }
+    }
+    
     /**
      *   Grabs the machines IP and will return the IP.
      *   @return a string of the IP if found, if not found then a Null value
@@ -58,7 +96,6 @@ public class CoordinatorConfig {
             if(realIp != null) break;
         }
 
-
         writeToConfig("Coordinator.IP", realIp);
 
         return realIp; 
@@ -74,9 +111,10 @@ public class CoordinatorConfig {
         // Set port to 0 to indicate an issue accessing the properties file or the key
         int port = 0;
         try{
-            // Try and get the port by the key sent to this method
-            port = Integer.parseInt(properties.getProperty(key));
-
+            String portString = instanceProperties.getProperty(key);
+            port = Integer.parseInt(portString);
+            logger.info("Retrieved port for key '" + key + "': " + port + " from " + 
+                (instanceId != null ? "instance config (ID: " + instanceId + ")" : "default config"));
         } catch (Exception e){
             logger.error("Error getting port from config file!\n" + e);
         }
@@ -95,54 +133,59 @@ public class CoordinatorConfig {
         return IP;
     }
 
+    private OutputStream openFile(String filePath) throws IOException {
+
+        OutputStream out;
+
+        try{
+            out = new FileOutputStream(filePath);
+            return out;
+        } catch (Exception e) {
+            logger.error("File from path: {}, could not be opened!", filePath);
+        }
+
+        throw new IOException("Could not open File from path: " + filePath + " could not be opened!");
+    }
+
     /**
      *  Will try to write/overwrite a key/value pair in config.properties    
      *  @param key - will look for this key in the config, if not there it will write it there
      *  @param value - the value to the key that will be inserted once the key is either found or written
      */
-
     public void writeToConfig(String key, String value) {
 
         // Trying to check to see if the config file has the node key, whatever that may be
         try{
 
-            // If the key is already in the file, this will add the value
-            if(properties.getProperty(key) != null){
+            // Set the property in the instance properties
+            instanceProperties.setProperty(key, value);
 
-                // Set a new (or existing, can overwrite!) key/value pair inside the properties fils
-                properties.setProperty(key, value);
+            // Determine which file path to use - instance config if available, otherwise default
+            String configPath = (instanceId != null && instanceConfigPath != null) ? instanceConfigPath : defaultConfigPath;
 
-                // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("config/coordinator_config/coordinatorConfig.properties")){
-                    properties.store(outputStream, null);
-                } catch(IOException ioe) {
-                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + ioe);
-                } catch(Exception e) {
-                    logger.error("Unhandled Exception!\n" + e);
+            // Write the key/value back to the appropriate file
+            try(OutputStream outputStream = openFile(configPath)){
+                instanceProperties.store(outputStream, null);
+                logger.info("Overwrote:\t Key: ( " + key + " )\t Value: ( " + value + " ) in file: " + configPath);
+            } catch(IOException ioe) {
+                logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file: " + configPath + "\n" + ioe);
+                
+                // If instance config fails and we were trying to write to instance, fall back to default
+                if(instanceId != null && instanceConfigPath != null && !configPath.equals(defaultConfigPath)) {
+                    logger.info("Falling back to default config file...");
+                    try(OutputStream outputStream = openFile(defaultConfigPath)) {
+                        instanceProperties.store(outputStream, null);
+                        logger.info("Overwrote:\t Key: ( " + key + " )\t Value: ( " + value + " ) in default file: " + defaultConfigPath);
+                    } catch(IOException e) {
+                        logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to default config file!\n" + e);
+                    }
                 }
-
-                logger.warn("Overwrote:\t Key: ( " + key + " )\t Value: ( " + value + " )");
-            } 
-            else if(properties.getProperty(key) == null){
-
-                properties.setProperty(key, value);
-
-                // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("config/coordinator_config/coordinatorConfig.properties")){
-                    properties.store(outputStream, null);
-                } catch(IOException ioe) {
-                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + ioe);
-                } catch(Exception e) {
-                    logger.error("Unknown Error adding contents to file!\n" + e);
-                }
-            }
-            else {
-                // Error handling the key/value and or the file itself.
-                throw new Exception("Unknown Error handling Key/Value for the config file!\n");
+            } catch(Exception e) {
+                logger.error("Unknown error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + e);
             }
 
         }catch (Exception e) { // Generic Exception
-            logger.error("Error finding key: ( " + key + " ) from config file!\n" + e);
+            logger.error("Error writing key: ( " + key + " ) to config file!\n" + e);
         }
     }
 }

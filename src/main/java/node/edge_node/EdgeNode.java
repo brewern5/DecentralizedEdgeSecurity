@@ -64,7 +64,7 @@ public class EdgeNode {
         // try/catch to generate the IP from ../config/Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
             IP = config.grabIP();
-            logger.info("Starting Node at " + IP + ".");
+            logger.info("Starting Node at " + IP);
         } catch (UnknownHostException e) {
             logger.error("Error: Unable to determine local host IP address.");
             e.printStackTrace();
@@ -74,8 +74,10 @@ public class EdgeNode {
 
         // Try to connect to the server
         try {
+            // init connection with the server
             serverConnectionManager = NodeConnectionManager.getInstance();
 
+            // Add connection to connection manager
             serverConnectionManager.addConnection(
                 new NodeConnectionInfo(
                     "1",
@@ -85,6 +87,7 @@ public class EdgeNode {
                 )
             );
 
+            // Create and store payload for INITALIZATION packet
             LinkedHashMap<String, String> payload = new LinkedHashMap<>();
             payload.put(
                 "Node.listeningPort", 
@@ -98,6 +101,7 @@ public class EdgeNode {
                 payload
             );  
 
+            // Send and get confirmation (ACK packet from server)
             serverConnectionManager.getConnectionInfoById("1").createSender();
             boolean sent = serverConnectionManager.getConnectionInfoById("1").send(initPacket);
 
@@ -201,7 +205,7 @@ public class EdgeNode {
 
         if(instanceId != null) {
             config = new NodeConfig(instanceId);
-            logger.info("Starting Edge Node Instance: " + instanceId);
+            logger.info("Starting Edge Node Instance with ID: {}", instanceId);
         } else {        
             config = new NodeConfig();
             logger.info("Starting default Node config");

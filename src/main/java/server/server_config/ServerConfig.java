@@ -61,9 +61,18 @@ public class ServerConfig {
             instanceProperties.load(in);
             in.close();
             logger.info("Loaded instance config for: " + instanceId);
+            logger.info("Instance config contains " + instanceProperties.size() + " properties:");
+            for (String key : instanceProperties.stringPropertyNames()) {
+                logger.info("  " + key + " = " + instanceProperties.getProperty(key));
+            }
         } catch(IOException e) {
-            logger.info("No Instance config found for: " + instanceId + "using default config instead");
+            logger.error("No instance config found for: " + instanceId + ". using default config instead.");
             instanceProperties = properties;
+            instanceConfigPath = null; // Clear the failed path so writeToConfig uses default
+            logger.info("Fallback to default config contains " + instanceProperties.size() + " properties:");
+            for (String key : instanceProperties.stringPropertyNames()) {
+                logger.info("  " + key + " = " + instanceProperties.getProperty(key));
+            }
         }
     }
 
@@ -101,8 +110,10 @@ public class ServerConfig {
 
         int port = 0;
         try{
-            port = Integer.parseInt(properties.getProperty(key));
-
+            String portString = instanceProperties.getProperty(key);
+            port = Integer.parseInt(portString);
+            logger.info("Retrieved port for key '" + key + "': " + port + " from " + 
+                (instanceId != null ? "instance config (ID: " + instanceId + ")" : "default config"));
         } catch (Exception e){
             logger.error("Error getting port with key: {}", key);
         }
@@ -145,47 +156,35 @@ public class ServerConfig {
         // Trying to check to see if the config file has the node key, whatever that may be
         try{
 
-            // If the key is already in the file, this will add the value
-            if(properties.getProperty(key) != null){
+            // Set the property in the instance properties
+            instanceProperties.setProperty(key, value);
 
-                properties.setProperty(key, value);
+            // Determine which file path to use - instance config if available, otherwise default
+            String configPath = (instanceId != null && instanceConfigPath != null) ? instanceConfigPath : defaultConfigPath;
 
-                // Write the new key/value back to the file
-                try(OutputStream outputStream = openFile(instanceConfigPath)){
-                    instanceProperties.store(outputStream, null);
-                    logger.info("Overwrote:\t Key: ( " + key + " )\t Value: ( " + value + " )");
-                } catch(IOException ioe) {
-                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + ioe + "\n\t Trying to open default path...");
+            // Write the key/value back to the appropriate file
+            try(OutputStream outputStream = openFile(configPath)){
+                instanceProperties.store(outputStream, null);
+                logger.info("Overwrote:\t Key: ( " + key + " )\t Value: ( " + value + " ) in file: " + configPath);
+            } catch(IOException ioe) {
+                logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file: " + configPath + "\n" + ioe);
+                
+                // If instance config fails and we were trying to write to instance, fall back to default
+                if(instanceId != null && instanceConfigPath != null && !configPath.equals(defaultConfigPath)) {
+                    logger.info("Falling back to default config file...");
                     try(OutputStream outputStream = openFile(defaultConfigPath)) {
                         instanceProperties.store(outputStream, null);
-                        logger.info("Overwrote:\t Key: ( " + key + " )\t Value: ( " + value + " )");
+                        logger.info("Overwrote:\t Key: ( " + key + " )\t Value: ( " + value + " ) in default file: " + defaultConfigPath);
                     } catch(IOException e) {
-                        logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + ioe);
+                        logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to default config file!\n" + e);
                     }
-                } catch(Exception e) {
-                    logger.error("Unknown error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + e);
                 }
-            } 
-            else if(properties.getProperty(key) == null){
-
-                properties.setProperty(key, value);
-
-                // Write the new key/value back to the file
-                try(OutputStream outputStream = new FileOutputStream("config/server_config/serverConfig.properties")){
-                    properties.store(outputStream, null);
-                } catch(IOException ioe) {
-                    logger.error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + ioe);
-                } catch(Exception e) {
-                    logger.error("Unknown Error writing value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + e);
-                }
-            }
-            else {
-                // Error handling the key/value and or the file itself.
-                throw new Exception("Unknown Error handling Key/Value for the config file!\n");
+            } catch(Exception e) {
+                logger.error("Unknown error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + e);
             }
 
         }catch (Exception e) { // Generic Exception
-            logger.error("Error finding key: ( " + key + " ) from config file!\n" + e);
+            logger.error("Error writing key: ( " + key + " ) to config file!\n" + e);
         }
 
     }
