@@ -95,6 +95,11 @@ public class ServerConfig {
             if(realIp != null) break;
         }
         
+        // For local testing only
+        // TODO: REMOVE IN DEPLOYMENT
+        writeToConfig("Coordinator.IP", realIp);
+
+
         writeToConfig("Server.IP", realIp);
 
         return realIp;
