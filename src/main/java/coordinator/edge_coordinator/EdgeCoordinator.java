@@ -199,7 +199,8 @@ public class EdgeCoordinator {
                     }
                     int serverNum = in.nextInt();
                     if(!servers.get(serverNum).isEmpty()) {
-                        serverConnectionManager.getConnectionInfoById(servers.get(serverNum))
+                        new CoordinatorConnectionDtoManager(
+                            serverConnectionManager.getConnectionInfoById(servers.get(serverNum)))
                             .send(messagePacket);
                         hasNum = true;
                     }

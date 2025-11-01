@@ -7,7 +7,7 @@
  *      This is desined as a Singleton Pattern, to prevent multiple instances of this connection map.
  *      
  */
-package server.server_connections.server_connection_manager;
+package node.node_connections.node_connection_manager;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -16,56 +16,56 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import server.edge_server.EdgeServer;
+import node.edge_node.EdgeNode;
 
-import server.server_connections.ServerConnectionDto;
-import server.server_connections.ServerConnectionDtoManager;
-import server.server_connections.ServerPriority;
+import node.node_connections.NodeConnectionDto;
+import node.node_connections.NodeConnectionDtoManager;
+import node.node_connections.NodePriority;
 
-import server.server_packet.*;
+import node.node_packet.*;
 
-import server.server_services.ServerKeepAliveService;
+import node.node_services.NodeKeepAliveService;
 
-public abstract class ServerConnectionManager {
+public abstract class NodeConnectionManager {
 
     /*
      *      Abstraction methods
      */
 
-    public abstract boolean sendKeepAlive(ServerPacket packet);
+    public abstract boolean sendKeepAlive(NodePacket packet);
 
-    protected final Map<String, ServerConnectionDto> activeConnections = new ConcurrentHashMap<>();
+    protected final Map<String, NodeConnectionDto> activeConnections = new ConcurrentHashMap<>();
 
     // Each class can have its own logger instance
-    private static final Logger logger = LogManager.getLogger(ServerConnectionManager.class);
+    private static final Logger logger = LogManager.getLogger(NodeConnectionManager.class);
 
     public void checkExpiredConnections() {
 
         // Create an iterator for the ConccurentHashMap since it needs an iterator
-        Iterator<Map.Entry<String , ServerConnectionDto>> iterator =
+        Iterator<Map.Entry<String , NodeConnectionDto>> iterator =
             activeConnections.entrySet().iterator();
 
         while(iterator.hasNext()) {
             // Check if each entry is expired, if it is, check the priority to see if it needs to be removed or kept alive
-            Map.Entry<String, ServerConnectionDto> entry = iterator.next();
-            if(new ServerConnectionDtoManager(entry.getValue()).isExpired()){
+            Map.Entry<String, NodeConnectionDto> entry = iterator.next();
+            if(new NodeConnectionDtoManager(entry.getValue()).isExpired()){
                 
-                if(entry.getValue().getPriority() == ServerPriority.CRITICAL){
+                if(entry.getValue().getPriority() == NodePriority.CRITICAL){
 
-                    ServerPacket keepAliveProbe =  
-                        ServerKeepAliveService.createKeepAliveProbe(
-                            EdgeServer.getServerId(),
+                    NodePacket keepAliveProbe =  
+                        NodeKeepAliveService.createKeepAlivePacket(
+                            EdgeNode.getNodeID(),
                             entry.getValue().getId()
                         );
 
-                    boolean sendSuccess = new ServerConnectionDtoManager(entry.getValue()).send( keepAliveProbe );
+                    boolean sendSuccess = new NodeConnectionDtoManager(entry.getValue()).send( keepAliveProbe );
                     if(!sendSuccess) {
-                        logger.warn("Connection with Node: {} has been terminated due to failed retry!", entry.getValue().getId());
+                        logger.warn("Connection with Server: {} has been terminated due to failed retry!", entry.getValue().getId());
                         terminateConnection(entry.getValue().getId());
                     }
                 }
                 else {
-                    logger.warn("Connection with Node: {} has been terminated due to priority status!", entry.getValue().getId()); 
+                    logger.warn("Connection with Server: {} has been terminated due to priority status!", entry.getValue().getId()); 
                     terminateConnection(entry.getValue().getId());
                 }
             }
@@ -77,7 +77,7 @@ public abstract class ServerConnectionManager {
      */
 
     public void terminateConnection(String id) {
-        ServerConnectionDto remove = activeConnections.get(id);
+        NodeConnectionDto remove = activeConnections.get(id);
         logger.info("Terminated Connection: \n  ID:" + remove.getId() 
             + "\n  IP - " + remove.getIp() + ":" + remove.getPort()
         );
@@ -89,15 +89,15 @@ public abstract class ServerConnectionManager {
      */
 
     // Can allow for multiple connections to be added at once(if needed)
-    public void addConnection(ServerConnectionDto... connection) {
-        for(ServerConnectionDto connected : connection) {
+    public void addConnection(NodeConnectionDto... connection) {
+        for(NodeConnectionDto connected : connection) {
             activeConnections.put(connected.getId(), connected);
         }
     }
 
     // When recieving a 
     public void updateById(String id, Object updator) {
-        ServerConnectionDto updatee = activeConnections.get(id);
+        NodeConnectionDto updatee = activeConnections.get(id);
 
         // TODO: Figure out a system for updating
 
@@ -107,11 +107,11 @@ public abstract class ServerConnectionManager {
     /*
      *      Getters
      */
-    public ServerConnectionDto getConnectionInfoById(String id) {
+    public NodeConnectionDto getConnectionInfoById(String id) {
         return activeConnections.get(id);
     }
 
-    public Map<String, ServerConnectionDto> getActiveConnections() {
+    public Map<String, NodeConnectionDto> getActiveConnections() {
         return activeConnections;
     }
 
@@ -123,7 +123,7 @@ public abstract class ServerConnectionManager {
 
         int connectionCount = 0;
 
-        Iterator<Map.Entry<String , ServerConnectionDto>> iterator =
+        Iterator<Map.Entry<String , NodeConnectionDto>> iterator =
             activeConnections.entrySet().iterator();
 
         while(iterator.hasNext()){

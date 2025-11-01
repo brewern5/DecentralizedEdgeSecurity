@@ -8,6 +8,7 @@
 
 package server.server_connections.server_connection_manager;
 
+import server.server_connections.ServerConnectionDtoManager;
 import server.server_connections.ServerPriority;
 import server.server_packet.*;
 
@@ -32,7 +33,7 @@ public class ServerNodeConnectionManager extends ServerConnectionManager {
 
                 boolean keptAlive;
 
-                keptAlive = connection.send(keepAliveProbe);
+                keptAlive = new ServerConnectionDtoManager(connection).send(keepAliveProbe);
 
                 // If the packet fails to send
                 if(!keptAlive) {

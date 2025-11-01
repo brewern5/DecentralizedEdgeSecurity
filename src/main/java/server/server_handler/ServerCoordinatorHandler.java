@@ -25,6 +25,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -36,7 +39,6 @@ import org.apache.logging.log4j.Logger;
 
 import server.edge_server.EdgeServer;
 
-import server.server_connections.server_connection_manager.*;
 import server.server_handler.server_packet_type_handler.*;
 
 import server.server_lib.RuntimeTypeAdapterFactory;
@@ -53,16 +55,72 @@ public class ServerCoordinatorHandler implements Runnable {
 
     private BufferedReader reader;
 
-    private ServerConnectionManager coordinatorConnectionManager = ServerCoordinatorConnectionManager.getInstance();
-
     private ServerPacket coordinatorPacket;
+
+    // This will will be instantiated based on the PacketType that needs to handle this. I.e initalizationHandler
+    ServerPacketHandler packetHandler; 
 
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private ServerPacket responsePacket;
 
+    private ServerHandlerResponse packetResponse;
+
+    // Dictionary for lookup to handle different packet types
+    private final Map<ServerPacketType, Function<ServerPacket, Void>> actionMap = new HashMap<>();
+
     // Constructor
     public ServerCoordinatorHandler(Socket socket) {
         this.coordinatorSocket = socket;
+        initActionMap();
+    }
+
+    private void initActionMap() {
+        actionMap.put(ServerPacketType.MESSAGE, this::handleMessage);
+        actionMap.put(ServerPacketType.KEEP_ALIVE, this::handleKeepAlive);
+    }
+
+    private void generatePacketResponse(ServerPacket coordinatorPacket) {
+        // Allow for the packet response to be created based on the handling response
+        packetResponse = packetHandler.handle(coordinatorPacket);
+
+        // If good send ack
+        if (packetResponse.getSuccess() == true) {
+
+            // Construct the ack packet
+            ack(packetResponse);
+        } else if (packetResponse.getSuccess() == false) {
+            logger.error("Error Handling Packet of Type: \tINITIALIZATION\n\tDetails:");
+
+            // Detail the errors
+            packetResponse.printMessages();
+
+            // Construct the failure packet based on the response
+            failure(packetResponse);
+        }
+    }
+
+    /*
+     * 
+     *          Actions 
+     * 
+     */
+
+    private void readAction(ServerPacketType packetAction, ServerPacket coordinatorPacket) {
+        // Dictionary lookup
+        actionMap.get(packetAction).apply(coordinatorPacket);
+
+        // Handle the packet
+        generatePacketResponse(coordinatorPacket);
+    }
+
+    private Void handleMessage(ServerPacket coordinatorPacket) {
+
+        return null;
+    }
+
+    private Void handleKeepAlive(ServerPacket coordinatorPacket) {
+
+        return null;
     }
 
     /*
@@ -177,10 +235,7 @@ public class ServerCoordinatorHandler implements Runnable {
             String json = payload;
 
             // Checks if empty packet
-            if (json != null) {
-                ServerPacketHandler packetHandler;    // This will will be instantiated based on the PacketType that needs to handle this. I.e initalizationHandler
-
-                ServerHandlerResponse packetResponse; // The response from the handling of the packet.    
+            if (json != null) {    
                 
                 // Grabs the server IP in order to be saved in config file
                 coordinatorIP = coordinatorSocket.getInetAddress().toString();
@@ -194,67 +249,12 @@ public class ServerCoordinatorHandler implements Runnable {
                 // Covert the string to the ENUM packetType
                 ServerPacketType packetType = ServerPacketType.valueOf(packetTypeStr);
 
-                // Checks the packet type to determine how it needs to handle it
-                switch (packetType) {
-                    case AUTH:
-                        // TODO: Handle authentication logic
-                        break;
-                    case MESSAGE:
-                        // Builds the packet to be handled
-                        coordinatorPacket = buildGsonWithPacketSubtype(packetType, json);
-
-                        logger.info("Recieved:" + coordinatorPacket.toJson());
-
-                        // Create the packetType based handler
-                        packetHandler = new ServerMessageHandler(coordinatorConnectionManager);
-
-                        // Allow for the packet response to be created based on the handling response
-                        packetResponse = packetHandler.handle(coordinatorPacket); 
-
-                        // If good send ack
-                        if(packetResponse.getSuccess() == true){
-                            // Construct the ack packet
-                            ack(packetResponse);
-                        }
-                        else if(packetResponse.getSuccess() == false){
-                            logger.error("Error Handling Packet of Type: \t MESSAGE \n\t Details:");
-
-                            // Detail the errors
-                            packetResponse.printMessages();
-                          
-                            // Construct the failure packet based on the response
-                            failure(packetResponse);
-                        }
-                        break;
-                    case KEEP_ALIVE:
-                        // Builds the packet to be handled
-                        coordinatorPacket = buildGsonWithPacketSubtype(packetType, json);
-
-                        logger.info("Recieved:\n\t" + coordinatorPacket.toJson());
-
-                        // Create the packetType based handler
-                        packetHandler = new ServerKeepAliveHandler(coordinatorConnectionManager);
-
-                        // Allow for the packet response to be created based on the handling response
-                        packetResponse = packetHandler.handle(coordinatorPacket); 
-
-                        // If good send ack
-                        if(packetResponse.getSuccess() == true){
-                            // Construct the ack packet
-                            ack(packetResponse);
-                        }
-                        else if(packetResponse.getSuccess() == false){
-                            logger.error("Error Handling Packet of Type: \t MESSAGE \n\t Details:");
-                            // Detail the errors
-                            packetResponse.printMessages();
-                          
-                            // Construct the failure packet based on the response
-                            failure(packetResponse);
-                        }
-                        break;
-                    default:
-                        // TODO: Handle unknown or unsupported packet types
-                        break;
+                try {
+                    coordinatorPacket = buildGsonWithPacketSubtype(packetType, json);
+                    readAction(packetType, coordinatorPacket);
+                } catch(IllegalArgumentException e) {
+                    logger.error("Recieved unknown packet of type: " + packetTypeStr);
+                    return; // Early exit
                 }
             }
         } catch (IOException e) {

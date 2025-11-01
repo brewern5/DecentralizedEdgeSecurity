@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.jmx.Server;
 
 import server.server_config.ServerConfig;
 
@@ -87,7 +86,7 @@ public class EdgeServer {
             coordinatorConnectionManager = ServerCoordinatorConnectionManager.getInstance();
             
             coordinatorConnectionManager.addConnection(
-                new ServerConnectionInfo(
+                new ServerConnectionDto(
                     "1",  // TEMP Will update when get the ack respones
                     config.getIPByKey("Coordinator.IP"), 
                     config.getPortByKey("Coordinator.listeningPort"),
@@ -108,8 +107,7 @@ public class EdgeServer {
                 payload
             );  
 
-            coordinatorConnectionManager.getConnectionInfoById("1").createSender();
-            coordinatorConnectionManager.getConnectionInfoById("1").send(initPacket);
+            new ServerConnectionDtoManager(coordinatorConnectionManager.getConnectionInfoById("1")).send(initPacket);
             
         } catch (Exception e) {
             logger.error("Error Sending Initalization Packet: " + e);
@@ -291,10 +289,9 @@ public class EdgeServer {
                         }
                         int nodeNum = in.nextInt();
                         if(!nodes.get(nodeNum).isEmpty()) {
-                            nodeConnectionManager.getConnectionInfoById(nodes.get(nodeNum))
-                                .createSender();
-                            nodeConnectionManager.getConnectionInfoById(nodes.get(nodeNum))
-                                .send(messagePacket);
+                            new ServerConnectionDtoManager(
+                                nodeConnectionManager.getConnectionInfoById(nodes.get(nodeNum))
+                            ).send(messagePacket);
                             hasNum = true;
                         }
                         else if(trys > 2){
@@ -304,7 +301,9 @@ public class EdgeServer {
                         trys++;
                     }
                 } else if(recipient.equals("coordinator") || recipient.equals("Coordinator")) {
-                    coordinatorConnectionManager.getConnectionInfoById("1").send(messagePacket);
+                    new ServerConnectionDtoManager(
+                        coordinatorConnectionManager.getConnectionInfoById("1"))
+                        .send(messagePacket);
                 }
                 else {
                     System.out.println("Unknown Recipient! \nYour input was: " + recipient + "\nTry again.");

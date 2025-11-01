@@ -34,6 +34,7 @@ import node.node_config.NodeConfig;
 
 import node.node_connections.*;
 
+import node.node_connections.node_connection_manager.*;
 import node.node_services.*;
 
 public class EdgeNode {
@@ -49,7 +50,7 @@ public class EdgeNode {
     // Each class can have its own logger instance
     private static final Logger logger = LogManager.getLogger(EdgeNode.class);
 
-    private static NodeConnectionManager serverConnectionManager; // Manage the connection between the server and the node
+    private static NodeServerConnectionManager serverConnectionManager; // Manage the connection between the server and the node
 
     // Timer components
     private static ScheduledExecutorService timerScheduler; //the timer that will send out the keepAlives to server
@@ -75,11 +76,11 @@ public class EdgeNode {
         // Try to connect to the server
         try {
             // init connection with the server
-            serverConnectionManager = NodeConnectionManager.getInstance();
+            serverConnectionManager = NodeServerConnectionManager.getInstance();
 
             // Add connection to connection manager
             serverConnectionManager.addConnection(
-                new NodeConnectionInfo(
+                new NodeConnectionDto(
                     "1",
                     config.getIPByKey("Server.IP"),
                     config.getPortByKey("Server.listeningPort"),
@@ -102,8 +103,7 @@ public class EdgeNode {
             );  
 
             // Send and get confirmation (ACK packet from server)
-            serverConnectionManager.getConnectionInfoById("1").createSender();
-            boolean sent = serverConnectionManager.getConnectionInfoById("1").send(initPacket);
+            boolean sent = new NodeConnectionDtoManager(serverConnectionManager.getConnectionInfoById("1")).send(initPacket);
 
             if(!sent) {
                 logger.error("INITALIZATION PACKET WAS NOT SENT!");
@@ -233,7 +233,7 @@ public class EdgeNode {
                     message
                 );
 
-                serverConnectionManager.getConnectionInfoById("1").send(messagePacket);
+                new NodeConnectionDtoManager(serverConnectionManager.getConnectionInfoById("1")).send(messagePacket);
             }
         }       
         in.close();

@@ -16,12 +16,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import coordinator.edge_coordinator.EdgeCoordinator;
+
+import coordinator.coordinator_connections.CoordinatorConnectionDto;
+import coordinator.coordinator_connections.CoordinatorConnectionDtoManager;
 import coordinator.coordinator_connections.CoordinatorPriority;
-import coordinator.coordinator_packet.CoordinatorPacket;
+
+import coordinator.coordinator_packet.*;
 
 import coordinator.coordinator_services.CoordinatorKeepAliveService;
-
-import coordinator.edge_coordinator.*;
 
 public class CoordinatorConnectionManager {
 
@@ -29,7 +32,7 @@ public class CoordinatorConnectionManager {
     private static final Logger logger = LogManager.getLogger(CoordinatorConnectionManager.class);
         
     // This "ConcurentHashMap" allows for multi-threaded visability.
-    private final Map<String, CoordinatorConnectionInfo> activeConnections = new ConcurrentHashMap<>();
+    private final Map<String, CoordinatorConnectionDto> activeConnections = new ConcurrentHashMap<>();
 
     // Step 1: (For my sanity) create an instance variable
     private static CoordinatorConnectionManager instance;
@@ -46,29 +49,32 @@ public class CoordinatorConnectionManager {
     }
 
     public void checkExpiredConnections() {
+
         // Create an iterator for the ConccurentHashMap since it needs an iterator
-        Iterator<Map.Entry<String , CoordinatorConnectionInfo>> iterator =
+        Iterator<Map.Entry<String , CoordinatorConnectionDto>> iterator =
             activeConnections.entrySet().iterator();
 
         while(iterator.hasNext()) {
             // Check if each entry is expired, if it is, check the priority to see if it needs to be removed or kept alive
-            Map.Entry<String, CoordinatorConnectionInfo> entry = iterator.next();
-            if(entry.getValue().isExpired()){
+            Map.Entry<String, CoordinatorConnectionDto> entry = iterator.next();
+            if(new CoordinatorConnectionDtoManager(entry.getValue()).isExpired()){
+                
                 if(entry.getValue().getPriority() == CoordinatorPriority.CRITICAL){
-                     CoordinatorPacket keepAliveProbe =  
+
+                    CoordinatorPacket keepAliveProbe =  
                         CoordinatorKeepAliveService.createKeepAliveProbe(
                             EdgeCoordinator.getCoordinatorId(),
                             entry.getValue().getId()
                         );
 
-                    boolean sendSuccess = entry.getValue().send( keepAliveProbe );
+                    boolean sendSuccess = new CoordinatorConnectionDtoManager(entry.getValue()).send( keepAliveProbe );
                     if(!sendSuccess) {
-                        logger.warn("Connection with Node: {} has been terminated due to failed retry!", entry.getValue().getId());
+                        logger.warn("Connection with Server: {} has been terminated due to failed retry!", entry.getValue().getId());
                         terminateConnection(entry.getValue().getId());
                     }
                 }
                 else {
-                    logger.warn("Connection with Node: {} has been terminated due to priority status!", entry.getValue().getId());
+                    logger.warn("Connection with Server: {} has been terminated due to priority status!", entry.getValue().getId()); 
                     terminateConnection(entry.getValue().getId());
                 }
             }
@@ -86,7 +92,7 @@ public class CoordinatorConnectionManager {
 
                 boolean keptAlive;
 
-                keptAlive = connection.send(keepAliveProbe);
+                keptAlive = new CoordinatorConnectionDtoManager(connection).send(keepAliveProbe);
 
                 // If the packet fails to send
                 if(!keptAlive) {
@@ -98,9 +104,9 @@ public class CoordinatorConnectionManager {
     }
 
     public void terminateConnection(String id) {
-        CoordinatorConnectionInfo remove = activeConnections.get(id);
+        CoordinatorConnectionDto remove = activeConnections.get(id);
         logger.info("Terminated Connection: \n  ID:" + remove.getId() 
-            + "\n  IP: " + remove.getIp()
+            + "\n  IP - " + remove.getIp() + ":" + remove.getPort()
         );
         activeConnections.remove(remove.getId());
     }
@@ -110,15 +116,15 @@ public class CoordinatorConnectionManager {
      */
 
     // Can allow for multiple connections to be added at once(if needed)
-    public void addConnection(CoordinatorConnectionInfo... connection) {
-        for(CoordinatorConnectionInfo connected : connection) {
+    public void addConnection(CoordinatorConnectionDto... connection) {
+        for(CoordinatorConnectionDto connected : connection) {
             activeConnections.put(connected.getId(), connected);
         }
     }
 
     // When recieving a 
     public void updateById(String id, Object updator) {
-        CoordinatorConnectionInfo updatee = activeConnections.get(id);
+        CoordinatorConnectionDto updatee = activeConnections.get(id);
 
         // TODO: Figure out a system for updating
 
@@ -128,15 +134,29 @@ public class CoordinatorConnectionManager {
     /*
      *      Getters
      */
-    public CoordinatorConnectionInfo getConnectionInfoById(String id) {
+    public CoordinatorConnectionDto getConnectionInfoById(String id) {
         return activeConnections.get(id);
     }
 
-    public Map<String, CoordinatorConnectionInfo> getActiveConnections() {
+    public Map<String, CoordinatorConnectionDto> getActiveConnections() {
         return activeConnections;
     }
 
     public String[] getAllIds() {
         return activeConnections.keySet().toArray(new String[0]);
+    }
+
+    public int getActiveConnectionCount() {
+
+        int connectionCount = 0;
+
+        Iterator<Map.Entry<String , CoordinatorConnectionDto>> iterator =
+            activeConnections.entrySet().iterator();
+
+        while(iterator.hasNext()){
+            connectionCount++;
+        }
+
+        return connectionCount;
     }
 }

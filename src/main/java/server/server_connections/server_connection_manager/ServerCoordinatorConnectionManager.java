@@ -14,7 +14,8 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import server.server_connections.ServerConnectionInfo;
+import server.server_connections.ServerConnectionDtoManager;
+import server.server_connections.ServerConnectionDto;
 import server.server_packet.ServerPacket;
 
 public class ServerCoordinatorConnectionManager extends ServerConnectionManager {
@@ -37,12 +38,12 @@ public class ServerCoordinatorConnectionManager extends ServerConnectionManager 
 
         boolean sent = false;
 
-        Iterator<Map.Entry<String , ServerConnectionInfo>> iterator =
+        Iterator<Map.Entry<String , ServerConnectionDto>> iterator =
             activeConnections.entrySet().iterator();
 
         while(iterator.hasNext()){
-            Map.Entry<String, ServerConnectionInfo> entry = iterator.next();
-            sent = entry.getValue().send(keepAlive); 
+            Map.Entry<String, ServerConnectionDto> entry = iterator.next();
+            sent = new ServerConnectionDtoManager(entry.getValue()).send(keepAlive); 
         }
         return sent;
     }

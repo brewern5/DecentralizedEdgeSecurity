@@ -21,8 +21,6 @@ import org.apache.logging.log4j.Logger;
 
 import server.server_connections.server_connection_manager.*;
 
-import server.server_services.ServerClusterManager;
-
 public class ServerInitalizationHandler extends ServerPacketHandler{
 
     private static final Logger logger = LogManager.getLogger(ServerInitalizationHandler.class);
@@ -60,7 +58,7 @@ public class ServerInitalizationHandler extends ServerPacketHandler{
             connectionManager.getConnectionInfoById(recievedPacket.getId()).setPort(port);
 
             // Try and create the sender for the node now that it has a port assigned
-            connectionManager.getConnectionInfoById(recievedPacket.getId()).createSender();
+            // connectionManager.getConnectionInfoById(recievedPacket.getId()).createSender();
 
             // Generates the success response to be put into the ack packet 
             packetResponse = new ServerHandlerResponse(true);

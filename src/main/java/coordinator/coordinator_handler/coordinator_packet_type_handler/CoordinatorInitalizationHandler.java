@@ -55,9 +55,6 @@ public class CoordinatorInitalizationHandler extends CoordinatorPacketHandler{
             // Relying on the fact the client should send the port here!
             connectionManager.getConnectionInfoById(recievedPacket.getId()).setPort(port);
 
-            // Try and create the sender for the node now that it has a port assigned
-            connectionManager.getConnectionInfoById(recievedPacket.getId()).createSender();
-
             // Generates the success response to be put into the ack packet 
             packetResponse = new CoordinatorHandlerResponse(true);
 
