@@ -149,7 +149,6 @@ public class ServerCoordinatorHandler implements Runnable {
 
         responsePacket = new ServerGenericPacket(
             ServerPacketType.ACK,       // Packet type
-            EdgeServer.getServerId(),            // Sender
             packetResponse.combineMaps()   // Payload
         );
         respond();
@@ -161,7 +160,6 @@ public class ServerCoordinatorHandler implements Runnable {
         // Construct a new failure packet
         responsePacket = new ServerGenericPacket(
             ServerPacketType.ERROR,    // Packet type
-            EdgeServer.getServerId(),  // Sender
             packetResponse.combineMaps()  // Payload
         );
         // Send the packet

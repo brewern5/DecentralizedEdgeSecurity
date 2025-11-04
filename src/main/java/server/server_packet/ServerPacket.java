@@ -15,23 +15,34 @@
 package server.server_packet;
 
 import java.util.LinkedHashMap;
-import java.util.Arrays;
 
 import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
 
 import server.edge_server.EdgeServer;
+import server.server_services.ServerClusterManager;
 
 public abstract class ServerPacket {
 
     protected int payloadPairCounter = 0;
 
-    protected String id = EdgeServer.getServerId();
+    protected String id;
+
+    protected String clusterId;
 
     protected ServerPacketType packetType;     // Enum for easy constant assignment
-    protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();     
+    protected LinkedHashMap<String, String> payload;     
 
     // No-args constructor
-    public ServerPacket() {} 
+    public ServerPacket() {
+        id = EdgeServer.getServerId();
+        clusterId = ServerClusterManager.getClusterId();
+    } 
+
+    public ServerPacket(LinkedHashMap<String, String> payload) {
+        id = EdgeServer.getServerId();
+        clusterId = ServerClusterManager.getClusterId();
+        this.payload = payload;
+    }
 
     /*
      * 
@@ -39,12 +50,9 @@ public abstract class ServerPacket {
      * 
      */
 
-    public ServerPacketType getPacketType() {
-        return packetType;
-    }
-    public void setPacketType(ServerPacketType packetType) {
-        this.packetType = packetType;
-    }
+    public ServerPacketType getPacketType() { return packetType; }
+
+    public void setPacketType(ServerPacketType packetType) { this.packetType = packetType; }
 
     /*
      * 
@@ -52,13 +60,9 @@ public abstract class ServerPacket {
      * 
      */
 
-    public String getId() {
-        return id;
-    }
+    public String getId() { return id; }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    public void setId(String id) { this.id = id; }
 
     /*
      * 
@@ -66,13 +70,9 @@ public abstract class ServerPacket {
      * 
      */
 
-    public LinkedHashMap<String, String> getPayload() {
-        return payload;
-    }
+    public LinkedHashMap<String, String> getPayload() { return payload; }
 
-    public void setPayload(LinkedHashMap<String, String> payload) {
-        this.payload = payload;
-    }
+    public void setPayload(LinkedHashMap<String, String> payload) { this.payload = payload; }
 
     public void addStringValue(String... value) {
         for(String val : value) {
@@ -81,36 +81,14 @@ public abstract class ServerPacket {
         }
     }   
     
-    public void addKeyValueToPayload(String key, String value) {
-        payload.put(key, value);
-    }
+    public void addKeyValueToPayload(String key, String value) { payload.put(key, value); }
 
     public String[] getAllPayloadKeys() {
-
-        Object[] objKeys;
-        String[] keys;
-
-        // Since LinkedHashMap .keySet returns an array of Objects, we need to convert it to an array of strings
-        objKeys = payload.keySet().toArray();
-
-        // Copies the obj array to string array
-        keys = Arrays.copyOf(objKeys, objKeys.length, String[].class);
-
-        return keys;
+        return payload.keySet().toArray(new String[0]);
     }
 
     public String[] getAllPayloadValues() {
-
-        Object[] objValues;
-        String[] values;
-
-        // Since LinkedHashMap .values returns an array of Objects, we need to convert it to an array of strings
-        objValues = payload.values().toArray();
-
-        // Copies the obj array to string array
-        values = Arrays.copyOf(objValues, objValues.length, String[].class);
-
-        return values;
+        return payload.values().toArray(new String[0]);
     } 
 
     public String getValueByKey(String key) {

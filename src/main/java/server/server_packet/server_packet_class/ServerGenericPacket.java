@@ -15,18 +15,15 @@ import server.server_packet.*;
 public class ServerGenericPacket extends ServerPacket {
 
     // No payload
-    public ServerGenericPacket(ServerPacketType packetType, String id) {
+    public ServerGenericPacket(ServerPacketType packetType) {
+        super();
         this.packetType = packetType;
-        this.id = id;
-        this.payload = new LinkedHashMap<String, String>();
     }
     
     // Constructor for setting a payload
-    public ServerGenericPacket(ServerPacketType packetType, String id, LinkedHashMap<String, String> payload) {
+    public ServerGenericPacket(ServerPacketType packetType, LinkedHashMap<String, String> payload) {
+        super(payload);
         this.packetType = packetType;
-        this.id = id;
-        this.payload = payload;
-
         payload.forEach( (key, value) -> {
             payloadPairCounter++;
         });

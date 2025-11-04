@@ -18,17 +18,15 @@ public class ServerKeepAliveService {
     
     /**
      * Creates a KeepAlive packet with current server state
-     * @param serverId Current server ID
      * @param serverIP Server's IP address
      * @param nodeManager Connection manager for node count
      * @return Configured KeepAlive packet
      */
-    public static ServerPacket createKeepAlivePacket(String serverId, String serverIP, ServerConnectionManager nodeManager) {
+    public static ServerPacket createKeepAlivePacket(String serverIP, ServerConnectionManager nodeManager) {
 
         LinkedHashMap<String, String> payload = new LinkedHashMap<>();
         
         payload.put("timestamp", String.valueOf(System.currentTimeMillis()));
-        payload.put("serverIP", serverIP);
         payload.put("status", "ACTIVE");
         
         // Add system metrics
@@ -37,18 +35,16 @@ public class ServerKeepAliveService {
         
         return new ServerGenericPacket(
             ServerPacketType.KEEP_ALIVE,
-            serverId,
             payload
         );
     }
 
     /**
      * Creates a KeepAlive probe to check if a CRITICAL connection is still alive
-     * @param serverId Current server ID
      * @param targetConnectionId ID of the connection to probe
      * @return KeepAlive probe packet
      */
-    public static ServerPacket createKeepAliveProbe(String serverId, String targetConnectionId) {
+    public static ServerPacket createKeepAliveProbe(String targetConnectionId) {
         LinkedHashMap<String, String> payload = new LinkedHashMap<>();
         
         // Essential probe information
@@ -64,7 +60,6 @@ public class ServerKeepAliveService {
         
         return new ServerGenericPacket(
             ServerPacketType.KEEP_ALIVE,
-            serverId,
             payload
         );
     }

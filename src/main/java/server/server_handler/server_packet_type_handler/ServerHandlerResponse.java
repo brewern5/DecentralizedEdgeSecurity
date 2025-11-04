@@ -140,17 +140,11 @@ public class ServerHandlerResponse {
      *  
      */
     // Standard get methods
-    public boolean getSuccess(){
-        return success;
-    }   
+    public boolean getSuccess(){ return success; }   
 
     // Returns the list of messages
-    public LinkedHashMap<String, String> getMessageMap(){
-        return messages;
-    }
+    public LinkedHashMap<String, String> getMessageMap(){ return messages; }
 
-    public LinkedHashMap<String, String> getExceptionMap(){
-        return exceptions;
-    }
+    public LinkedHashMap<String, String> getExceptionMap(){ return exceptions; }
 
 }

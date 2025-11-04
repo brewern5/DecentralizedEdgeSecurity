@@ -10,13 +10,11 @@
 package server.server_connections.server_connection_manager;
 
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import server.edge_server.EdgeServer;
 
 import server.server_connections.ServerConnectionDto;
 import server.server_connections.ServerConnectionDtoManager;
@@ -34,7 +32,7 @@ public abstract class ServerConnectionManager {
 
     public abstract boolean sendKeepAlive(ServerPacket packet);
 
-    protected final Map<String, ServerConnectionDto> activeConnections = new ConcurrentHashMap<>();
+    protected final LinkedHashMap<String, ServerConnectionDto> activeConnections = new LinkedHashMap<>();
 
     // Each class can have its own logger instance
     private static final Logger logger = LogManager.getLogger(ServerConnectionManager.class);
@@ -54,7 +52,6 @@ public abstract class ServerConnectionManager {
 
                     ServerPacket keepAliveProbe =  
                         ServerKeepAliveService.createKeepAliveProbe(
-                            EdgeServer.getServerId(),
                             entry.getValue().getId()
                         );
 
@@ -111,7 +108,7 @@ public abstract class ServerConnectionManager {
         return activeConnections.get(id);
     }
 
-    public Map<String, ServerConnectionDto> getActiveConnections() {
+    public LinkedHashMap<String, ServerConnectionDto> getActiveConnections() {
         return activeConnections;
     }
 

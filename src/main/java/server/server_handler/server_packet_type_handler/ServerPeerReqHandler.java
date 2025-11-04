@@ -11,47 +11,57 @@
  */
 package server.server_handler.server_packet_type_handler;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import server.server_connections.server_connection_manager.ServerConnectionManager;
+import server.server_connections.ServerConnectionDto;
 import server.server_connections.server_connection_manager.ServerNodeConnectionManager;
 
-public class ServerPeerReqHandler extends ServerPacketHandler{
+import server.server_packet.server_packet_class.ServerPeerListRes;
+import server.server_packet.ServerPacket;
+
+public class ServerPeerReqHandler{
 
     private static final Logger logger = LogManager.getLogger(ServerPeerReqHandler.class);
 
-    public 
+    private ServerPeerListRes responsePacket;
+
+    private ServerPacket recievedPacket;
    
-    public ServerPeerReqHandler() {
-        connectionManager = ServerNodeConnectionManager.getInstance();
+    public ServerPeerReqHandler(ServerPacket recievedPacket) {
+        this.recievedPacket = recievedPacket;
     }
 
-    /* This method will be called from the 'PacketHandler' SuperClass's "handle" method.
-     * This particular method will seperate the handled KeyValue pairs and seperate them
-     * into a key and a value. In this instance it is the Servers preferred recieving port.
-     * Once recieved and handled, this method will put the Key Value into the config file
-     */
-    @Override
-    public ServerHandlerResponse process() {
-
+    public ServerPeerListRes process() {
         try{
-            payloadKeyValuePairs.forEach( (k, v) -> { 
+            ServerNodeConnectionManager nodeConnManager = ServerNodeConnectionManager.getInstance();
+
+            LinkedHashMap<String, ServerConnectionDto> nodeMap = nodeConnManager.getActiveConnections();
+
+            String reqId = null;
+            
+            for (Map.Entry<String, String> entry : recievedPacket.getPayload().entrySet()) {
+                String k = entry.getKey();
+                String v = entry.getValue();
                 //System.out.println("Message " + messageCounter + ":\n\t\t" + v );
 
+                if ("reqId".equals(k)) {
+                    reqId = v;
+                }
+            }
 
-            });
+            responsePacket = new ServerPeerListRes(reqId, nodeMap);
 
-            // Generates the success response to be put into the ack packet 
-            packetResponse = new ServerHandlerResponse(true, "Recieved");
 
         } catch(Exception e) {
             logger.error("Error Handling packet\n"+e);
             // Generates the response to be put into the failure packet
-            packetResponse = new ServerHandlerResponse(false, e, "Error Handling Packet.");
+            //packetResponse = new ServerHandlerResponse(false, e, "Error Handling Packet.");
         }
-        return packetResponse;
+        return responsePacket;
     }
 }
 
-}

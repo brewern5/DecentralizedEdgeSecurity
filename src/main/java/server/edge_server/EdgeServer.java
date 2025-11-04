@@ -102,8 +102,7 @@ public class EdgeServer {
 
             // Create the initalization packet
             ServerPacket initPacket = new ServerGenericPacket(
-                ServerPacketType.INITIALIZATION, 
-                getServerId(),                   
+                ServerPacketType.INITIALIZATION,                  
                 payload
             );  
 
@@ -195,7 +194,6 @@ public class EdgeServer {
 
                 keepAliveSent = coordinatorConnectionManager.sendKeepAlive(
                     ServerKeepAliveService.createKeepAlivePacket(
-                        getServerId(),
                         IP,
                         nodeConnectionManager
                     )

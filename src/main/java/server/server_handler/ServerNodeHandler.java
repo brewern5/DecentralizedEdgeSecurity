@@ -40,8 +40,6 @@ import com.google.gson.JsonParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import server.edge_server.EdgeServer;
-
 import server.server_connections.*;
 import server.server_connections.server_connection_manager.*;
 import server.server_handler.server_packet_type_handler.*;
@@ -193,7 +191,6 @@ public class ServerNodeHandler implements Runnable {
 
         responsePacket = new ServerGenericPacket(
             ServerPacketType.ACK,        // Packet type
-            EdgeServer.getServerId(),             // Sender
             packetResponse.combineMaps()    // Payload
         );
         respond();
@@ -205,7 +202,6 @@ public class ServerNodeHandler implements Runnable {
         // Construct a new failure packet
         responsePacket = new ServerGenericPacket(
             ServerPacketType.ERROR,            // Packet type
-            EdgeServer.getServerId(),                   // Sender
             packetResponse.combineMaps() // Payload
         );
         // Send the packet

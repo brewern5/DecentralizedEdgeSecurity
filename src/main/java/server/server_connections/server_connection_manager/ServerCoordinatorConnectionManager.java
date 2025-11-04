@@ -11,16 +11,11 @@ package server.server_connections.server_connection_manager;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import server.server_connections.ServerConnectionDtoManager;
 import server.server_connections.ServerConnectionDto;
 import server.server_packet.ServerPacket;
 
 public class ServerCoordinatorConnectionManager extends ServerConnectionManager {
-
-    private static final Logger logger = LogManager.getLogger(ServerCoordinatorConnectionManager.class);
 
     // Step 1: (For my sanity) create an instance variable
     private static ServerCoordinatorConnectionManager instance;
