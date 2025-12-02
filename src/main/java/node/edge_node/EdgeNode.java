@@ -46,12 +46,14 @@ public class EdgeNode {
     private static String IP;
 
     private static NodeListener serverListener;            // The socket that will be listening to requests from the Edge server.
+    private static NodeListener peerListener;
 
     // Each class can have its own logger instance
     private static final Logger logger = LogManager.getLogger(EdgeNode.class);
 
     private static NodeServerConnectionManager serverConnectionManager; // Manage the connection between the server and the node
 
+    private static NodeServerConnectionManager peerConnectionManager;
     // Timer components
     private static ScheduledExecutorService timerScheduler; //the timer that will send out the keepAlives to server
 
@@ -103,7 +105,9 @@ public class EdgeNode {
             );  
 
             // Send and get confirmation (ACK packet from server)
-            boolean sent = new NodeConnectionDtoManager(serverConnectionManager.getConnectionInfoById("1")).send(initPacket);
+            boolean sent = new NodeConnectionDtoManager(
+                serverConnectionManager.getConnectionInfoById("1"))
+                .send(initPacket);
 
             if(!sent) {
                 logger.error("INITALIZATION PACKET WAS NOT SENT!");
@@ -156,8 +160,31 @@ public class EdgeNode {
         clusterId = newClusterId;
         logger.info("Cluster ID assigned: " + newClusterId);
     }
+
     public static synchronized String getClusterId() {
         return clusterId;
+    }
+
+    // Peer list request 
+    public static synchronized void peerListReq() {
+                // Try and and get a peer list from the connected server
+        try {
+            boolean peerListReqSent;
+
+            peerListReqSent = serverConnectionManager.sendPeerListReq(
+                NodePeerListService.createPeerListReq(
+                    getNodeID(), 
+                    IP, 
+                    getClusterId()
+                )
+            );
+
+            if(!peerListReqSent) {
+
+            }
+        } catch(Exception e) {
+            logger.error("Could not get Peer List: " + e);
+        }
     }
 
     /*
@@ -216,7 +243,9 @@ public class EdgeNode {
         Thread serverThread = new Thread(serverListener);
         serverThread.start();
 
-        // TODO: DEMO
+        // Request the peer list   
+        peerListReq();
+
         Scanner in = new Scanner(System.in);
 
         boolean on = true;

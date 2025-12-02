@@ -5,8 +5,6 @@
  *      This is a thread and will be created by the Main coordinator file once initialization
  *      is complete.
  * 
- *      
- * 
  */
 package server.server_listener;
 

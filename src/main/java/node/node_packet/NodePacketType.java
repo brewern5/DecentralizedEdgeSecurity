@@ -13,14 +13,10 @@
 package node.node_packet;
 
 public enum NodePacketType {
-    INITIALIZATION,   // For handshake or setup - Will send the preferred listening port 
-    AUTH,             // Authentication packets
-    MESSAGE,          // Generic text/data message
-    COMMAND,          // Control commands (start, stop, etc.)
-    KEEP_ALIVE,        // Keep-alive or ping
-    STATUS,           // Status update (health, load, etc.)
-    DATA,             // Bulk or sensor data
-    ERROR,            // Error or exception reporting
-    ACK,              // Acknowledgement of receipt
-    DISCONNECT        // Graceful disconnect notice
+    INITIALIZATION,     // For handshake or setup - Will send the preferred listening port 
+    MESSAGE,            // Generic text/data message
+    KEEP_ALIVE,         // Keep-alive or ping
+    ERROR,              // Error or exception reporting
+    ACK,                // Acknowledgement of receipt
+    PEER_LIST_REQ       // Request of peer list from the servers
 }

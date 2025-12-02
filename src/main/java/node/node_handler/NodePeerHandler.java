@@ -1,7 +1,7 @@
 /*
  *      Author: Nathaniel Brewer
  * 
- *      This is the main handling point Packets recieved from the Coordinator.
+ *      This is the main handling point Packets recieved from the server.
  *      All recieved packets will be sent from it's respective thread to
  *      here where the packet will be checked in this order:
  *          - Proper termination
@@ -17,7 +17,8 @@
  *      is true, then a ACK packet will be sent, else a Failure packet or Error packet will
  *      be sent instead.
  */
-package server.server_handler;
+
+package node.node_handler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,8 +26,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
 import java.net.Socket;
-import java.util.HashMap;
+
 import java.util.Map;
+import java.util.HashMap;
 import java.util.function.Function;
 
 import com.google.gson.Gson;
@@ -37,51 +39,49 @@ import com.google.gson.JsonParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import server.edge_server.EdgeServer;
+import node.edge_node.EdgeNode;
 
-import server.server_handler.server_packet_type_handler.*;
-import server.server_handler.server_packet_type_handler.server_handler_response.ServerHandlerResponse;
-import server.server_lib.RuntimeTypeAdapterFactory;
+import node.node_handler.node_packet_type_handler.*;
 
-import server.server_packet.server_packet_class.*;
-import server.server_packet.*;
+import node.node_lib.RuntimeTypeAdapterFactory;
 
-public class ServerCoordinatorHandler implements Runnable {
+import node.node_packet.*;
+import node.node_packet.node_packet_class.*;
 
-    private static final Logger logger = LogManager.getLogger(ServerCoordinatorHandler.class);
+public class NodePeerHandler implements Runnable {
 
-    private Socket coordinatorSocket;
-    private String coordinatorIP;
+    private static final Logger logger = LogManager.getLogger(NodePeerHandler.class);
+
+    private Socket serverSocket;
+    private String serverIP;
+
+    private NodePacket serverPacket;
 
     private BufferedReader reader;
 
-    private ServerPacket coordinatorPacket;
-
     // This will will be instantiated based on the PacketType that needs to handle this. I.e initalizationHandler
-    ServerPacketHandler packetHandler; 
+    NodePacketHandler packetHandler;    
 
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
-    private ServerPacket responsePacket;
+    private NodePacket responsePacket;
 
-    private ServerHandlerResponse packetResponse;
+    private NodeHandlerResponse packetResponse;
 
     // Dictionary for lookup to handle different packet types
-    private final Map<ServerPacketType, Function<ServerPacket, Void>> actionMap = new HashMap<>();
+    private final Map<NodePacketType, Function<NodePacket, Void>> actionMap = new HashMap<>();
 
-    // Constructor
-    public ServerCoordinatorHandler(Socket socket) {
-        this.coordinatorSocket = socket;
+    public NodePeerHandler(Socket socket) {
+        this.serverSocket = socket;
         initActionMap();
     }
 
     private void initActionMap() {
-        actionMap.put(ServerPacketType.MESSAGE, this::handleMessage);
-        actionMap.put(ServerPacketType.KEEP_ALIVE, this::handleKeepAlive);
+        actionMap.put(NodePacketType.MESSAGE, this::handleSignature);
     }
 
-    private void generatePacketResponse(ServerPacket coordinatorPacket) {
+    private void generatePacketResponse(NodePacket serverPacket) {
         // Allow for the packet response to be created based on the handling response
-        packetResponse = packetHandler.handle(coordinatorPacket);
+        packetResponse = packetHandler.handle(serverPacket);
 
         // If good send ack
         if (packetResponse.getSuccess() == true) {
@@ -105,69 +105,77 @@ public class ServerCoordinatorHandler implements Runnable {
      * 
      */
 
-    private void readAction(ServerPacketType packetAction, ServerPacket coordinatorPacket) {
+    private void readAction(NodePacketType packetAction, NodePacket serverPacket) {
         // Dictionary lookup
-        actionMap.get(packetAction).apply(coordinatorPacket);
+        actionMap.get(packetAction).apply(serverPacket);
 
         // Handle the packet
-        generatePacketResponse(coordinatorPacket);
+        generatePacketResponse(serverPacket);
     }
 
-    private Void handleMessage(ServerPacket coordinatorPacket) {
+    private Void handleSignature(NodePacket serverPacket) {
+        // Create the packetType based handler
+        packetHandler = new NodeSigReq();
 
         return null;
     }
 
-    private Void handleKeepAlive(ServerPacket coordinatorPacket) {
-
-        return null;
-    }
-
+    
     /*
+     *  
      *          Packet Reconstruction
+     * 
      */
 
-    private ServerPacket buildGsonWithPacketSubtype(ServerPacketType type, String json) {
-        RuntimeTypeAdapterFactory<ServerPacket> packetAdapterFactory =
+    private NodePacket buildGsonWithPacketSubtype(NodePacketType type, String json) {
+        RuntimeTypeAdapterFactory<NodePacket> packetAdapterFactory =
         RuntimeTypeAdapterFactory
-            .of(ServerPacket.class, "packetType")
-            .registerSubtype(ServerGenericPacket.class, type.name());
+            .of(NodePacket.class, "packetType")
+            .registerSubtype(NodeGenericPacket.class, type.name());
 
         Gson tempGson = new GsonBuilder()
             .registerTypeAdapterFactory(packetAdapterFactory)
             .create();
 
-        return tempGson.fromJson(json, ServerPacket.class);
+        return tempGson.fromJson(json, NodePacket.class);
     }
 
-    /*     
+    /*          End Packet Reconstruction
+     * 
+     * 
      *          Responses
+     * 
      */
 
     // This is a good response, it will be sent back to the server to ensure a packet was recieved 
-    private void ack(ServerHandlerResponse packetResponse) {
+    private void ack(NodeHandlerResponse packetResponse) {
 
-        responsePacket = new ServerGenericPacket(
-            ServerPacketType.ACK,       // Packet type
-            packetResponse.combineMaps()   // Payload
+        responsePacket = new NodeGenericPacket(
+            NodePacketType.ACK,        // Packet type
+            EdgeNode.getNodeID(),             // Sender
+            packetResponse.combineMaps()    // Payload
         );
         respond();
     }
 
     // This is the creation of the failure packet based on the packet response 
-    private void failure(ServerHandlerResponse packetResponse) {
+    private void failure(NodeHandlerResponse packetResponse) {
         
         // Construct a new failure packet
-        responsePacket = new ServerGenericPacket(
-            ServerPacketType.ERROR,    // Packet type
-            packetResponse.combineMaps()  // Payload
+        responsePacket = new NodeGenericPacket(
+            NodePacketType.ERROR,            // Packet type
+            EdgeNode.getNodeID(),                   // Sender
+            packetResponse.combineMaps() // Payload
         );
         // Send the packet
         respond();
     }
 
-    /*
+    /*          End Responses
+     * 
+     * 
      *          Respond
+     * 
      */
 
     // Takes an already initalized response packet and returns to sender
@@ -179,65 +187,64 @@ public class ServerCoordinatorHandler implements Runnable {
         try{
             // The responder object
             PrintWriter output = new PrintWriter(
-                coordinatorSocket.getOutputStream(), 
+                serverSocket.getOutputStream(), 
                 true
             );
             // Send the jsonified packet as a response
             output.println(json);
+            output.close();
         } catch (IOException e) {
-            logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + "\n", e);
+            logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + "\n"+ e);
         }
     }
     /*
      *                      Main run loop
      */
+
     @Override
     public void run() {
-
+        
         logger.info(
-            "Coordinator connected: \n\t" 
-            + coordinatorSocket.getInetAddress().toString() 
-            + ":"
-            + coordinatorSocket.getPort()
+            "Server connected: \n\t"
+            + serverSocket.getInetAddress().toString()
+            + ":" 
+            + serverSocket.getPort()
         );
 
         // Handle client events
-        try{
+        try {
             // This is what decodes the incoming packet
             reader = new BufferedReader(
                 new InputStreamReader(
-                    coordinatorSocket.getInputStream()
+                    serverSocket.getInputStream()
                 )
             );
-            
+
             // Stores the payload as a string to check (and potentially remove) the delimiter
             String payload = reader.readLine();
 
             // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
             if(payload.endsWith("||END||")){
-                payload = payload.substring(
-                    0, 
-                    payload.length() - "||END||".length()
-                );
+                payload = payload.substring(0, payload.length() - "||END||".length());
             }
             else{
-                failure(
-                    new ServerHandlerResponse(
-                        false, 
-                        new Exception("Payload not terminated."), 
-                        "Incomplete Packet"
-                    )
+                failure(new NodeHandlerResponse(
+                    false, 
+                    new Exception("Payload not terminated."), 
+                    "Incomplete Packet")
                 );
+                return; // Early exit
             }
+
             // Reads the packet as json
             String json = payload;
 
             // Checks if empty packet
-            if (json != null) {    
-                
+            if (json != null) {
+
                 // Grabs the server IP in order to be saved in config file
-                coordinatorIP = coordinatorSocket.getInetAddress().toString();
-                coordinatorIP = coordinatorIP.substring(1); // Removes the forward slash
+                serverIP = serverSocket.getInetAddress().toString();
+                serverIP = serverIP.substring(1); // Removes the forward slash
 
                 // Pre-parses the Json in order to grab the packetType to use for the switch statement
                 JsonObject jsonObj = JsonParser.parseString(json).getAsJsonObject();
@@ -245,25 +252,26 @@ public class ServerCoordinatorHandler implements Runnable {
                 String packetTypeStr = jsonObj.get("packetType").getAsString();
 
                 // Covert the string to the ENUM packetType
-                ServerPacketType packetType = ServerPacketType.valueOf(packetTypeStr);
+                NodePacketType packetType = NodePacketType.valueOf(packetTypeStr);
 
                 try {
-                    coordinatorPacket = buildGsonWithPacketSubtype(packetType, json);
-                    readAction(packetType, coordinatorPacket);
+                    // Reconstruct the recieved packet into a 'NodePacket' type 
+                    serverPacket = buildGsonWithPacketSubtype(packetType, json);
+                    //logger.info("Recieved:\n" + serverPacket.toJson());
+                    readAction(packetType, serverPacket); 
                 } catch(IllegalArgumentException e) {
                     logger.error("Recieved unknown packet of type: " + packetTypeStr);
                     return; // Early exit
                 }
             }
         } catch (IOException e) {
-             logger.error("I/O Error! " + e);
+            e.printStackTrace();
         } finally {
             try {
                 if( reader != null){ reader.close(); }
-                if( coordinatorSocket != null && !coordinatorSocket.isClosed()) { coordinatorSocket.close(); }
-                logger.info("Closing handler thread.");
+                if( serverSocket != null && !serverSocket.isClosed()) { serverSocket.close(); }
             } catch (IOException e) {
-                logger.error("Error closing socket!" + e);
+                logger.error("Error closing socket!\n" + e);
             }
         }
     }

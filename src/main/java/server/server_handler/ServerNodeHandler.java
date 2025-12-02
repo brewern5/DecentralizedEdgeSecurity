@@ -43,7 +43,7 @@ import org.apache.logging.log4j.Logger;
 import server.server_connections.*;
 import server.server_connections.server_connection_manager.*;
 import server.server_handler.server_packet_type_handler.*;
-
+import server.server_handler.server_packet_type_handler.server_handler_response.ServerHandlerResponse;
 import server.server_lib.RuntimeTypeAdapterFactory;
 
 import server.server_packet.*;
@@ -82,7 +82,7 @@ public class ServerNodeHandler implements Runnable {
         actionMap.put(ServerPacketType.INITIALIZATION, this::handleInitalization);
         actionMap.put(ServerPacketType.MESSAGE, this::handleMessage);
         actionMap.put(ServerPacketType.KEEP_ALIVE, this::handleKeepAlive);
-        actionMap.put(ServerPacketType.PEER_LIST_REQUEST, this::handlePeerListReq);
+        actionMap.put(ServerPacketType.PEER_LIST_REQ, this::handlePeerListReq);
     }
 
     private void generatePacketResponse(ServerPacket nodePacket) {
@@ -95,7 +95,7 @@ public class ServerNodeHandler implements Runnable {
             // Construct the ack packet
             ack(packetResponse);
         } else if (packetResponse.getSuccess() == false) {
-            logger.error("Error Handling Packet of Type: \tINITIALIZATION\n\tDetails:");
+            logger.error("Error Handling Packet of Type: {} \n\tDetails:", nodePacket.getPacketType());
 
             // Detail the errors
             packetResponse.printMessages();
@@ -156,6 +156,10 @@ public class ServerNodeHandler implements Runnable {
 
     // Will be respoible for creating the packetHandler
     private Void handlePeerListReq(ServerPacket nodePacket) {
+
+        ServerPeerReqHandler peerReqHandler = new ServerPeerReqHandler(nodePacket);
+
+        peerReqHandler.process();
 
         return null;
     }
@@ -275,6 +279,8 @@ public class ServerNodeHandler implements Runnable {
 
             // Reads the packet as json
             String json = payload;
+
+            logger.info(json);
 
             // Checks if empty packet
             if (json != null) {

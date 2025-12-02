@@ -65,15 +65,14 @@ public class NodeConnectionDtoManager {
         if(!sent) {
             boolean retry = sender.retry(packet);
             if(!retry){
+                logger.error("Sender was not created for Connection: {}! Cannot send packet", connectionInfo.getId());
                 return false;
+            } else {
+                return true;
             }
         } else {
             return true;
         }
-
-        logger.error("Sender was not created for Connection: {}! Cannot send packet", connectionInfo.getId());
-        // TODO: Exception handling
-        return false;
     }
 
     /*

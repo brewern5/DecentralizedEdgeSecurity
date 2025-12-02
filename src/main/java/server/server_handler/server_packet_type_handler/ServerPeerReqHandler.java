@@ -19,15 +19,15 @@ import org.apache.logging.log4j.Logger;
 
 import server.server_connections.ServerConnectionDto;
 import server.server_connections.server_connection_manager.ServerNodeConnectionManager;
-
+import server.server_handler.server_packet_type_handler.server_handler_response.ServerHandlerResponse;
 import server.server_packet.server_packet_class.ServerPeerListRes;
 import server.server_packet.ServerPacket;
 
-public class ServerPeerReqHandler{
+public class ServerPeerReqHandler extends ServerPacketHandler {
 
     private static final Logger logger = LogManager.getLogger(ServerPeerReqHandler.class);
 
-    private ServerPeerListRes responsePacket;
+    private ServerHandlerResponse responsePacket;
 
     private ServerPacket recievedPacket;
    
@@ -35,7 +35,7 @@ public class ServerPeerReqHandler{
         this.recievedPacket = recievedPacket;
     }
 
-    public ServerPeerListRes process() {
+    public ServerHandlerResponse process() {
         try{
             ServerNodeConnectionManager nodeConnManager = ServerNodeConnectionManager.getInstance();
 
@@ -52,7 +52,7 @@ public class ServerPeerReqHandler{
                     reqId = v;
                 }
             }
-
+            
             responsePacket = new ServerPeerListRes(reqId, nodeMap);
 
 
