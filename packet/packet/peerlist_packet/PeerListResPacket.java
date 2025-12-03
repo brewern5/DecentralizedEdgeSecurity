@@ -4,10 +4,10 @@
         This will contain the response of a peerlist from the server to the Node
 */
 
-package src.peerlist_packet;
+package packet.peerlist_packet;
 
-import src.AbstractPacket;
-import src.PacketType;
+import packet.AbstractPacket;
+import packet.PacketType;
 
 public class PeerListResPacket extends AbstractPacket {
     

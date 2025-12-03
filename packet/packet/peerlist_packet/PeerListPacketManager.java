@@ -4,10 +4,11 @@
 
         This manager will handle both the response and the request for the peer list. 
 */
-package src.peerlist_packet;
+package packet.peerlist_packet;
 
-import src.AbstractPacket;
-import src.AbstractPacketManager;
+import packet.AbstractPacket;
+import packet.AbstractPacketManager;
+import packet.response_packet.ErrorResponse;
 
 public class PeerListPacketManager extends AbstractPacketManager {
     
@@ -22,10 +23,20 @@ public class PeerListPacketManager extends AbstractPacketManager {
         return packet;
     }
 
+    
     @Override
-    public AbstractPacket createResponsePacket() {
+    public AbstractPacket createGoodResponsePacket() {
         responsePacket = new PeerListResPacket(senderId, clusterId, recipientId);
+
         return responsePacket;
+    }
+    
+    @Override
+    public AbstractPacket createBadResponsePacket() {
+
+        packet = new ErrorResponse(senderId, clusterId, recipientId);
+
+        return packet;
     }
 
 }

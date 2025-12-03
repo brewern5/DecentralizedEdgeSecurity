@@ -11,10 +11,10 @@
             ReciepientId (to whom we are sending the packet to)
 */
 
-package src.peerlist_packet;
+package packet.peerlist_packet;
 
-import src.AbstractPacket;
-import src.PacketType;
+import packet.AbstractPacket;
+import packet.PacketType;
 
 public class PeerListReqPacket extends AbstractPacket {
 

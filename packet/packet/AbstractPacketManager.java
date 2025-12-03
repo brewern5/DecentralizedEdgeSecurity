@@ -13,7 +13,7 @@
  * 
  */
 
-package src;
+package packet;
 
 import java.util.LinkedHashMap;
 import java.util.Arrays;
@@ -36,7 +36,9 @@ public abstract class AbstractPacketManager {
     /*
      *      Abstract Methods
      */
-    public abstract AbstractPacket createResponsePacket();
+    public abstract AbstractPacket createGoodResponsePacket();
+
+    public abstract AbstractPacket createBadResponsePacket();
     
     public abstract AbstractPacket createPacket();
 
@@ -45,10 +47,8 @@ public abstract class AbstractPacketManager {
      */
 
     public void addStringValue(String... value) {
-        int payloadCounter = packet.getPayloadPairCounter();
         for(String val : value) {
             packet.addKeyValueToPayload("Message" + packet.getPayloadPairCounter(), val);
-            payloadCounter++;
         }
     }   
 
@@ -63,7 +63,7 @@ public abstract class AbstractPacketManager {
         objKeys = payload.keySet().toArray();
 
         // Copies the obj array to string array
-        keys = Arrays.copyOf(objKeys, objKeys.length, String[].class);
+        keys = Arrays.copyOf(objKeys, objKeys.length, String[].class); 
 
         return keys;
     }

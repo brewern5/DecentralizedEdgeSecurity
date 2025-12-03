@@ -3,10 +3,10 @@
 
 */
 
-package src.response_packet;
+package packet.response_packet;
 
-import src.AbstractPacket;
-import src.PacketType;
+import packet.AbstractPacket;
+import packet.PacketType;
 
 public class ErrorResponse extends AbstractPacket{
 

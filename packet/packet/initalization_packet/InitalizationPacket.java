@@ -2,10 +2,10 @@
  *      Author: Nathaniel Brewer
  * 
  */
-package src.initalization_packet;
+package packet.initalization_packet;
 
-import src.AbstractPacket;
-import src.PacketType;
+import packet.AbstractPacket;
+import packet.PacketType;
 
 public class InitalizationPacket extends AbstractPacket{
 

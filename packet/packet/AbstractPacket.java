@@ -12,7 +12,7 @@
  *      the need for a timer.
  * 
  */
-package src;
+package packet;
 
 import java.util.LinkedHashMap;
 import java.util.UUID;
@@ -35,8 +35,8 @@ public abstract class AbstractPacket {
 
     protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();  
     
-    protected AbstractPacket(String senderId, PacketType packetType, String clusterId, String recipientId) {
-        this.senderId = senderId;
+    protected AbstractPacket(String instantiatorId, PacketType packetType, String clusterId, String recipientId) {
+        this.senderId = instantiatorId;
         this.packetType = packetType;
         this.clusterId = clusterId;
         this.recipientId = clusterId;
@@ -55,7 +55,7 @@ public abstract class AbstractPacket {
 
     public PacketType getPacketType() { return packetType; }
 
-    public String getSenderId() { return senderId; }
+    public String getInstantiatorId() { return senderId; }
 
     public String getClusterId() { return clusterId; }
 
@@ -68,6 +68,7 @@ public abstract class AbstractPacket {
     public LinkedHashMap<String, String> getPayload() { return payload; }
 
     public int getPayloadPairCounter() { return payloadPairCounter; }
+
     
     /*
      *      Mutators
@@ -75,7 +76,7 @@ public abstract class AbstractPacket {
 
     public void setPacketType(PacketType packetType) { this.packetType = packetType; }
 
-    public void setSenderId(String senderId) { this.senderId = senderId; }
+    public void setInstantiatorId(String senderId) { this.senderId = senderId; }
 
     public void setClusterId(String clusterId) { this.clusterId = clusterId; }
 
@@ -85,11 +86,9 @@ public abstract class AbstractPacket {
 
     public void setTimeStamp() { this.timeStamp = String.valueOf(System.currentTimeMillis()); }
 
-    public void setPayload(LinkedHashMap<String, String> payload) { this.payload = payload; }
-
     public void setPayloadPairCounter(int payloadPairCounter) { this.payloadPairCounter = payloadPairCounter; }
 
-    public void addKeyValueToPayload(String key, String value) { payload.put(key, value); }
+    public void addKeyValueToPayload(String key, String value) { payload.put(key, value); payloadPairCounter++; }
 
     /*
      *      Stringify Methods

@@ -10,7 +10,7 @@
  *      For example, AUTH will be sent to whatever auth system we decide to use 
  * 
  */
-package src;
+package packet;
 
 public enum PacketType {
     INITIALIZATION,     // For handshake or setup - Will send the preferred listening port 
