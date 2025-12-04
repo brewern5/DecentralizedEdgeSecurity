@@ -1,12 +1,8 @@
 /*
  *      Author: Nathaniel Brewer
  *
- *      Packet class that easily allows for creation of packets that are in the Json Format for
+ *      Packet class that easily allows for creation of packets that will be transformed into Json Format for
  *      digestability and ease of use.
- * 
- *      I chose the Json format for easy formatting purposes and the preservation of variables
- * 
- *      Gson Docs: https://github.com/google/gson/blob/main/UserGuide.md
  * 
  *      This is an abstract class that's child classes will handle unique logic. Such as Keep Alive having
  *      the need for a timer.
@@ -14,10 +10,11 @@
  */
 package packet;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
-import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
+import com.google.gson.Gson;
 
 public abstract class AbstractPacket {
 
@@ -33,10 +30,12 @@ public abstract class AbstractPacket {
 
     protected String timeStamp;
 
+    // This is where all information will be stored that is either in the request or response format.
+    // NO IDs should be stored here, only information to be handled
     protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();  
     
-    protected AbstractPacket(String instantiatorId, PacketType packetType, String clusterId, String recipientId) {
-        this.senderId = instantiatorId;
+    protected AbstractPacket(String senderId, PacketType packetType, String clusterId, String recipientId) {
+        this.senderId = senderId;
         this.packetType = packetType;
         this.clusterId = clusterId;
         this.recipientId = clusterId;
@@ -55,7 +54,7 @@ public abstract class AbstractPacket {
 
     public PacketType getPacketType() { return packetType; }
 
-    public String getInstantiatorId() { return senderId; }
+    public String getSenderId() { return senderId; }
 
     public String getClusterId() { return clusterId; }
 
@@ -76,7 +75,7 @@ public abstract class AbstractPacket {
 
     public void setPacketType(PacketType packetType) { this.packetType = packetType; }
 
-    public void setInstantiatorId(String senderId) { this.senderId = senderId; }
+    public void setSenderId(String senderId) { this.senderId = senderId; }
 
     public void setClusterId(String clusterId) { this.clusterId = clusterId; }
 
@@ -90,13 +89,39 @@ public abstract class AbstractPacket {
 
     public void addKeyValueToPayload(String key, String value) { payload.put(key, value); payloadPairCounter++; }
 
+    public void addStringValue(String... value) {
+        for(String val : value) {
+            addKeyValueToPayload("Message" + payloadPairCounter, val);
+        }
+    }    
+
+    public String[] getAllPayloadValues() {
+
+        Object[] objValues;
+        String[] values;
+
+        // Since LinkedHashMap .values returns an array of Objects, we need to convert it to an array of strings
+        objValues = payload.values().toArray();
+
+        // Copies the obj array to string array
+        values = Arrays.copyOf(objValues, objValues.length, String[].class);
+
+        return values;
+    } 
+    
+    public String getValueByKey(String key) {
+        return payload.get(key);
+    }
+
     /*
-     *      Stringify Methods
-     */
+        Stringify Methods
+    */
 
     // converts the packet to a key/value String
     public String toJson() { return new Gson().toJson(this); }
 
     // adds a clear end of message line that will be handled 
     public String toDelimitedString() { return new Gson().toJson(this) + "||END||"; }
+
+    
 }

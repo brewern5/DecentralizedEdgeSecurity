@@ -42,35 +42,48 @@ import org.apache.logging.log4j.Logger;
 
 import coordinator.coordinator_connections.*;
 
+/*
+        NEW
+*/
+
+import coordinator.coordinator_connections.CoordinatorConnectionManager2;
+
+import packet.AbstractPacket;
+import packet.PacketType;
+
+import connection.ConnectionDto;
+import connection.Priority;
+
+/*
+        END NEW
+*/
+
 import coordinator.coordinator_handler.coordinator_packet_type_handler.*;
 
-import coordinator.coordinator_lib.RuntimeTypeAdapterFactory;
+import lib.RuntimeTypeAdapterFactory;
 
 import coordinator.coordinator_packet.*;
 import coordinator.coordinator_packet.coordinator_packet_class.*;
 
 import coordinator.edge_coordinator.EdgeCoordinator;
 
+
 public class CoordinatorServerHandler implements Runnable {
 
     private static final Logger logger = LogManager.getLogger(CoordinatorServerHandler.class);
 
-    private static CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
+    //private static CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
+    private static CoordinatorConnectionManager2 connectionManager = CoordinatorConnectionManager2.getInstance();
 
     private Socket serverSocket;
     private String serverIp;
 
-    private CoordinatorPacket serverPacket;
+    private AbstractPacket serverPacket;
 
     private BufferedReader reader;
 
-    // This will will be instantiated based on the PacketType that needs to handle this. I.e initalizationHandler
-    CoordinatorPacketHandler packetHandler;    
-
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
-    private CoordinatorPacket responsePacket;
-
-    private CoordinatorHandlerResponse packetResponse;
+    private AbstractPacket responsePacket;
 
     // Dictionary for lookup to handle different packet types
     private final Map<CoordinatorPacketType, Function<CoordinatorPacket, Void>> actionMap = new HashMap<>();
@@ -125,11 +138,11 @@ public class CoordinatorServerHandler implements Runnable {
         String serverId = UUID.randomUUID().toString();
 
         connectionManager.addConnection(
-            new CoordinatorConnectionDto(
+            new ConnectionDto(
                 serverId,
                 serverIp,
                 0, // TEMP, this will be updated inside the InitalizationHandler
-                CoordinatorPriority.CRITICAL
+                Priority.CRITICAL
             )
         );
         serverPacket.setId(serverId);

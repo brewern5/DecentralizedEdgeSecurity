@@ -50,7 +50,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Build Helper Plugin to add packet directory as source -->
+            <!-- Build Helper Plugin to add additional source directories -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -65,6 +65,9 @@
                         <configuration>
                             <sources>
                                 <source>packet</source>
+                                <source>connection</source>
+                                <source>lib</source>
+                                <source>sender</source>
                             </sources>
                         </configuration>
                     </execution>

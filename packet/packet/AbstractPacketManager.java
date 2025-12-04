@@ -15,81 +15,59 @@
 
 package packet;
 
-import java.util.LinkedHashMap;
-import java.util.Arrays;
+import exception.InvalidFormatException;
+import exception.UnknownPacketException;
 
 public abstract class AbstractPacketManager {
     
-    protected AbstractPacket packet;
-    protected AbstractPacket responsePacket;
+    protected AbstractPacket outgoingPacket; // The packet we are using to send
+    protected AbstractPacket incomingPacket; // The packet we recieved and need to handle
+    protected AbstractPacket responsePacket; // The response to the incoming packet
     
     protected String senderId;
     protected String clusterId;
     protected String recipientId;
-    
-    protected AbstractPacketManager(String senderId, String clusterId, String recipientId) {
+
+    protected String role;
+
+    /**
+     * 
+     * @param senderId This instance's ID
+     * @param clusterId The cluster ID 
+     * @param recipientId The ID of the recieving instance
+     * @param role What this particular instance role is. I.e. "Node", "Server", "Coordinator"
+     */
+    protected AbstractPacketManager(String senderId, String clusterId, String recipientId, String role) {
         this.senderId = senderId;
         this.clusterId = clusterId;
         this.recipientId = recipientId;
+        this.role = role;
     }
 
     /*
      *      Abstract Methods
      */
+    
+    public abstract AbstractPacket createOutgoingPacket();
+    
     public abstract AbstractPacket createGoodResponsePacket();
 
     public abstract AbstractPacket createBadResponsePacket();
-    
-    public abstract AbstractPacket createPacket();
+
+    public abstract void recreateIncomingPacket(AbstractPacket incomingPacket);
+
+    public abstract AbstractPacket processIncomingPacket();
+
+    /**
+     * 
+     * @return 'True' if the payload is verified as okay, 'False' if there is issues
+     * @exception 
+     */
+    protected abstract boolean validatePayload(String[] values) throws InvalidFormatException, UnknownPacketException;
 
     /*  
      *      End Abstraction
      */
 
-    public void addStringValue(String... value) {
-        for(String val : value) {
-            packet.addKeyValueToPayload("Message" + packet.getPayloadPairCounter(), val);
-        }
-    }   
-
-    public String[] getAllPayloadKeys() {
-
-        Object[] objKeys;
-        String[] keys;
-
-        LinkedHashMap<String, String> payload = packet.getPayload();
-
-        // Since LinkedHashMap .keySet returns an array of Objects, we need to convert it to an array of strings
-        objKeys = payload.keySet().toArray();
-
-        // Copies the obj array to string array
-        keys = Arrays.copyOf(objKeys, objKeys.length, String[].class); 
-
-        return keys;
-    }
-
-    public String[] getAllPayloadValues() {
-
-        Object[] objValues;
-        String[] values;
-
-        LinkedHashMap<String, String> payload = packet.getPayload();
-
-        // Since LinkedHashMap .values returns an array of Objects, we need to convert it to an array of strings
-        objValues = payload.values().toArray();
-
-        // Copies the obj array to string array
-        values = Arrays.copyOf(objValues, objValues.length, String[].class);
-
-        return values;
-    } 
-
-    public String getValueByKey(String key) {
-        LinkedHashMap<String, String> payload = packet.getPayload();
-
-        return payload.get(key);
-    }
-
-    // TODO: Packet Recreation
 
 }

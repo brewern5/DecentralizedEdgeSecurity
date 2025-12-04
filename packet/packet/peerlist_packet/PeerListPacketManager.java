@@ -6,14 +6,17 @@
 */
 package packet.peerlist_packet;
 
+import java.util.LinkedHashMap;
+
+import exception.InvalidFormatException;
 import packet.AbstractPacket;
 import packet.AbstractPacketManager;
 import packet.response_packet.ErrorResponse;
 
 public class PeerListPacketManager extends AbstractPacketManager {
     
-    public PeerListPacketManager(String senderId, String clusterId, String recipientId) {
-        super(senderId, clusterId, recipientId);
+    public PeerListPacketManager(String senderId, String clusterId, String recipientId, String role) {
+        super(senderId, clusterId, recipientId, role);
     }
 
     @Override
@@ -37,6 +40,22 @@ public class PeerListPacketManager extends AbstractPacketManager {
         packet = new ErrorResponse(senderId, clusterId, recipientId);
 
         return packet;
+    }
+
+    @Override
+    public AbstractPacket processRecievedPacket() throws InvalidFormatException{
+        
+        return packet;
+    }
+
+    protected Boolean validatePayload(LinkedHashMap<String, String> payload) {
+        // TODO: Implement validation for peer list packets
+        return true;
+    }
+
+    protected boolean validatePayload() {
+
+        return false;
     }
 
 }

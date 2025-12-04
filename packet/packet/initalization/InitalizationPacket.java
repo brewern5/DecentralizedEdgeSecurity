@@ -2,7 +2,7 @@
  *      Author: Nathaniel Brewer
  * 
  */
-package packet.initalization_packet;
+package packet.initalization;
 
 import packet.AbstractPacket;
 import packet.PacketType;

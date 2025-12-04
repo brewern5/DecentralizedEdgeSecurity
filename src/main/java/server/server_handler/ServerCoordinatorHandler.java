@@ -37,8 +37,6 @@ import com.google.gson.JsonParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import server.edge_server.EdgeServer;
-
 import server.server_handler.server_packet_type_handler.*;
 import server.server_handler.server_packet_type_handler.server_handler_response.ServerHandlerResponse;
 import server.server_lib.RuntimeTypeAdapterFactory;

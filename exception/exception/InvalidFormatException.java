@@ -1,4 +1,4 @@
-package packet.exception;
+package exception;
 
 public class InvalidFormatException extends Exception {
     

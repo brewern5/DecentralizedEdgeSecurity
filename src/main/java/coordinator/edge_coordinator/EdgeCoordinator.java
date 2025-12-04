@@ -26,9 +26,7 @@ import java.net.UnknownHostException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.Scanner;
 import java.util.UUID;
-import java.util.HashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,10 +35,7 @@ import coordinator.coordinator_config.CoordinatorConfig;
 
 import coordinator.coordinator_listener.CoordinatorListener;
 
-import coordinator.coordinator_packet.*;
-import coordinator.coordinator_packet.coordinator_packet_class.*;
-import node.node_config.NodeConfig;
-import coordinator.coordinator_connections.*;
+import coordinator.coordinator_connections.CoordinatorConnectionManager2;
 
 public class EdgeCoordinator {
 
@@ -48,7 +43,7 @@ public class EdgeCoordinator {
 
     private static volatile String coordinatorId = null;
 
-    private static CoordinatorConnectionManager serverConnectionManager;
+    private static CoordinatorConnectionManager2 serverConnectionManager;
 
     private static String IP;
 
@@ -67,7 +62,7 @@ public class EdgeCoordinator {
         // Give the Coordinator an ID
         setCoordinatorId(UUID.randomUUID().toString());
 
-        serverConnectionManager = CoordinatorConnectionManager.getInstance();
+        serverConnectionManager = CoordinatorConnectionManager2.getInstance(coordinatorId, null, "Coordinator");
 
         // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
@@ -166,9 +161,9 @@ public class EdgeCoordinator {
         // Start the thread
         listeningThread.start();
 
+        /* 
         // TODO: DEMO
         Scanner in = new Scanner(System.in);
-
         boolean on = true;
         while(on){
             // TODO: Stuff
@@ -213,5 +208,6 @@ public class EdgeCoordinator {
             }
         }
         in.close();
-    }
+    */
+   } 
 }

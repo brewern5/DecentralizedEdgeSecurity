@@ -53,7 +53,7 @@ public class ServerPeerReqHandler extends ServerPacketHandler {
                 }
             }
             
-            responsePacket = new ServerPeerListRes(reqId, nodeMap);
+            //responsePacket = new ServerPeerListRes(reqId, nodeMap);
 
 
         } catch(Exception e) {
