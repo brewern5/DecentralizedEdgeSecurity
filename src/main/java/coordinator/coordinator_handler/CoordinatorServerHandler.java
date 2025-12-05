@@ -33,10 +33,6 @@ import com.google.gson.GsonBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/*
-        NEW
-*/
-
 import coordinator.coordinator_connections.CoordinatorConnectionManager;
 
 import packet.AbstractPacket;
@@ -47,10 +43,6 @@ import packet.PacketManagerFactory;
 import external.PacketTypeAdapterFactory;
 
 import exception.NonDelimitedPacket;
-
-/*
-        END NEW
-*/
  
 public class CoordinatorServerHandler implements Runnable {
 
@@ -85,6 +77,8 @@ public class CoordinatorServerHandler implements Runnable {
 
         // Puts the contents of the packet to JSON with a non-JSON compatable delimiter at the end to be handled prior to pakcet content hanlding
         String json = responsePacket.toDelimitedString();
+
+        logger.info("RESPONDING   " + json);
 
         try{
             // The responder object
@@ -129,7 +123,10 @@ public class CoordinatorServerHandler implements Runnable {
 
             // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
             if(jsonPacket.endsWith("||END||")){
-                jsonPacket = jsonPacket.substring(0, jsonPacket.length() - "||END||".length());
+                jsonPacket = jsonPacket.substring(
+                    0, 
+                    jsonPacket.length() - "||END||".length()
+                );
             }
             else{
                throw new NonDelimitedPacket("Recieved Packet does not end with \" ||END|| \".");
@@ -141,11 +138,11 @@ public class CoordinatorServerHandler implements Runnable {
             // Checks if empty packet
             if (json != null) {
 
+                logger.info("RECIEVED PACKET  " + json);
+
                 // Grabs the server IP in order to be saved in config file
                 serverIp = serverSocket.getInetAddress().toString();
-                serverIp = serverIp.substring(1); // Removes the forward slash
-
-                logger.info(json);
+                serverIp = serverIp.substring(1); // Removes the forward slash 
 
                 try {
                     // Set's up the Factory to be able to reconstruct the packet to it's correct class
@@ -156,11 +153,11 @@ public class CoordinatorServerHandler implements Runnable {
                     // Reconstructs the packet to it's desired type
                     serverPacket = gson.fromJson(json, AbstractPacket.class);
                         
-                    // Check if packet type needs a manager
+                 // Check if packet type needs a manager
                     if (!PacketManagerFactory.requiresManager(serverPacket.getPacketType())) {
                         logger.warn("Received response packet type: " + serverPacket.getPacketType());
                         return; // Response packets don't need managers
-                    }
+                    }   
 
                     // Initialization packets need to be handled differently
                     if (serverPacket.getPacketType() == PacketType.INITIALIZATION) {
@@ -177,7 +174,7 @@ public class CoordinatorServerHandler implements Runnable {
                             serverPacket,
                             connectionManager.getInstanceId(),
                             connectionManager.getClusterId(),
-                            "Server"
+                            "Coordinator"
                         ); 
                     } 
 
@@ -185,7 +182,7 @@ public class CoordinatorServerHandler implements Runnable {
                     respond();
 
                 } catch(IllegalArgumentException e) { 
-                    logger.error("Recieved unknown packet!");  
+                    logger.error("Recieved unknown packet!  " + e);  
                     return; // Early exit
                 }
             } 
@@ -196,9 +193,9 @@ public class CoordinatorServerHandler implements Runnable {
 
                 */
                logger.error("NonDelimitedPacket!" + e);
-        }catch(Exception e) {
+        } catch(Exception e) {
             logger.error("Unchecked Exception!" + e);
-        }finally {
+        } finally {
             try {
                 if( reader != null){ reader.close(); }
                 if( serverSocket != null && !serverSocket.isClosed()) { serverSocket.close(); }

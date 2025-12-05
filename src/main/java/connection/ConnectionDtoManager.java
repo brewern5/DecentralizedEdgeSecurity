@@ -19,12 +19,15 @@ import sender.AbstractSender;
 import sender.PacketSender;
 
 import packet.AbstractPacket;
+import packet.PacketType;
 
 public class ConnectionDtoManager {
     
     private static final Logger logger = LogManager.getLogger(ConnectionDtoManager.class);
     
     private ConnectionDto connectionInfo;
+
+    private String assignedId;
 
     private AbstractSender sender;
     private Boolean hasSender = false;
@@ -70,6 +73,9 @@ public class ConnectionDtoManager {
                 return false;
             }
         } else {
+            if(packet.getPacketType() == PacketType.INITIALIZATION) {
+                assignedId = sender.getAssignedId();
+            }
             return true;
         }
 
@@ -77,5 +83,7 @@ public class ConnectionDtoManager {
         // TODO: Exception handling
         return false;
     }
+
+    public String getAssignedId() { return assignedId; }
 
 }

@@ -37,6 +37,8 @@ public abstract class AbstractSender {
     protected String ip;
     protected int sendingPort;
 
+    protected String assignedId;
+
     // Gson instance configured with packet type adapter for proper serialization/deserialization
     protected static final Gson gson = new GsonBuilder()
         .registerTypeAdapterFactory(PacketTypeAdapterFactory.create())
@@ -131,6 +133,7 @@ public abstract class AbstractSender {
                     "Response Recieved:"
                     + "\n\tSender ID:\t" + responsePacket.getSenderId() 
                     + "\n\tPacket Type:\t" + responsePacket.getPacketType() 
+                    + "\n\tAssigned ID:\t" + responsePacket.getRecipientId()
                 );
                 /* Deserialize the JSON response into the appropriate packet type
                 responsePacket = (AbstractPacket) deserializePacket(response);
@@ -140,8 +143,14 @@ public abstract class AbstractSender {
                 */
 
                 // If the packet type is a ACK packet - then it is a good connection made and the coordinator will close this socket.
-                if (responsePacket.getPacketType() != PacketType.ACK) {
-                    throw new IllegalStateException("Expected ACK packet, but received: " + responsePacket.getPacketType());
+                if(responsePacket.getPacketType() == PacketType.INITIALIZATION_RES) {
+                    String assignedId = responsePacket.getRecipientId();
+                    this.assignedId = assignedId; // Store for later retrieval
+                    logger.info("Received assigned ID: {}", assignedId);
+                    ackReceived = true;
+                }
+                else if (responsePacket.getPacketType() != PacketType.ACK) {
+                    throw new IllegalStateException("Expected ACK or INITIALIZATION_RES packet, but received: " + responsePacket.getPacketType());
                 } else {
                     ackReceived = true; // Break out of while loop to contiune initalization
                 }
@@ -172,5 +181,7 @@ public abstract class AbstractSender {
         // Return false as if this section is reached, the packet was not sent properly meaning an error occurred early i
         return false;
     }
+
+    public String getAssignedId() { return assignedId; }
 
 }

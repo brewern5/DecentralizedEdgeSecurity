@@ -19,9 +19,13 @@ package server.edge_server;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
+//DEMO
+/* 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Scanner;
+*/ 
+
+import java.util.LinkedHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +42,6 @@ import server.server_services.ServerClusterManager;
 import server.server_connections.*;
 
 import packet.AbstractPacket;
-import packet.initalization.InitalizationPacket;
 import packet.initalization.InitalizationPacketManager;
 
 import connection.Priority;
@@ -69,7 +72,7 @@ public class EdgeServer {
     public static void init() {
 
         // Create the connection manager
-        nodeConnectionManager = ServerNodeConnectionManager.getInstance();
+        nodeConnectionManager = ServerNodeConnectionManager.getInstance("", "", "Server");
 
         // try to generate the IP from the machines IP - Throws UnknownHostException if it cannot determine
         try{
@@ -84,7 +87,7 @@ public class EdgeServer {
         /*          Try to create senders        */
         try{
 
-            coordinatorConnectionManager = ServerCoordinatorConnectionManager.getInstance();
+            coordinatorConnectionManager = ServerCoordinatorConnectionManager.getInstance("", "", "Server");
             
             coordinatorConnectionManager.addConnection(
                 new ConnectionDto(
@@ -102,12 +105,25 @@ public class EdgeServer {
             );
 
             // Create the initalization packet
-            //AbstractPacket initPacket = new InitalizationPacketManager("", "", "1", "Server", coordinatorConnectionManager, IP).createOutgoingPacket();
+            AbstractPacket initPacket = new InitalizationPacketManager(
+                "", 
+                "", 
+                "1", 
+                "Server", 
+                coordinatorConnectionManager, 
+                IP
+            )
+            .createOutgoingPacket();
 
-            AbstractPacket initPacket = new InitalizationPacket("", "", "1");
+            initPacket.addPayload(payload);
 
-            new ServerConnectionDtoManager(coordinatorConnectionManager.getConnectionInfoById("1")).send(initPacket);
+            logger.info("SENDING PACKET " + initPacket.toJson());
+
+            coordinatorConnectionManager.sendToConnection("1", initPacket);
             
+            // Try and get setId
+            setServerId(coordinatorConnectionManager.getInstanceId());
+
         } catch (Exception e) {
             logger.error("Error Sending Initalization Packet: " + e);
         }
@@ -162,6 +178,7 @@ public class EdgeServer {
 
         try {
             ServerClusterManager.initializeClusterIdentity();
+            nodeConnectionManager.setClusterId(ServerClusterManager.getClusterId());
         } catch (Exception e) {
             logger.error("Error creating Cluster ID: " + e);
         }
@@ -174,7 +191,7 @@ public class EdgeServer {
         serverId = id;
         logger.info("Server ID assigned: " + id);
     }
-
+ 
     public static synchronized String getServerId() {
         return serverId;
     }
@@ -192,13 +209,8 @@ public class EdgeServer {
             try {
                 boolean keepAliveSent;
 
-                keepAliveSent = coordinatorConnectionManager.sendKeepAlive(
-                    ServerKeepAliveService.createKeepAlivePacket(
-                        IP,
-                        nodeConnectionManager
-                    )
-                );
-
+                keepAliveSent = coordinatorConnectionManager.sendKeepAlive();
+ 
                 if(!keepAliveSent){
                     logger.error("Keep alive was not sent!");
                     //TODO: something to stop the keep alive sender
@@ -246,6 +258,7 @@ public class EdgeServer {
         serverThread.start();
 
         // DEMO
+        /*
         Scanner in = new Scanner(System.in);
         boolean on = true;
         while (on) {
@@ -311,5 +324,6 @@ public class EdgeServer {
             message = "";
         }
         in.close();
+    */
     }
 }

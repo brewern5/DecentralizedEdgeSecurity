@@ -4,6 +4,7 @@
  */
 package packet.initalization;
 
+import java.util.LinkedHashMap;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -91,6 +92,7 @@ public class InitalizationPacketManager extends AbstractPacketManager {
 
             // Create ID for the new connection
             recipientId = UUID.randomUUID().toString();
+            logger.info("Assigned new connection with ID \" {} \".", recipientId);
 
             // Create connection DTO and add to the connection manager
             // Use the IP from the socket connection, not from the packet
@@ -105,7 +107,7 @@ public class InitalizationPacketManager extends AbstractPacketManager {
             logger.info("Added new connection from initialization packet: {}", incomingPacket.getSenderId());
             
             responsePacket = createGoodResponsePacket();
-
+ 
         } catch(InvalidFormatException ife) {
             logger.error("Invalid format in processed packet! {}", ife);
             responsePacket = createBadResponsePacket();
@@ -147,4 +149,5 @@ public class InitalizationPacketManager extends AbstractPacketManager {
         return false;
     }
 
+    public void addOutgoingPayload(LinkedHashMap<String, String> payload) { outgoingPacket.addPayload(payload); }
 }

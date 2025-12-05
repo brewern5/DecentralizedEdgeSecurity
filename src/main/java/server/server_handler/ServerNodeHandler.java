@@ -27,196 +27,46 @@ import java.io.PrintWriter;
 
 import java.net.Socket;
 
-import java.util.UUID;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.function.Function;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
+ 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import server.server_connections.*;
-import server.server_connections.server_connection_manager.*;
-import server.server_handler.server_packet_type_handler.*;
-import server.server_handler.server_packet_type_handler.server_handler_response.ServerHandlerResponse;
-import server.server_lib.RuntimeTypeAdapterFactory;
+import server.server_connections.ServerNodeConnectionManager;
 
-import server.server_packet.*;
-import server.server_packet.server_packet_class.*;
+import packet.AbstractPacket;
+import packet.AbstractPacketManager;
+import packet.PacketManagerFactory;
+import packet.PacketType;
+
+import external.*;
+
+import exception.NonDelimitedPacket;
 
 public class ServerNodeHandler implements Runnable {
-
+ 
     private static final Logger logger = LogManager.getLogger(ServerNodeHandler.class);
 
-    private static ServerConnectionManager nodeConnectionManager = ServerNodeConnectionManager.getInstance();
+    private static ServerNodeConnectionManager nodeConnectionManager = ServerNodeConnectionManager.getInstance();
 
     private Socket nodeSocket;
     private String nodeIP;
 
-    private ServerPacket nodePacket;
+    private AbstractPacket nodePacket;
+    private AbstractPacketManager nodePacketManager;
 
-    private BufferedReader reader;
-
-    // This will will be instantiated based on the PacketType that needs to handle this. I.e initalizationHandler
-    ServerPacketHandler packetHandler;    
+    private BufferedReader reader;  
 
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
-    private ServerPacket responsePacket;
-
-    private ServerHandlerResponse packetResponse;
-
-    // Dictionary for lookup to handle different packet types
-    private final Map<ServerPacketType, Function<ServerPacket, Void>> actionMap = new HashMap<>();
-
+    private AbstractPacket responsePacket;
+ 
     public ServerNodeHandler(Socket socket) {
         this.nodeSocket = socket;
-        initActionMap();
     }
 
-    private void initActionMap() {
-        actionMap.put(ServerPacketType.INITIALIZATION, this::handleInitalization);
-        actionMap.put(ServerPacketType.MESSAGE, this::handleMessage);
-        actionMap.put(ServerPacketType.KEEP_ALIVE, this::handleKeepAlive);
-        actionMap.put(ServerPacketType.PEER_LIST_REQ, this::handlePeerListReq);
-    }
-
-    private void generatePacketResponse(ServerPacket nodePacket) {
-        // Allow for the packet response to be created based on the handling response
-        packetResponse = packetHandler.handle(nodePacket);
-
-        // If good send ack
-        if (packetResponse.getSuccess() == true) {
-
-            // Construct the ack packet
-            ack(packetResponse);
-        } else if (packetResponse.getSuccess() == false) {
-            logger.error("Error Handling Packet of Type: {} \n\tDetails:", nodePacket.getPacketType());
-
-            // Detail the errors
-            packetResponse.printMessages();
-
-            // Construct the failure packet based on the response
-            failure(packetResponse);
-        }
-    }
-
-    /*
-     * 
-     *          Actions 
-     * 
-     */
-
-    private void readAction(ServerPacketType packetAction, ServerPacket nodePacket) {
-        // Dictionary lookup
-        actionMap.get(packetAction).apply(nodePacket);
-
-        // Handle the packet
-        generatePacketResponse(nodePacket);
-    }
-
-    private Void handleInitalization(ServerPacket nodePacket) {
-        // Assign an id to the node - this will be sent back to the node
-        String nodeId = UUID.randomUUID().toString();
-
-        nodeConnectionManager.addConnection(
-            new ServerConnectionDto(
-                nodeId,
-                nodeIP,
-                0, // TEMP, this will be updated inside the InitalizationHandler
-                ServerPriority.CRITICAL
-            )
-        );
-        nodePacket.setId(nodeId);
-
-        // Create the packetType based handler
-        packetHandler = new ServerInitalizationHandler(nodeConnectionManager);
-
-        // Need to return null to fulfill the 'Void' return data type   
-        return null;
-    }
-
-    private Void handleMessage(ServerPacket nodePacket) {
-        // Create the packetType based handler
-        packetHandler = new ServerMessageHandler(nodeConnectionManager);
-
-        return null;
-    }
-
-    private Void handleKeepAlive(ServerPacket nodePacket) {
-        // Create the packetType based handler
-        packetHandler = new ServerKeepAliveHandler(nodeConnectionManager);
-
-        return null;
-    }
-
-    // Will be respoible for creating the packetHandler
-    private Void handlePeerListReq(ServerPacket nodePacket) {
-
-        ServerPeerReqHandler peerReqHandler = new ServerPeerReqHandler(nodePacket);
-
-        peerReqHandler.process();
-
-        return null;
-    }
-    
-    /*
-     *  
-     *          Packet Reconstruction
-     * 
-     */
-
-    private ServerPacket buildGsonWithPacketSubtype(ServerPacketType type, String json) {
-        RuntimeTypeAdapterFactory<ServerPacket> packetAdapterFactory =
-        RuntimeTypeAdapterFactory
-            .of(ServerPacket.class, "packetType")
-            .registerSubtype(ServerGenericPacket.class, type.name());
-
-        Gson tempGson = new GsonBuilder()
-            .registerTypeAdapterFactory(packetAdapterFactory)
-            .create();
-
-        return tempGson.fromJson(json, ServerPacket.class);
-    }
-
-    /*          End Packet Reconstruction
-     * 
-     * 
-     *          Responses
-     * 
-     */
-
-    // This is a good response, it will be sent back to the server to ensure a packet was recieved 
-    private void ack(ServerHandlerResponse packetResponse) {
-
-        responsePacket = new ServerGenericPacket(
-            ServerPacketType.ACK,        // Packet type
-            packetResponse.combineMaps()    // Payload
-        );
-        respond();
-    }
-
-    // This is the creation of the failure packet based on the packet response 
-    private void failure(ServerHandlerResponse packetResponse) {
-        
-        // Construct a new failure packet
-        responsePacket = new ServerGenericPacket(
-            ServerPacketType.ERROR,            // Packet type
-            packetResponse.combineMaps() // Payload
-        );
-        // Send the packet
-        respond();
-    }
-
-    /*          End Responses
-     * 
-     * 
+    /*          
      *          Respond
-     * 
      */
 
     // Takes an already initalized response packet and returns to sender
@@ -236,8 +86,9 @@ public class ServerNodeHandler implements Runnable {
             output.close();
         } catch (IOException e) {
             logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + "\n"+ e);
-        }
+        } 
     }
+
     /*
      *                      Main run loop
      */
@@ -254,6 +105,7 @@ public class ServerNodeHandler implements Runnable {
 
         // Handle client events
         try {
+
             // This is what decodes the incoming packet
             reader = new BufferedReader(
                 new InputStreamReader(
@@ -269,18 +121,11 @@ public class ServerNodeHandler implements Runnable {
                 payload = payload.substring(0, payload.length() - "||END||".length());
             }
             else{
-                failure(new ServerHandlerResponse(
-                    false, 
-                    new Exception("Payload not terminated."), 
-                    "Incomplete Packet")
-                );
-                return; // Early exit
+                throw new NonDelimitedPacket("Recieved Packet does not end with \" ||END|| \".");
             }
 
             // Reads the packet as json
             String json = payload;
-
-            logger.info(json);
 
             // Checks if empty packet
             if (json != null) {
@@ -289,26 +134,57 @@ public class ServerNodeHandler implements Runnable {
                 nodeIP = nodeSocket.getInetAddress().toString();
                 nodeIP = nodeIP.substring(1); // Removes the forward slash
 
-                // Pre-parses the Json in order to grab the packetType to use for the switch statement
-                JsonObject jsonObj = JsonParser.parseString(json).getAsJsonObject();
-
-                String packetTypeStr = jsonObj.get("packetType").getAsString();
-
-                // Covert the string to the ENUM packetType
-                ServerPacketType packetType = ServerPacketType.valueOf(packetTypeStr);
-
                 try {
-                    // Reconstruct the recieved packet into a 'ServerPacket' type 
-                    nodePacket = buildGsonWithPacketSubtype(packetType, json);
-                    //logger.info("Recieved:\n" + nodePacket.toJson());
-                    readAction(packetType, nodePacket); 
+                    // Set's up the Factory to be able to reconstruct the packet to it's correct class
+                    Gson gson = new GsonBuilder()
+                        .registerTypeAdapterFactory(PacketTypeAdapterFactory.create())
+                        .create();
+
+                    // Reconstructs the packet to it's desired type
+                    nodePacket = gson.fromJson(json, AbstractPacket.class);
+
+                    // Check if packet type needs a manager
+                    if (!PacketManagerFactory.requiresManager(nodePacket.getPacketType())) {
+                        logger.warn("Received response packet type: " + nodePacket.getPacketType());
+                        return; // Response packets don't need managers
+                    }
+
+                    // Initialization packets need to be handled differently
+                    if (nodePacket.getPacketType() == PacketType.INITIALIZATION) {
+                        nodePacketManager = PacketManagerFactory.createManager(
+                            nodePacket,
+                            nodeConnectionManager.getInstanceId(),
+                            nodeConnectionManager.getClusterId(),
+                            "Server",
+                            nodeConnectionManager,
+                            nodeSocket.getInetAddress().getHostAddress()  // From socket - convert to String
+                        );
+                    } else {
+                        nodePacketManager = PacketManagerFactory.createManager(
+                            nodePacket,
+                            nodeConnectionManager.getInstanceId(),
+                            nodeConnectionManager.getClusterId(),
+                            "Server" 
+                        ); 
+                    }
+
+                    responsePacket = nodePacketManager.processIncomingPacket();
+                    respond();
+
                 } catch(IllegalArgumentException e) {
-                    logger.error("Recieved unknown packet of type: " + packetTypeStr);
+                    logger.error("Recieved unknown packet");
                     return; // Early exit
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch(NonDelimitedPacket e) {
+            /* TODO: Create failure sender logic
+
+                */
+               logger.error("NonDelimitedPacket!" + e);
+        }catch(Exception e) {
+            logger.error("Unchecked Exception!" + e);
         } finally {
             try {
                 if( reader != null){ reader.close(); }

@@ -38,7 +38,7 @@ public abstract class AbstractPacket {
         this.senderId = senderId;
         this.packetType = packetType;
         this.clusterId = clusterId;
-        this.recipientId = clusterId;
+        this.recipientId = recipientId;
 
         // Create packetId for backtracking
         this.packetId = UUID.randomUUID().toString();
@@ -65,9 +65,26 @@ public abstract class AbstractPacket {
     public String getTimeStamp() { return timeStamp; }
     
     public LinkedHashMap<String, String> getPayload() { return payload; }
-
+    
     public int getPayloadPairCounter() { return payloadPairCounter; }
+    
+    public String[] getAllPayloadValues() {
 
+        Object[] objValues;
+        String[] values;
+
+        // Since LinkedHashMap .values returns an array of Objects, we need to convert it to an array of strings
+        objValues = payload.values().toArray();
+
+        // Copies the obj array to string array
+        values = Arrays.copyOf(objValues, objValues.length, String[].class);
+
+        return values;
+    } 
+    
+    public String getValueByKey(String key) {
+        return payload.get(key);
+    }
     
     /*
      *      Mutators
@@ -95,23 +112,7 @@ public abstract class AbstractPacket {
         }
     }    
 
-    public String[] getAllPayloadValues() {
-
-        Object[] objValues;
-        String[] values;
-
-        // Since LinkedHashMap .values returns an array of Objects, we need to convert it to an array of strings
-        objValues = payload.values().toArray();
-
-        // Copies the obj array to string array
-        values = Arrays.copyOf(objValues, objValues.length, String[].class);
-
-        return values;
-    } 
-    
-    public String getValueByKey(String key) {
-        return payload.get(key);
-    }
+    public void addPayload(LinkedHashMap<String, String> payload) { this.payload = payload; }
 
     /*
         Stringify Methods

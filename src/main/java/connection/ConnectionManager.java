@@ -19,14 +19,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import packet.AbstractPacket;
+import packet.PacketType;
 import packet.keep_alive.KeepAliveManager;
 
 public abstract class ConnectionManager {
 
     protected final ConcurrentHashMap<String, ConnectionDto> activeConnections = new ConcurrentHashMap<>();
-    protected final String instanceId; // ID of the instance that created this connection manager
-    protected final String clusterId; // ID of the cluster this instance is assigned to
-    protected final String role;
+    protected String instanceId; // ID of the instance that created this connection manager
+    protected String clusterId; // ID of the cluster this instance is assigned to
+    protected String role; 
 
     private static final Logger logger = LogManager.getLogger(ConnectionManager.class);
 
@@ -83,6 +84,16 @@ public abstract class ConnectionManager {
     /*
             End abstraction
     */
+
+    public void sendToConnection(String connectionId, AbstractPacket packet) {
+        ConnectionDtoManager  dtoManager = new ConnectionDtoManager(activeConnections.get(connectionId));
+
+        dtoManager.send(packet);
+
+        if(packet.getPacketType() == PacketType.INITIALIZATION) {
+            setInstanceId(dtoManager.getAssignedId());
+        }
+    }
     
     public void checkExpiredConnections() {
         // Create an iterator for the ConccurentHashMap since it needs an iterator
@@ -166,4 +177,13 @@ public abstract class ConnectionManager {
     }
 
 
+    /*
+        Mutators
+    */ 
+
+    public void setInstanceId(String instanceId) { this.instanceId = instanceId; }
+
+    public void setClusterId(String clusterId) { this.clusterId = clusterId; }
+
+    public void setRole(String role) { this.role = role; }
 }
