@@ -35,7 +35,7 @@ import coordinator.coordinator_config.CoordinatorConfig;
 
 import coordinator.coordinator_listener.CoordinatorListener;
 
-import coordinator.coordinator_connections.CoordinatorConnectionManager2;
+import coordinator.coordinator_connections.CoordinatorConnectionManager;
 
 public class EdgeCoordinator {
 
@@ -43,7 +43,7 @@ public class EdgeCoordinator {
 
     private static volatile String coordinatorId = null;
 
-    private static CoordinatorConnectionManager2 serverConnectionManager;
+    private static CoordinatorConnectionManager serverConnectionManager;
 
     private static String IP;
 
@@ -62,7 +62,7 @@ public class EdgeCoordinator {
         // Give the Coordinator an ID
         setCoordinatorId(UUID.randomUUID().toString());
 
-        serverConnectionManager = CoordinatorConnectionManager2.getInstance(coordinatorId, null, "Coordinator");
+        serverConnectionManager = CoordinatorConnectionManager.getInstance(coordinatorId, null, "Coordinator");
 
         // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
         try{

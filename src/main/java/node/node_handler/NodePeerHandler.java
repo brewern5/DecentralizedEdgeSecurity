@@ -43,7 +43,7 @@ import node.edge_node.EdgeNode;
 
 import node.node_handler.node_packet_type_handler.*;
 
-import node.node_lib.RuntimeTypeAdapterFactory;
+import external.RuntimeTypeAdapterFactory;
 
 import node.node_packet.*;
 import node.node_packet.node_packet_class.*;

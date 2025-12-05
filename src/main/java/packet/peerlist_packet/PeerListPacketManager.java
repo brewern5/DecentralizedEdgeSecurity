@@ -7,6 +7,7 @@
 package packet.peerlist_packet;
 
 import java.util.LinkedHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import exception.InvalidFormatException;
 import packet.AbstractPacket;
@@ -15,15 +16,22 @@ import packet.response_packet.ErrorResponse;
 
 public class PeerListPacketManager extends AbstractPacketManager {
     
+    /**
+     * 
+     * @param instantiatorId The id of the node that created this instance
+     * @param clusterId The id of the cluster the instantiator is part of
+     * @param recipientId The id of the intended reciepient (if there is one)
+     * @param insantiatorType What type of class (Node, Server, Coordinator) created this instance
+     */
     public PeerListPacketManager(String senderId, String clusterId, String recipientId, String role) {
         super(senderId, clusterId, recipientId, role);
     }
 
     @Override
     // Creates the Peer List Request packet
-    public AbstractPacket createPacket() {
-        packet = new PeerListReqPacket(senderId, clusterId, recipientId);
-        return packet;
+    public AbstractPacket createOutgoingPacket() {
+        outgoingPacket = new PeerListReqPacket(senderId, clusterId, recipientId);
+        return outgoingPacket;
     }
 
     
@@ -37,25 +45,26 @@ public class PeerListPacketManager extends AbstractPacketManager {
     @Override
     public AbstractPacket createBadResponsePacket() {
 
-        packet = new ErrorResponse(senderId, clusterId, recipientId);
+        responsePacket = new ErrorResponse(senderId, clusterId, recipientId);
 
-        return packet;
+        return responsePacket;
     }
 
     @Override
-    public AbstractPacket processRecievedPacket() throws InvalidFormatException{
+    public AbstractPacket processIncomingPacket(){
         
-        return packet;
+        return responsePacket;
     }
 
-    protected Boolean validatePayload(LinkedHashMap<String, String> payload) {
+    @Override
+    public void recreateIncomingPacket(AbstractPacket incomingPacket) {
+        this.incomingPacket = incomingPacket;
+    }
+
+    @Override
+    protected boolean validatePayload(String[] values) {
         // TODO: Implement validation for peer list packets
         return true;
-    }
-
-    protected boolean validatePayload() {
-
-        return false;
     }
 
 }

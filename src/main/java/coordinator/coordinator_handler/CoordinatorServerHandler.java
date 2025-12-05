@@ -27,57 +27,42 @@ import java.io.PrintWriter;
 
 import java.net.Socket;
 
-import java.util.UUID;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.function.Function;
-
-import com.google.gson.Gson;
+import com.google.gson.Gson; 
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import coordinator.coordinator_connections.*;
 
 /*
         NEW
 */
 
-import coordinator.coordinator_connections.CoordinatorConnectionManager2;
+import coordinator.coordinator_connections.CoordinatorConnectionManager;
 
 import packet.AbstractPacket;
+import packet.AbstractPacketManager;
 import packet.PacketType;
 import packet.PacketManagerFactory;
 
-import connection.ConnectionDto;
-import connection.Priority;
+import external.PacketTypeAdapterFactory;
 
-import exception.;
+import exception.NonDelimitedPacket;
+
 /*
         END NEW
 */
-
-import coordinator.coordinator_handler.coordinator_packet_type_handler.*;
-
-import external.RuntimeTypeAdapterFactory;
-
-import coordinator.edge_coordinator.EdgeCoordinator;
-import exception.NonDelimitedPacket;
-
-
+ 
 public class CoordinatorServerHandler implements Runnable {
 
     private static final Logger logger = LogManager.getLogger(CoordinatorServerHandler.class);
 
     //private static CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
-    private static CoordinatorConnectionManager2 connectionManager = CoordinatorConnectionManager2.getInstance();
+    private static CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
 
     private Socket serverSocket;
     private String serverIp;
 
+    private AbstractPacketManager serverPacketManager;
     private AbstractPacket serverPacket;
 
     private BufferedReader reader;
@@ -92,9 +77,7 @@ public class CoordinatorServerHandler implements Runnable {
 
 
     /*        
-     * 
      *          Respond
-     * 
      */
 
     // Takes an already initalized response packet and returns to sender
@@ -116,6 +99,7 @@ public class CoordinatorServerHandler implements Runnable {
             logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + "\n"+ e);
         }
     }
+
     /*
      *                      Main run loop
      */
@@ -161,26 +145,50 @@ public class CoordinatorServerHandler implements Runnable {
                 serverIp = serverSocket.getInetAddress().toString();
                 serverIp = serverIp.substring(1); // Removes the forward slash
 
-                // Pre-parses the Json in order to grab the packetType to use for the switch statement
-                JsonObject jsonObj = JsonParser.parseString(json).getAsJsonObject();
-
-                String packetTypeStr = jsonObj.get("packetType").getAsString();
-
-                
-
-                // Covert the string to the ENUM packetType
-                CoordinatorPacketType packetType = CoordinatorPacketType.valueOf(packetTypeStr);
+                logger.info(json);
 
                 try {
-                    // Reconstruct the recieved packet into a 'CoordinatorPacket' type 
-                    serverPacket = buildGsonWithPacketSubtype(packetType, json);
-                    //logger.info("Recieved:\n" + serverPacket.toJson());
-                    readAction(packetType, serverPacket); 
-                } catch(IllegalArgumentException e) {
-                    logger.error("Recieved unknown packet of type: " + packetTypeStr);
+                    // Set's up the Factory to be able to reconstruct the packet to it's correct class
+                    Gson gson = new GsonBuilder()
+                        .registerTypeAdapterFactory(PacketTypeAdapterFactory.create())
+                        .create();
+
+                    // Reconstructs the packet to it's desired type
+                    serverPacket = gson.fromJson(json, AbstractPacket.class);
+                        
+                    // Check if packet type needs a manager
+                    if (!PacketManagerFactory.requiresManager(serverPacket.getPacketType())) {
+                        logger.warn("Received response packet type: " + serverPacket.getPacketType());
+                        return; // Response packets don't need managers
+                    }
+
+                    // Initialization packets need to be handled differently
+                    if (serverPacket.getPacketType() == PacketType.INITIALIZATION) {
+                        serverPacketManager = PacketManagerFactory.createManager(
+                            serverPacket,
+                            connectionManager.getInstanceId(),
+                            connectionManager.getClusterId(),
+                            "Coordinator",
+                            connectionManager,
+                            serverSocket.getInetAddress().getHostAddress()  // From socket - convert to String
+                        );
+                    } else {
+                        serverPacketManager = PacketManagerFactory.createManager(
+                            serverPacket,
+                            connectionManager.getInstanceId(),
+                            connectionManager.getClusterId(),
+                            "Server"
+                        ); 
+                    } 
+
+                    responsePacket = serverPacketManager.processIncomingPacket();
+                    respond();
+
+                } catch(IllegalArgumentException e) { 
+                    logger.error("Recieved unknown packet!");  
                     return; // Early exit
                 }
-            }
+            } 
         } catch (IOException e) {
             logger.error("IOException!" + e);
         } catch(NonDelimitedPacket e) {

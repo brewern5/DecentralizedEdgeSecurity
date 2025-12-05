@@ -51,7 +51,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import node.edge_node.EdgeNode;
-import node.node_lib.RuntimeTypeAdapterFactory;
+import external.RuntimeTypeAdapterFactory;
 
 import node.node_packet.*;
 import node.node_packet.node_packet_class.*;

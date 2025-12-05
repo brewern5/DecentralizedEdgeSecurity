@@ -78,7 +78,7 @@ public abstract class ConnectionManager {
             Abstract Methods
      */
 
-    public abstract boolean sendKeepAlive(AbstractPacket packet);
+    public abstract boolean sendKeepAlive();
 
     /*
             End abstraction

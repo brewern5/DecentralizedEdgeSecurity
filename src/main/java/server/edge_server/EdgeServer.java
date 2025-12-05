@@ -28,35 +28,37 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
+ 
 import server.server_config.ServerConfig;
 
 import server.server_listener.ServerListener;
 
-import server.server_packet.server_packet_class.*;
-import server.server_services.ServerKeepAliveService;
-import server.server_packet.*;
+import server.server_services.ServerClusterManager;
 
 import server.server_connections.*;
-import server.server_connections.server_connection_manager.*;
 
-import server.server_services.ServerClusterManager;
+import packet.AbstractPacket;
+import packet.initalization.InitalizationPacket;
+import packet.initalization.InitalizationPacketManager;
+
+import connection.Priority;
+import connection.ConnectionDto;
 
 public class EdgeServer {
 
-    private static final Logger logger = LogManager.getLogger(EdgeServer.class);
+    private static final Logger logger = LogManager.getLogger(EdgeServer.class); 
 
     private static volatile String serverId = null;
 
     private static String IP;      // The IP of this devices
 
-    private static ServerListener coordinatorListener;  // The socket that will be listening to requests from the Edge Coordinator
-    private static ServerListener nodeListener;     // The socket that will be listening for Nodes
+    private static ServerListener coordinatorListener; 
+    private static ServerListener nodeListener;     
 
     private static ServerConfig config;
 
-    private static ServerConnectionManager nodeConnectionManager;   // This will manage all connections and check keep alive
-    private static ServerConnectionManager coordinatorConnectionManager;
+    private static ServerNodeConnectionManager nodeConnectionManager;   // This will manage all connections and check keep alive
+    private static ServerCoordinatorConnectionManager coordinatorConnectionManager;
 
     // Timer components
     private static ScheduledExecutorService timerScheduler; // The timer that will send out to keepAlives to the coordinator and check Node expiry   
@@ -64,7 +66,6 @@ public class EdgeServer {
     /*
      *  Initalize the Edge Server
      */
-    // This is the function that will be called first that will have the inital handshake between the Coordinator
     public static void init() {
 
         // Create the connection manager
@@ -86,11 +87,11 @@ public class EdgeServer {
             coordinatorConnectionManager = ServerCoordinatorConnectionManager.getInstance();
             
             coordinatorConnectionManager.addConnection(
-                new ServerConnectionDto(
+                new ConnectionDto(
                     "1",  // TEMP Will update when get the ack respones
                     config.getIPByKey("Coordinator.IP"), 
                     config.getPortByKey("Coordinator.listeningPort"),
-                    ServerPriority.CRITICAL
+                    Priority.CRITICAL
                 )
             );
 
@@ -101,10 +102,9 @@ public class EdgeServer {
             );
 
             // Create the initalization packet
-            ServerPacket initPacket = new ServerGenericPacket(
-                ServerPacketType.INITIALIZATION,                  
-                payload
-            );  
+            //AbstractPacket initPacket = new InitalizationPacketManager("", "", "1", "Server", coordinatorConnectionManager, IP).createOutgoingPacket();
+
+            AbstractPacket initPacket = new InitalizationPacket("", "", "1");
 
             new ServerConnectionDtoManager(coordinatorConnectionManager.getConnectionInfoById("1")).send(initPacket);
             

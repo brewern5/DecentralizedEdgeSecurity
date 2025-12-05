@@ -35,16 +35,6 @@ if "%1"=="" (
     echo Using Server Instance ID from command line: %SERVER_INSTANCE%
 )
 
-if "%2"=="" (
-    if "%1"=="" (
-        set /p NODE_INSTANCE="Enter Node Instance ID (e.g., node1, node2, or leave blank for default): "
-    ) else (
-        set /p NODE_INSTANCE="Enter Node Instance ID (e.g., node1, node2, or leave blank for default): "
-    )
-) else (
-    set NODE_INSTANCE=%2
-    echo Using Node Instance ID from command line: %NODE_INSTANCE%
-)
 
 echo.
 if "%SERVER_INSTANCE%"=="" (
