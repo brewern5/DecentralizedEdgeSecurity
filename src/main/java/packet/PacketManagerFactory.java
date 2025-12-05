@@ -81,6 +81,10 @@ public class PacketManagerFactory {
         String senderId = receivedPacket.getSenderId();
         
         AbstractPacketManager manager;
+
+        /*
+            I Used a switch here because of memory efficiency, which is important in highly distributed systems.
+        */
         
         switch (packetType) {
             case INITIALIZATION:
@@ -152,13 +156,16 @@ public class PacketManagerFactory {
     public static boolean requiresManager(PacketType packetType) {
         switch (packetType) {
             case INITIALIZATION:
+                return true;
             case KEEP_ALIVE:
             case PEER_LIST_REQ:
+                return true;
             case MESSAGE:
                 return true;
                 
             case INITIALIZATION_RES:
             case ACK:
+                return false;
             case ERROR:
             case PEER_LIST_RES:
                 return false;

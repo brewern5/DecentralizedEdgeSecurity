@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package node.node_lib;
+package external;
 
 //import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.gson.Gson;

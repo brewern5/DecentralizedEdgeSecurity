@@ -50,22 +50,22 @@ import coordinator.coordinator_connections.CoordinatorConnectionManager2;
 
 import packet.AbstractPacket;
 import packet.PacketType;
+import packet.PacketManagerFactory;
 
 import connection.ConnectionDto;
 import connection.Priority;
 
+import exception.;
 /*
         END NEW
 */
 
 import coordinator.coordinator_handler.coordinator_packet_type_handler.*;
 
-import lib.RuntimeTypeAdapterFactory;
-
-import coordinator.coordinator_packet.*;
-import coordinator.coordinator_packet.coordinator_packet_class.*;
+import external.RuntimeTypeAdapterFactory;
 
 import coordinator.edge_coordinator.EdgeCoordinator;
+import exception.NonDelimitedPacket;
 
 
 public class CoordinatorServerHandler implements Runnable {
@@ -85,139 +85,13 @@ public class CoordinatorServerHandler implements Runnable {
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private AbstractPacket responsePacket;
 
-    // Dictionary for lookup to handle different packet types
-    private final Map<CoordinatorPacketType, Function<CoordinatorPacket, Void>> actionMap = new HashMap<>();
 
     public CoordinatorServerHandler(Socket socket) {
         this.serverSocket = socket;
-        initActionMap();
     }
 
-    private void initActionMap() {
-        actionMap.put(CoordinatorPacketType.INITIALIZATION, this::handleInitalization);
-        actionMap.put(CoordinatorPacketType.MESSAGE, this::handleMessage);
-        actionMap.put(CoordinatorPacketType.KEEP_ALIVE, this::handleKeepAlive);
-    }
 
-    private void generatePacketResponse(CoordinatorPacket serverPacket) {
-        // Allow for the packet response to be created based on the handling response
-        packetResponse = packetHandler.handle(serverPacket);
-
-        // If good send ack
-        if (packetResponse.getSuccess() == true) {
-
-            // Construct the ack packet
-            ack(packetResponse);
-        } else if (packetResponse.getSuccess() == false) {
-            logger.error("Error Handling Packet of Type: \tINITIALIZATION\n\tDetails:");
-
-            // Detail the errors
-            packetResponse.printMessages();
-
-            // Construct the failure packet based on the response
-            failure(packetResponse);
-        }
-    }
-
-    /*
-     * 
-     *          Actions 
-     * 
-     */
-
-    private void readAction(CoordinatorPacketType packetAction, CoordinatorPacket serverPacket) {
-        // Dictionary lookup
-        actionMap.get(packetAction).apply(serverPacket);
-
-        // Handle the packet
-        generatePacketResponse(serverPacket);
-    }
-
-    private Void handleInitalization(CoordinatorPacket serverPacket) {
-        // Assign an id to the server - this will be sent back to the server
-        String serverId = UUID.randomUUID().toString();
-
-        connectionManager.addConnection(
-            new ConnectionDto(
-                serverId,
-                serverIp,
-                0, // TEMP, this will be updated inside the InitalizationHandler
-                Priority.CRITICAL
-            )
-        );
-        serverPacket.setId(serverId);
-
-        // Create the packetType based handler
-        packetHandler = new CoordinatorInitalizationHandler();
-
-        // Need to return null to fulfill the 'Void' return data type   
-        return null;
-    }
-
-    private Void handleMessage(CoordinatorPacket serverPacket) {
-        // Create the packetType based handler
-        packetHandler = new CoordinatorMessageHandler();
-
-        return null;
-    }
-
-    private Void handleKeepAlive(CoordinatorPacket serverPacket) {
-        // Create the packetType based handler
-        packetHandler = new CoordinatorKeepAliveHandler();
-
-        return null;
-    }
-
-    /*
-     *          Packet Reconstruction
-     */
-
-    private CoordinatorPacket buildGsonWithPacketSubtype(CoordinatorPacketType type, String json) {
-        RuntimeTypeAdapterFactory<CoordinatorPacket> packetAdapterFactory =
-        RuntimeTypeAdapterFactory
-            .of(CoordinatorPacket.class, "packetType")
-            .registerSubtype(CoordinatorGenericPacket.class, type.name());
-
-        Gson tempGson = new GsonBuilder()
-            .registerTypeAdapterFactory(packetAdapterFactory)
-            .create();
-
-        return tempGson.fromJson(json, CoordinatorPacket.class);
-    }
-
-    /*          End Packet Reconstruction
-     * 
-     * 
-     *          Responses
-     * 
-     */
-
-    // This is a good response, it will be sent back to the server to ensure a packet was recieved 
-    private void ack(CoordinatorHandlerResponse packetResponse) {
-
-        responsePacket = new CoordinatorGenericPacket(
-            CoordinatorPacketType.ACK,        // Packet type
-            EdgeCoordinator.getCoordinatorId(),             // Sender
-            packetResponse.combineMaps()    // Payload
-        );
-        respond();
-    }
-
-    // This is the creation of the failure packet based on the packet response 
-    private void failure(CoordinatorHandlerResponse packetResponse) {
-        
-        // Construct a new failure packet
-        responsePacket = new CoordinatorGenericPacket(
-            CoordinatorPacketType.ERROR,            // Packet type
-            EdgeCoordinator.getCoordinatorId(),                   // Sender
-            packetResponse.combineMaps() // Payload
-        );
-        // Send the packet
-        respond();
-    }
-
-    /*          End Responses
-     * 
+    /*        
      * 
      *          Respond
      * 
@@ -267,23 +141,18 @@ public class CoordinatorServerHandler implements Runnable {
             );
             
             // Stores the payload as a string to check (and potentially remove) the delimiter
-            String payload = reader.readLine();
+            String jsonPacket = reader.readLine();
 
             // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
-            if(payload.endsWith("||END||")){
-                payload = payload.substring(0, payload.length() - "||END||".length());
+            if(jsonPacket.endsWith("||END||")){
+                jsonPacket = jsonPacket.substring(0, jsonPacket.length() - "||END||".length());
             }
             else{
-                failure(new CoordinatorHandlerResponse(
-                    false, 
-                    new Exception("Payload not terminated."), 
-                    "Incomplete Packet")
-                );
-                return; // Early exit
+               throw new NonDelimitedPacket("Recieved Packet does not end with \" ||END|| \".");
             }
 
             // Reads the packet as json
-            String json = payload;
+            String json = jsonPacket;
 
             // Checks if empty packet
             if (json != null) {
@@ -296,6 +165,8 @@ public class CoordinatorServerHandler implements Runnable {
                 JsonObject jsonObj = JsonParser.parseString(json).getAsJsonObject();
 
                 String packetTypeStr = jsonObj.get("packetType").getAsString();
+
+                
 
                 // Covert the string to the ENUM packetType
                 CoordinatorPacketType packetType = CoordinatorPacketType.valueOf(packetTypeStr);
@@ -311,8 +182,15 @@ public class CoordinatorServerHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
+            logger.error("IOException!" + e);
+        } catch(NonDelimitedPacket e) {
+            /* TODO: Create failure sender logic
+
+                */
+               logger.error("NonDelimitedPacket!" + e);
+        }catch(Exception e) {
+            logger.error("Unchecked Exception!" + e);
+        }finally {
             try {
                 if( reader != null){ reader.close(); }
                 if( serverSocket != null && !serverSocket.isClosed()) { serverSocket.close(); }

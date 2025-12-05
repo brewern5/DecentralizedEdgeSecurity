@@ -10,16 +10,17 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
 import java.net.Inet4Address;
-import java.net.InetAddress;            // Used for grabbing the machine's IP address
+import java.net.InetAddress;        
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;   // Error for trying to grab IP address
+import java.net.UnknownHostException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Properties;            // Utility for getting properties from any .properties file
+import java.util.Properties;
 
 public class CoordinatorConfig {
 
