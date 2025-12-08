@@ -8,8 +8,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import exception.InvalidFormatException;
+import exception.UnknownPacketException;
+
 import packet.AbstractPacket;
 import packet.AbstractPacketManager;
+import packet.PacketType;
 
 import packet.response_packet.AckResponse;
 import packet.response_packet.ErrorResponse;
@@ -25,7 +28,7 @@ public class KeepAliveManager extends AbstractPacketManager {
      * @param instantiatorId The id of the node that created this instance
      * @param clusterId The id of the cluster the instantiator is part of
      * @param recipientId The id of the intended reciepient (if there is one)
-     * @param insantiatorType What class (Node, Server, Coordinator) created this instance
+     * @param role What class (Node, Server, Coordinator) created this instance
      */
     public KeepAliveManager(String instantiatorId, String clusterId, String recipientId, String role) {
         super(instantiatorId, clusterId, recipientId, role);
@@ -64,7 +67,7 @@ public class KeepAliveManager extends AbstractPacketManager {
         this.incomingPacket = incomingPacket;
     }
 
-        /**
+    /**
      * Handle the incoming packet and generate a resposne packet based on what packet was recieved
      * 
      * @return the generated response packet
@@ -79,8 +82,13 @@ public class KeepAliveManager extends AbstractPacketManager {
 
             validatePayload(values);
 
+            responsePacket = createGoodResponsePacket();
+
         } catch(InvalidFormatException ife) {
             logger.error("Invalid format in processed packet! {}", ife);
+            responsePacket = createBadResponsePacket();
+        } catch(UnknownPacketException upe) {
+            logger.error("Unexpected Packet type! {}", upe);
             responsePacket = createBadResponsePacket();
         } catch(Exception e) {
             logger.error("Unchecked Exception! {}", e);
@@ -91,10 +99,20 @@ public class KeepAliveManager extends AbstractPacketManager {
     }
 
     @Override
-    protected boolean validatePayload(String[] values) throws InvalidFormatException {
+    protected void validatePayload(String[] values) throws InvalidFormatException, UnknownPacketException {
 
+        PacketType incomingPacketType = incomingPacket.getPacketType();
 
-        return false;
+        // See if there is a termination string then handle accordingly
+        if(incomingPacketType == PacketType.KEEP_ALIVE) {
+            
+            // TODO: check termination status and then respond with keep alive packet
+                
+            
+
+        } else {
+            throw new UnknownPacketException("Expected packet type of KEEP_ALIVE. Recieved: " + incomingPacketType.toString());
+        }
     }
 
     public void setTerminationStatus(boolean terminate) {

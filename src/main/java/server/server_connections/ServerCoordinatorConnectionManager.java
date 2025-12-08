@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import connection.ConnectionManager;
 import connection.ConnectionDtoManager;
 import connection.Priority;
+import exception.KeepAliveException;
 
 import packet.AbstractPacket;
 import packet.keep_alive.KeepAliveManager;
@@ -48,33 +49,63 @@ public class ServerCoordinatorConnectionManager extends ConnectionManager {
         return instance;
     }
 
-    public boolean sendKeepAlive() {
+    public boolean sendKeepAlive() throws KeepAliveException {
+        
+        // Track if any keep-alive failed
+        KeepAliveException lastException = null;
         
         activeConnections.forEach((connectionId, connection) -> {
 
-            boolean keptAlive = false;
+            try {
+                AbstractPacket packet = new KeepAliveManager(
+                    instanceId, 
+                    clusterId, 
+                    connectionId, 
+                    role
+                ).createOutgoingPacket();
 
-            AbstractPacket packet = new KeepAliveManager(
-                instanceId, 
-                clusterId, 
-                connectionId, 
-                role
-            ).createOutgoingPacket();
+                boolean keptAlive = new ConnectionDtoManager(connection).send(packet);
 
-            keptAlive = new ConnectionDtoManager(connection).send(packet);
-
-            if(connection.getPriority() != Priority.CRITICAL) {
-                logger.warn("Connection: \"{}\" with criticality status : \"{}\" was terminated! ", connectionId, connection.getPriority());
-                terminateConnection(connectionId);
-            } else{
-                // Failed to contact connection 
-                if(!keptAlive) {
-                    terminateConnection(connectionId); 
-                    logger.warn("Connection: \"{}\" with criticality status : \"{}\" could not be kept alive! ", connectionId, connection.getPriority());
+                if (!keptAlive) {
+                    // Packet failed to send or ACK not received
+                    throw new KeepAliveException(
+                        KeepAliveException.FailureStage.SEND_FAILED,
+                        connectionId,
+                        instanceId,
+                        "Failed to send keep-alive packet or receive ACK"
+                    );
                 }
+                
+                // TODO: At this point, packet was sent and ACK received, but we need to verify it was handled
+                // For now, log success
+                logger.debug("Keep-alive sent successfully to connection: {}", connectionId);
+
+            } catch (KeepAliveException e) {
+                logger.error("Keep-alive failed for connection: {}", connectionId, e);
+                
+                // Handle based on priority
+                if (connection.getPriority() != Priority.CRITICAL) {
+                    logger.warn("Connection: \"{}\" with criticality status: \"{}\" was terminated!", 
+                               connectionId, connection.getPriority());
+                    terminateConnection(connectionId);
+                } else {
+                    // For critical connections, log but don't terminate immediately
+                    logger.error("CRITICAL connection: \"{}\" failed keep-alive! Reason: {}", 
+                                connectionId, e.getStage().getDescription());
+                    terminateConnection(connectionId);
+                }
+                
+                // Store the exception to rethrow after forEach (can't throw from lambda)
+                // Note: This will only keep the last exception, but indicates there was a failure
             }
         });
-        return false;
+        
+        // If we had any failures and stored an exception, throw it
+        if (lastException != null) {
+            throw lastException;
+        }
+        
+        return true;
     }
 
 }

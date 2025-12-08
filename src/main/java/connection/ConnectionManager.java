@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import packet.AbstractPacket;
 import packet.PacketType;
 import packet.keep_alive.KeepAliveManager;
+import exception.KeepAliveException;
 
 public abstract class ConnectionManager {
 
@@ -79,7 +80,7 @@ public abstract class ConnectionManager {
             Abstract Methods
      */
 
-    public abstract boolean sendKeepAlive();
+    public abstract boolean sendKeepAlive() throws KeepAliveException;
 
     /*
             End abstraction

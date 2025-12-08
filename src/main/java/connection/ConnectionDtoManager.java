@@ -65,23 +65,37 @@ public class ConnectionDtoManager {
         if (sender == null || !hasSender) {
             // if no sender, create one
             createSender();
-        }
-        boolean sent = sender.send(packet);
-        if(!sent) {
-            boolean retry = sender.retry(packet);
-            if(!retry){
+            if (sender == null || !hasSender) {
+                logger.error("Sender was not created for Connection: {}! Cannot send packet", connectionInfo.getId());
                 return false;
             }
+        }
+        
+        logger.debug("Attempting to send {} packet to connection: {}", packet.getPacketType(), connectionInfo.getId());
+        boolean sent = sender.send(packet);
+        
+        if(!sent) {
+            logger.warn("Initial send failed for connection: {}, attempting retry...", connectionInfo.getId());
+            boolean retry = sender.retry(packet);
+            if(!retry){
+                logger.error("Retry failed for connection: {} - packet was NOT sent or ACK was NOT received", 
+                           connectionInfo.getId());
+                return false;
+            } else {
+                logger.info("Retry succeeded for connection: {} - packet sent and ACK received", connectionInfo.getId());
+                if(packet.getPacketType() == PacketType.INITIALIZATION) {
+                    assignedId = sender.getAssignedId();
+                }
+                return true;
+            }
         } else {
+            logger.debug("Successfully sent {} packet to connection: {} and received ACK", 
+                        packet.getPacketType(), connectionInfo.getId());
             if(packet.getPacketType() == PacketType.INITIALIZATION) {
                 assignedId = sender.getAssignedId();
             }
             return true;
         }
-
-        logger.error("Sender was not created for Connection: {}! Cannot send packet", connectionInfo.getId());
-        // TODO: Exception handling
-        return false;
     }
 
     public String getAssignedId() { return assignedId; }

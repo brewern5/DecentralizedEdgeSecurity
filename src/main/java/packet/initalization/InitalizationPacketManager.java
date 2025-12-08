@@ -122,7 +122,7 @@ public class InitalizationPacketManager extends AbstractPacketManager {
     }
 
     @Override
-    protected boolean validatePayload(String[] values) throws InvalidFormatException, UnknownPacketException {
+    protected void validatePayload(String[] values) throws InvalidFormatException, UnknownPacketException {
 
         PacketType incomingPacketType = incomingPacket.getPacketType();
 
@@ -141,12 +141,10 @@ public class InitalizationPacketManager extends AbstractPacketManager {
         } else if(incomingPacketType == PacketType.INITIALIZATION_RES) {
             if(values.length < 1 || values.length > 1) {
                 throw new InvalidFormatException("Expected Payload length of 0. Recieved length of " + values.length);
-            }
-            
+            }  
         } else {
             throw new UnknownPacketException("Excpected Packet of type INITALIZATION or INITALIZATION_RES. Recieved: " + incomingPacketType.toString());
         }
-        return false;
     }
 
     public void addOutgoingPayload(LinkedHashMap<String, String> payload) { outgoingPacket.addPayload(payload); }

@@ -59,11 +59,11 @@ public abstract class AbstractPacketManager {
     public abstract AbstractPacket processIncomingPacket();
 
     /**
-     * 
-     * @return 'True' if the payload is verified as okay, 'False' if there is issues
-     * @exception 
+     * @param values - the payload of the incoming packet  
+     * @exception InvalidFormatException - Packet has incorrect format such as no delimiter.
+     * @exception UnknownPacketException - Packet type is not of a type that can be handled by the concrete manager.
      */
-    protected abstract boolean validatePayload(String[] values) throws InvalidFormatException, UnknownPacketException;
+    protected abstract void validatePayload(String[] values) throws InvalidFormatException, UnknownPacketException;
 
     /*  
      *      End Abstraction

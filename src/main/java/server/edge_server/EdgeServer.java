@@ -121,7 +121,7 @@ public class EdgeServer {
 
             coordinatorConnectionManager.sendToConnection("1", initPacket);
             
-            // Try and get setId
+            // Try and get created ID from the response packet
             setServerId(coordinatorConnectionManager.getInstanceId());
 
         } catch (Exception e) {
@@ -210,12 +210,29 @@ public class EdgeServer {
                 boolean keepAliveSent;
 
                 keepAliveSent = coordinatorConnectionManager.sendKeepAlive();
- 
+                
                 if(!keepAliveSent){
                     logger.error("Keep alive was not sent!");
                     //TODO: something to stop the keep alive sender
                 }
 
+            } catch(exception.KeepAliveException e) {
+                // Detailed logging for keep-alive specific failures
+                logger.error("Keep-alive failed at stage: {} for connection: {} - {}", 
+                           e.getStage(), e.getConnectionId(), e.getMessage());
+                
+                // Different handling based on failure type
+                if (e.isSendFailure()) {
+                    logger.error("Failed to send keep-alive packet - network or socket issue");
+                } else if (e.isAckFailure()) {
+                    if (e.getStage() == exception.KeepAliveException.FailureStage.ACK_NOT_RECEIVED) {
+                        logger.error("Keep-alive sent but ACK not received - coordinator may be down");
+                    } else if (e.getStage() == exception.KeepAliveException.FailureStage.ACK_NOT_HANDLED) {
+                        logger.error("ACK received but not handled properly - handler issue");
+                    }
+                }
+                //TODO: Consider stopping keep-alive sender or implementing fallback logic
+                
             } catch(Exception e) {
                 logger.error("Exception in keep-alive timer: ", e);
             }

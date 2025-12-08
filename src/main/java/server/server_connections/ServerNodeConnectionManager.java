@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import connection.ConnectionDtoManager;
 import connection.ConnectionManager;
 import connection.Priority;
+import exception.KeepAliveException;
 
 import packet.AbstractPacket;
 import packet.keep_alive.KeepAliveManager;
@@ -51,33 +52,48 @@ public class ServerNodeConnectionManager extends ConnectionManager {
         return instance;
     }
 
-    public boolean sendKeepAlive() {
+    public boolean sendKeepAlive() throws KeepAliveException {
         
         activeConnections.forEach((connectionId, connection) -> {
 
-            boolean keptAlive = false;
+            try {
+                AbstractPacket packet = new KeepAliveManager(
+                    instanceId, 
+                    clusterId, 
+                    connectionId, 
+                    role
+                ).createOutgoingPacket();
 
-            AbstractPacket packet = new KeepAliveManager(
-                instanceId, 
-                clusterId, 
-                connectionId, 
-                role
-            ).createOutgoingPacket();
+                boolean keptAlive = new ConnectionDtoManager(connection).send(packet);
 
-            keptAlive = new ConnectionDtoManager(connection).send(packet);
+                if (!keptAlive) {
+                    throw new KeepAliveException(
+                        KeepAliveException.FailureStage.SEND_FAILED,
+                        connectionId,
+                        instanceId,
+                        "Failed to send keep-alive packet or receive ACK"
+                    );
+                }
+                
+                logger.debug("Keep-alive sent successfully to connection: {}", connectionId);
 
-            if(connection.getPriority() != Priority.CRITICAL) {
-                logger.warn("Connection: \"{}\" with criticality status : \"{}\" was terminated! ", connectionId, connection.getPriority());
-                terminateConnection(connectionId);
-            } else{
-                // Failed to contact connection 
-                if(!keptAlive) {
-                    terminateConnection(connectionId); 
-                    logger.warn("Connection: \"{}\" with criticality status : \"{}\" could not be kept alive! ", connectionId, connection.getPriority());
+            } catch (KeepAliveException e) {
+                logger.error("Keep-alive failed for connection: {}", connectionId, e);
+                
+                if(connection.getPriority() != Priority.CRITICAL) {
+                    logger.warn("Connection: \"{}\" with criticality status: \"{}\" was terminated!", 
+                               connectionId, connection.getPriority());
+                    terminateConnection(connectionId);
+                } else {
+                    logger.error("CRITICAL connection: \"{}\" failed keep-alive! Reason: {}", 
+                                connectionId, e.getStage().getDescription());
+                    terminateConnection(connectionId);
+                    logger.warn("Connection: \"{}\" with criticality status: \"{}\" could not be kept alive!", 
+                               connectionId, connection.getPriority());
                 }
             }
         });
-        return false;
+        return true;
     }
 
 }

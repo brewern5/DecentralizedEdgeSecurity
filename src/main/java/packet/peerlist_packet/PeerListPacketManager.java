@@ -62,9 +62,8 @@ public class PeerListPacketManager extends AbstractPacketManager {
     }
 
     @Override
-    protected boolean validatePayload(String[] values) {
+    protected void validatePayload(String[] values) {
         // TODO: Implement validation for peer list packets
-        return true;
     }
 
 }
