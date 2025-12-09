@@ -53,6 +53,9 @@ public class InitalizationPacketManager extends AbstractPacketManager {
 
     @Override
     public AbstractPacket createGoodResponsePacket() {
+        
+        logger.debug("Creating response packet - senderId: {}, clusterId: {}, recipientId: {}", 
+                    senderId, clusterId, recipientId);
 
         responsePacket = new InitializationResponse(senderId, clusterId, recipientId);
 

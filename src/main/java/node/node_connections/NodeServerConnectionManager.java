@@ -1,13 +1,10 @@
 /*
- *      Author: Nathaniel Brewer
- */
-
-package server.server_connections;
+    Author: Nathaniel Brewer
+*/
+package node.node_connections;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.concurrent.atomic.AtomicReference;
 
 import connection.ConnectionManager;
 import connection.ConnectionDtoManager;
@@ -18,15 +15,15 @@ import exception.KeepAliveException;
 import packet.AbstractPacket;
 import packet.keep_alive.KeepAliveManager;
 
-public class ServerCoordinatorConnectionManager extends ConnectionManager {
-    
-    private static final Logger logger = LogManager.getLogger(ServerCoordinatorConnectionManager.class);
+public class NodeServerConnectionManager extends ConnectionManager {
+       
+    private static final Logger logger = LogManager.getLogger(NodeServerConnectionManager.class);
 
-    private ServerCoordinatorConnectionManager(String instanceId, String clusterId, String role) {
-        super(instanceId, clusterId, role); 
+    public NodeServerConnectionManager(String instanceId, String clusterId, String role) {
+        super(instanceId, clusterId, role);
     }
 
-    private static volatile ServerCoordinatorConnectionManager instance;
+    private static volatile NodeServerConnectionManager instance;
 
     /** 
      * 
@@ -35,9 +32,10 @@ public class ServerCoordinatorConnectionManager extends ConnectionManager {
      * @param role The Role of the instantiator (In this case: "Coordinator")
      * @return a singleton instance of the connectionManager
      */
-    public static ServerCoordinatorConnectionManager getInstance(String instanceId, String clusterId, String role) {
-        return getOrCreateInstance(instance, ServerCoordinatorConnectionManager.class, 
-            () -> instance = new ServerCoordinatorConnectionManager(instanceId, clusterId, role));
+    public static NodeServerConnectionManager getInstance(String instanceId, String clusterId, String role) {
+        return getOrCreateInstance(instance, NodeServerConnectionManager.class,
+            () -> instance = new NodeServerConnectionManager(instanceId, clusterId, role)
+        );
     }
 
     /**
@@ -45,7 +43,7 @@ public class ServerCoordinatorConnectionManager extends ConnectionManager {
      * @return the singleton instance
      * @throws IllegalStateException if getInstance with parameters hasn't been called yet
      */
-    public static ServerCoordinatorConnectionManager getInstance() {
+        public static NodeServerConnectionManager getInstance() {
         if (instance == null) {
             throw new IllegalStateException("ConnectionManager not initialized. Call getInstance(instanceId, clusterId, role) first.");
         }
@@ -53,9 +51,9 @@ public class ServerCoordinatorConnectionManager extends ConnectionManager {
     }
 
     public boolean sendKeepAlive() throws KeepAliveException {
-        
+                
         // Track if any keep-alive failed
-        AtomicReference<KeepAliveException> lastException = new AtomicReference<>();
+        KeepAliveException lastException = null;
         
         activeConnections.forEach((connectionId, connection) -> {
 
@@ -100,13 +98,12 @@ public class ServerCoordinatorConnectionManager extends ConnectionManager {
                 
                 // Store the exception to rethrow after forEach (can't throw from lambda)
                 // Note: This will only keep the last exception, but indicates there was a failure
-                lastException.set(e);
             }
         });
         
         // If we had any failures and stored an exception, throw it
-        if (lastException.get() != null) {
-            throw lastException.get();
+        if (lastException != null) {
+            throw lastException;
         }
         
         return true;

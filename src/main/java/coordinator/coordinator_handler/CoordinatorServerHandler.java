@@ -48,9 +48,6 @@ public class CoordinatorServerHandler implements Runnable {
 
     private static final Logger logger = LogManager.getLogger(CoordinatorServerHandler.class);
 
-    //private static CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
-    private static CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
-
     private Socket serverSocket;
     private String serverIp;
 
@@ -77,9 +74,7 @@ public class CoordinatorServerHandler implements Runnable {
 
         // Puts the contents of the packet to JSON with a non-JSON compatable delimiter at the end to be handled prior to pakcet content hanlding
         String json = responsePacket.toDelimitedString();
-
-        logger.info("RESPONDING   " + json);
-
+        
         try{
             // The responder object
             PrintWriter output = new PrintWriter(
@@ -138,8 +133,6 @@ public class CoordinatorServerHandler implements Runnable {
             // Checks if empty packet
             if (json != null) {
 
-                logger.info("RECIEVED PACKET  " + json);
-
                 // Grabs the server IP in order to be saved in config file
                 serverIp = serverSocket.getInetAddress().toString();
                 serverIp = serverIp.substring(1); // Removes the forward slash 
@@ -159,11 +152,18 @@ public class CoordinatorServerHandler implements Runnable {
                         return; // Response packets don't need managers
                     }   
 
+                    // Get connection manager instance (lazy initialization ensures coordinator ID is set)
+                    CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
+                    
+                    // Debug: Log the coordinator's instance ID
+                    String coordinatorId = connectionManager.getInstanceId();
+                    logger.info("Coordinator Instance ID: " + coordinatorId);
+
                     // Initialization packets need to be handled differently
                     if (serverPacket.getPacketType() == PacketType.INITIALIZATION) {
                         serverPacketManager = PacketManagerFactory.createManager(
                             serverPacket,
-                            connectionManager.getInstanceId(),
+                            coordinatorId,
                             connectionManager.getClusterId(),
                             "Coordinator",
                             connectionManager,
@@ -172,7 +172,7 @@ public class CoordinatorServerHandler implements Runnable {
                     } else {
                         serverPacketManager = PacketManagerFactory.createManager(
                             serverPacket,
-                            connectionManager.getInstanceId(),
+                            coordinatorId,
                             connectionManager.getClusterId(),
                             "Coordinator"
                         ); 

@@ -17,7 +17,12 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import java.util.LinkedHashMap;
+
+// DEMO
+/*
 import java.util.Scanner;
+*/
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,15 +32,16 @@ import org.apache.logging.log4j.Logger;
 
 import node.node_listener.NodeListener;
 
-import node.node_packet.*;
-import node.node_packet.node_packet_class.*;
-
 import node.node_config.NodeConfig;
 
 import node.node_connections.*;
 
-import node.node_connections.node_connection_manager.*;
-import node.node_services.*;
+import packet.AbstractPacket;
+import packet.initalization.InitalizationPacketManager;
+import packet.keep_alive.KeepAliveManager;
+
+import connection.Priority;
+import connection.ConnectionDto;
 
 public class EdgeNode {
 
@@ -53,7 +59,7 @@ public class EdgeNode {
 
     private static NodeServerConnectionManager serverConnectionManager; // Manage the connection between the server and the node
 
-    private static NodeServerConnectionManager peerConnectionManager;
+    private static NodeServerConnectionManager peerConnectionManager; 
     // Timer components
     private static ScheduledExecutorService timerScheduler; //the timer that will send out the keepAlives to server
 
@@ -78,15 +84,15 @@ public class EdgeNode {
         // Try to connect to the server
         try {
             // init connection with the server
-            serverConnectionManager = NodeServerConnectionManager.getInstance();
+            serverConnectionManager = NodeServerConnectionManager.getInstance("", "", "Node");
 
             // Add connection to connection manager
             serverConnectionManager.addConnection(
-                new NodeConnectionDto(
+                new ConnectionDto(
                     "1",
                     config.getIPByKey("Server.IP"),
                     config.getPortByKey("Server.listeningPort"),
-                    NodePriority.CRITICAL
+                    Priority.CRITICAL
                 )
             );
 
@@ -98,20 +104,21 @@ public class EdgeNode {
             );
 
             // Create the initalization packet
-            NodePacket initPacket = new NodeGenericPacket(
-                NodePacketType.INITIALIZATION, 
-                getNodeID(),                   
-                payload
-            );  
+            AbstractPacket initPacket = new InitalizationPacketManager(
+                "", 
+                "", 
+                "1", 
+                "Node", serverConnectionManager, 
+                IP
+            )
+            .createOutgoingPacket();
 
-            // Send and get confirmation (ACK packet from server)
-            boolean sent = new NodeConnectionDtoManager(
-                serverConnectionManager.getConnectionInfoById("1"))
-                .send(initPacket);
+            initPacket.addPayload(payload);
 
-            if(!sent) {
-                logger.error("INITALIZATION PACKET WAS NOT SENT!");
-            }
+            serverConnectionManager.sendToConnection("1", initPacket);
+
+            setNodeId(serverConnectionManager.getInstanceId());
+            setClusterId(serverConnectionManager.getClusterId());
 
         } catch(Exception e){
             logger.error("Error Sending Initalization Packet: " + e);
@@ -147,12 +154,12 @@ public class EdgeNode {
      *      ID assignment 
      */
     // Thread-safe setter for ID assignment
-    public static synchronized void setNodeID(String id) {
+    public static synchronized void setNodeId(String id) {
         nodeId = id;
         logger.info("Node ID assigned: " + id);
     }
 
-    public static synchronized String getNodeID() {
+    public static synchronized String getNodeId() {
         return nodeId;
     }
 
@@ -167,13 +174,14 @@ public class EdgeNode {
 
     // Peer list request 
     public static synchronized void peerListReq() {
-                // Try and and get a peer list from the connected server
+        /*         // Try and and get a peer list from the connected server
         try {
             boolean peerListReqSent;
 
+            
             peerListReqSent = serverConnectionManager.sendPeerListReq(
                 NodePeerListService.createPeerListReq(
-                    getNodeID(), 
+                    getNodeId(), 
                     IP, 
                     getClusterId()
                 )
@@ -184,7 +192,7 @@ public class EdgeNode {
             }
         } catch(Exception e) {
             logger.error("Could not get Peer List: " + e);
-        }
+        }*/
     }
 
     /*
@@ -202,18 +210,27 @@ public class EdgeNode {
             try {
                 boolean keepAliveSent;
 
-                keepAliveSent = serverConnectionManager.sendKeepAlive(
-                    NodeKeepAliveService.createKeepAlivePacket(
-                        getNodeID(),
-                        IP
-                    )
-                );
+                keepAliveSent = serverConnectionManager.sendKeepAlive();
 
                 if(!keepAliveSent){
                     logger.error("Keep alive was not sent!");
-                    //TODO: something to stop the keep alive sender
                 }
 
+            } catch(exception.KeepAliveException e) {
+                // Detailed logging for keep-alive specific failures
+                logger.error("Keep-alive failed at stage: {} for connection: {} - {}", 
+                           e.getStage(), e.getConnectionId(), e.getMessage());
+                
+                // Different handling based on failure type
+                if (e.isSendFailure()) {
+                    logger.error("Failed to send keep-alive packet - network or socket issue");
+                } else if (e.isAckFailure()) {
+                    if (e.getStage() == exception.KeepAliveException.FailureStage.ACK_NOT_RECEIVED) {
+                        logger.error("Keep-alive sent but ACK not received - coordinator may be down");
+                    } else if (e.getStage() == exception.KeepAliveException.FailureStage.ACK_NOT_HANDLED) {
+                        logger.error("ACK received but not handled properly - handler issue");
+                    }
+                }
             } catch(Exception e) {
                 logger.error("Exception in keep-alive timer: ", e);
             }
@@ -246,25 +263,27 @@ public class EdgeNode {
         // Request the peer list   
         peerListReq();
 
+        // DEMO
+        /*
         Scanner in = new Scanner(System.in);
-
+        
         boolean on = true;
         while(on){
             
-            // TODO: DEMO
-            System.out.println("Manually Send Message to Server: ");
-            String message = in.nextLine();
-
-            if(!message.isEmpty()) {
+        System.out.println("Manually Send Message to Server: ");
+        String message = in.nextLine();
+        
+        if(!message.isEmpty()) {
                 NodePacket messagePacket = new NodeGenericPacket(
                     NodePacketType.MESSAGE,
                     getNodeID(),
                     message
                 );
-
+                
                 new NodeConnectionDtoManager(serverConnectionManager.getConnectionInfoById("1")).send(messagePacket);
             }
         }       
         in.close();
+        */
     }
 }

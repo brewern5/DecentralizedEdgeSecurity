@@ -56,7 +56,6 @@ public class ServerCoordinatorHandler implements Runnable {
 
     private ServerCoordinatorConnectionManager coordinatorConnectionManager = ServerCoordinatorConnectionManager.getInstance();
 
-
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private AbstractPacket responsePacket;
 

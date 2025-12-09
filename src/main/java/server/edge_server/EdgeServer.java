@@ -117,12 +117,15 @@ public class EdgeServer {
 
             initPacket.addPayload(payload);
 
-            logger.info("SENDING PACKET " + initPacket.toJson());
-
             coordinatorConnectionManager.sendToConnection("1", initPacket);
             
             // Try and get created ID from the response packet
-            setServerId(coordinatorConnectionManager.getInstanceId());
+            String assignedServerId = coordinatorConnectionManager.getInstanceId();
+            setServerId(assignedServerId);
+            
+            // Update the nodeConnectionManager with the assigned server ID
+            nodeConnectionManager.setInstanceId(assignedServerId);
+            logger.info("Updated nodeConnectionManager with server ID: {}", assignedServerId);
 
         } catch (Exception e) {
             logger.error("Error Sending Initalization Packet: " + e);
