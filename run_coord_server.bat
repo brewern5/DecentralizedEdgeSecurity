@@ -35,16 +35,6 @@ if "%1"=="" (
     echo Using Server Instance ID from command line: %SERVER_INSTANCE%
 )
 
-if "%2"=="" (
-    if "%1"=="" (
-        set /p NODE_INSTANCE="Enter Node Instance ID (e.g., node1, node2, or leave blank for default): "
-    ) else (
-        set /p NODE_INSTANCE="Enter Node Instance ID (e.g., node1, node2, or leave blank for default): "
-    )
-) else (
-    set NODE_INSTANCE=%2
-    echo Using Node Instance ID from command line: %NODE_INSTANCE%
-)
 
 echo.
 if "%SERVER_INSTANCE%"=="" (
@@ -65,12 +55,12 @@ pause
 
 cd /d %BASEDIR%\
 
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* coordinator.edge_coordinator.EdgeCoordinator"
+start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* components.coordinator.EdgeCoordinator"
 
-if "%SERVER_INSTANCE%"=="" (
-    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* server.edge_server.EdgeServer"
+if "%SERVER_INSTANCE%"==="" (
+    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* components.server.EdgeServer"
 ) else (
-    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* server.edge_server.EdgeServer %SERVER_INSTANCE%"
+    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* components.server.EdgeServer %SERVER_INSTANCE%"
 )
 
 endlocal

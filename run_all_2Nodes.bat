@@ -51,16 +51,16 @@ pause
 
 cd /d %BASEDIR%\
 
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* coordinator.edge_coordinator.EdgeCoordinator"
+start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* components.coordinator.EdgeCoordinator"
 
-if "%SERVER_INSTANCE%"=="" (
-    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* server.edge_server.EdgeServer"
+if "%SERVER_INSTANCE%"==="" (
+    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* components.server.EdgeServer"
 ) else (
-    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* server.edge_server.EdgeServer %SERVER_INSTANCE%"
+    start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* components.server.EdgeServer %SERVER_INSTANCE%"
 )
 
 REM Start two nodes with specific IDs
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* node.edge_node.EdgeNode node1"
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* node.edge_node.EdgeNode node2"
+start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* components.node.EdgeNode node1"
+start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* components.node.EdgeNode node2"
 
 endlocal

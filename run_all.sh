@@ -62,16 +62,16 @@ read -p "Press enter to start all components..."
 
 cd "$BASEDIR"
 
-gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* coordinator.edge_coordinator.EdgeCoordinator; exec bash" &
+gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* components.coordinator.EdgeCoordinator; exec bash" &
 
 if [ -n "$SERVER_INSTANCE" ]; then
-    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* server.edge_server.EdgeServer $SERVER_INSTANCE; exec bash" &
+    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* components.server.EdgeServer $SERVER_INSTANCE; exec bash" &
 else
-    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* server.edge_server.EdgeServer; exec bash" &
+    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* components.server.EdgeServer; exec bash" &
 fi
 
 if [ -n "$NODE_INSTANCE" ]; then
-    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* node.edge_node.EdgeNode $NODE_INSTANCE; exec bash" &
+    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* components.node.EdgeNode $NODE_INSTANCE; exec bash" &
 else
-    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* node.edge_node.EdgeNode; exec bash" &
+    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* components.node.EdgeNode; exec bash" &
 fi
