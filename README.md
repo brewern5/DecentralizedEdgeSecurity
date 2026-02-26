@@ -17,27 +17,38 @@ DecentralizedEdgeSecurity is a research project for building a basic 3-tiered ed
 
 ## Architecture
 
-### Three-Tier Network Structure
+### Three-Tier Network Structure (Current Ports)
 ```
-┌─────────────────┐
-│   Coordinator   │  ← Top Tier (Network Management)
-│   (Port 5001)   │
-└─────────────────┘
-         ↑
-         │ TCP Connection
-         ↓
-┌─────────────────┐
-│     Server      │  ← Middle Tier (Edge Processing)
-│   (Port 5002)   │
-└─────────────────┘
-         ↑
-         │ TCP Connection
-         ↓
-┌─────────────────┐
-│      Node       │  ← Bottom Tier (Edge Device)
-│   (Port 5003)   │
-└─────────────────┘
+┌─────────────────────────┐
+│      Coordinator        │
+│  listens: 4001          │
+└─────────────────────────┘
+            ▲
+            │ init + commands
+            │
+            ▼
+┌─────────────────────────┐
+│         Server          │
+│  listens:               │
+│    from coordinator 5003│
+│    from nodes       5004│
+└─────────────────────────┘
+            ▲
+            │ init + data
+            │
+            ▼
+┌─────────────────────────┐
+│          Node           │
+│  listens: 6001          │
+└─────────────────────────┘
 ```
+
+### Control and Data Flow
+- Startup order: Coordinator → Server → Node (matching run scripts).
+- Server → Coordinator: Sends initialization with its coordinator-facing port; Coordinator assigns ID and tracks connection via `CoordinatorConnectionManager`.
+- Node → Server: Sends initialization with its listening port; Server assigns Node/Cluster IDs and manages via `ServerNodeConnectionManager`.
+- Keep-alives: Coordinator and Server timers check for expired connections; Node timers handle keep-alives to Server.
+- Message routing: Servers bridge messages between Nodes and Coordinator; payloads remain JSON packets with `packetType/sender/payload`.
 
 ---
 
@@ -45,38 +56,19 @@ DecentralizedEdgeSecurity is a research project for building a basic 3-tiered ed
 
 ```
 DecentralizedEdgeSecurity/
-├── pom.xml                    # Maven configuration
-├── run_all.bat               # Build and run script
-├── config/                   # Configuration files
+├── pom.xml
+├── run_all.bat | run_all.sh | run_all_2Nodes.bat
+├── config/
 │   ├── coordinator_config/
 │   ├── node_config/
 │   └── server_config/
-├── src/main/
-│   ├── java/
-│   │   ├── coordinator/      # Coordinator module
-│   │   │   ├── edge_coordinator/
-│   │   │   ├── coordinator_config/
-│   │   │   ├── coordinator_handler/
-│   │   │   ├── coordinator_listener/
-│   │   │   ├── coordinator_packet/
-│   │   │   └── coordinator_sender/
-│   │   ├── server/           # Server module
-│   │   │   ├── edge_server/
-│   │   │   ├── server_config/
-│   │   │   ├── server_handler/
-│   │   │   ├── server_listener/
-│   │   │   ├── server_packet/
-│   │   │   └── server_sender/
-│   │   └── node/             # Node module
-│   │       ├── edge_node/
-│   │       ├── node_config/
-│   │       ├── node_handler/
-│   │       ├── node_listener/
-│   │       ├── node_packet/
-│   │       └── node_sender/
-│   └── resources/
-│       └── log4j2.xml        # Logging configuration
-└── target/                   # Maven build output (auto-generated)
+├── src/main/java/
+│   ├── coordinator/    # EdgeCoordinator, config, connections, listener, packet, services
+│   ├── server/         # EdgeServer, config, connections, listener, services
+│   ├── node/           # EdgeNode, config, connections, listener, packet
+│   └── core/           # shared connection, packet, sender utilities
+└── src/main/resources/
+   └── log4j2.xml
 ```
 
 ---
@@ -245,13 +237,13 @@ If you prefer to run components individually:
 mvn clean compile
 
 # Run Coordinator
-java -cp target/classes;lib/* coordinator.edge_coordinator.EdgeCoordinator
+java -cp target/classes;lib/* coordinator.EdgeCoordinator
 
 # Run Server (in new terminal)
-java -cp target/classes;lib/* server.edge_server.EdgeServer
+java -cp target/classes;lib/* server.EdgeServer
 
-# Run Node (in new terminal)  
-java -cp target/classes;lib/* node.edge_node.EdgeNode
+# Run Node (in new terminal)
+java -cp target/classes;lib/* node.EdgeNode
 ```
 
 ### Configuration

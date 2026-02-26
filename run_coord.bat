@@ -52,6 +52,6 @@ pause
 
 cd /d %BASEDIR%\
 
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* coordinator.edge_coordinator.EdgeCoordinator"
+start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* components.coordinator.EdgeCoordinator"
 
 endlocal
