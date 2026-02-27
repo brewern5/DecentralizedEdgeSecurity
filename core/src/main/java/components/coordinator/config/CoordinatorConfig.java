@@ -30,13 +30,18 @@ public class CoordinatorConfig {
     private Properties instanceProperties; // If the coordinator has multiple instances, will load the corrisponding properties file
     private String instanceId; // ID for the instance 
     
-    private static String defaultConfigPath = "config/coordinator_config/coordinatorConfig.properties";
+    private static final String CONFIG_PROFILE_PROPERTY = "des.transport.profile";
+    private static final String CONFIG_PROFILE_ENV = "DES_TRANSPORT_PROFILE";
+    private static final String TRANSPORT_MODE_PROPERTY = "transport.mode";
+    private static final String TRANSPORT_MODE_ENV = "TRANSPORT_MODE";
+
+    private static String defaultConfigPath = resolveDefaultConfigPath();
     private String instanceConfigPath;
 
     static {
         try {
             // Allow the reading and wrting of the properties file as a stream
-            FileInputStream in = new FileInputStream("config/coordinator_config/coordinatorConfig.properties");
+            FileInputStream in = new FileInputStream(defaultConfigPath);
             properties.load(in);
             in.close();
         } catch (IOException e){
@@ -57,7 +62,7 @@ public class CoordinatorConfig {
 
         // Try to open specific instance file - if not it will load the default one
         try {
-            instanceConfigPath = "config/coordinator_config/coordinatorConfig_" + instanceId + ".properties";
+            instanceConfigPath = resolveInstanceConfigPath(instanceId);
             FileInputStream in = new FileInputStream(instanceConfigPath);
             instanceProperties.load(in);
             in.close();
@@ -188,5 +193,32 @@ public class CoordinatorConfig {
         }catch (Exception e) { // Generic Exception
             logger.error("Error writing key: ( " + key + " ) to config file!\n" + e);
         }
+    }
+
+    private static String resolveDefaultConfigPath() {
+        return "config/" + resolveConfigProfile() + "/coordinator_config/coordinatorConfig.properties";
+    }
+
+    private static String resolveInstanceConfigPath(String instanceId) {
+        return "config/" + resolveConfigProfile() + "/coordinator_config/coordinatorConfig_" + instanceId + ".properties";
+    }
+
+    private static String resolveConfigProfile() {
+        String profile = System.getProperty(CONFIG_PROFILE_PROPERTY);
+        if (profile == null || profile.isBlank()) {
+            profile = System.getenv(CONFIG_PROFILE_ENV);
+        }
+        if (profile != null && !profile.isBlank()) {
+            return profile.trim().toLowerCase();
+        }
+
+        String mode = System.getProperty(TRANSPORT_MODE_PROPERTY);
+        if (mode == null || mode.isBlank()) {
+            mode = System.getenv(TRANSPORT_MODE_ENV);
+        }
+        if (mode != null && mode.trim().equalsIgnoreCase("LORA")) {
+            return "lora";
+        }
+        return "ip";
     }
 }

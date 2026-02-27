@@ -17,8 +17,8 @@ import org.apache.logging.log4j.Logger;
 
 import core.packet.AbstractPacket;
 import core.packet.PacketType;
-import core.sender.AbstractSender;
-import core.sender.PacketSender;
+import core.transport.TransportClient;
+import core.transport.TransportClientFactory;
 
 public class ConnectionDtoManager {
     
@@ -28,8 +28,10 @@ public class ConnectionDtoManager {
 
     private String assignedId;
 
-    private AbstractSender sender;
-    private Boolean hasSender = false;
+    private TransportClient transportClient;
+    private Boolean hasTransportClient = false;
+
+    private final TransportClientFactory transportClientFactory = new TransportClientFactory();
 
     public ConnectionDtoManager(ConnectionDto connectionInfo) {
         this.connectionInfo = connectionInfo;
@@ -44,38 +46,38 @@ public class ConnectionDtoManager {
             .isBefore(LocalDateTime.now());
     }
 
-    public void createSender() {
+    public void createTransportClient() {
 
         if(connectionInfo.getPort() == 0) {
             logger.error("Port is not set for connection " + connectionInfo.getId() +"!");
             return;
         }
-        // Create sender for this node
+        // Create transport client for this connection
         try {
-            this.sender = new PacketSender(connectionInfo.getIp(), connectionInfo.getPort());
-            hasSender = true;
-            logger.info("Sender Created for connection: " + connectionInfo.getId() + " - " + connectionInfo.getIp() +":" + connectionInfo.getPort());
+            this.transportClient = transportClientFactory.create(connectionInfo);
+            hasTransportClient = true;
+            logger.info("Transport client created for connection: " + connectionInfo.getId() + " - " + connectionInfo.getIp() +":" + connectionInfo.getPort());
         } catch (Exception e) {
-            logger.error("Failed to create sender for connection " + connectionInfo.getId() + ":" + connectionInfo.getPort() + "\n" + e);
+            logger.error("Failed to create transport client for connection " + connectionInfo.getId() + ":" + connectionInfo.getPort() + "\n" + e);
         }
     }
 
     public boolean send(AbstractPacket packet) {
-        if (sender == null || !hasSender) {
-            // if no sender, create one
-            createSender();
-            if (sender == null || !hasSender) {
-                logger.error("Sender was not created for Connection: {}! Cannot send packet", connectionInfo.getId());
+        if (transportClient == null || !hasTransportClient) {
+            // if no transport client, create one
+            createTransportClient();
+            if (transportClient == null || !hasTransportClient) {
+                logger.error("Transport client was not created for Connection: {}! Cannot send packet", connectionInfo.getId());
                 return false;
             }
         }
         
         logger.debug("Attempting to send {} packet to connection: {}", packet.getPacketType(), connectionInfo.getId());
-        boolean sent = sender.send(packet);
+        boolean sent = transportClient.send(packet);
         
         if(!sent) {
             logger.warn("Initial send failed for connection: {}, attempting retry...", connectionInfo.getId());
-            boolean retry = sender.retry(packet);
+            boolean retry = transportClient.retry(packet);
             if(!retry){
                 logger.error("Retry failed for connection: {} - packet was NOT sent or ACK was NOT received", 
                            connectionInfo.getId());
@@ -83,7 +85,7 @@ public class ConnectionDtoManager {
             } else {
                 logger.info("Retry succeeded for connection: {} - packet sent and ACK received", connectionInfo.getId());
                 if(packet.getPacketType() == PacketType.INITIALIZATION) {
-                    assignedId = sender.getAssignedId();
+                    assignedId = transportClient.getAssignedId();
                 }
                 return true;
             }
@@ -91,7 +93,7 @@ public class ConnectionDtoManager {
             logger.debug("Successfully sent {} packet to connection: {} and received ACK", 
                         packet.getPacketType(), connectionInfo.getId());
             if(packet.getPacketType() == PacketType.INITIALIZATION) {
-                assignedId = sender.getAssignedId();
+                assignedId = transportClient.getAssignedId();
             }
             return true;
         }

@@ -30,7 +30,12 @@ public class ServerConfig {
     private Properties instanceProperties; // This is for instances properties files
     private String instanceId;  // The ID of the specific isntance of the server - this will determine the config file that is loaded
 
-    private static String defaultConfigPath = "config/server_config/serverConfig.properties";
+    private static final String CONFIG_PROFILE_PROPERTY = "des.transport.profile";
+    private static final String CONFIG_PROFILE_ENV = "DES_TRANSPORT_PROFILE";
+    private static final String TRANSPORT_MODE_PROPERTY = "transport.mode";
+    private static final String TRANSPORT_MODE_ENV = "TRANSPORT_MODE";
+
+    private static String defaultConfigPath = resolveDefaultConfigPath();
     private String instanceConfigPath;
 
     static {
@@ -56,7 +61,7 @@ public class ServerConfig {
 
         // Try to open a specific instance file, if not, it will create one
         try {
-            instanceConfigPath = "config/server_config/serverConfig_" + instanceId + ".properties";
+            instanceConfigPath = resolveInstanceConfigPath(instanceId);
             FileInputStream in = new FileInputStream(instanceConfigPath);
             instanceProperties.load(in);
             in.close();
@@ -192,6 +197,33 @@ public class ServerConfig {
             logger.error("Error writing key: ( " + key + " ) to config file!\n" + e);
         }
 
+    }
+
+    private static String resolveDefaultConfigPath() {
+        return "config/" + resolveConfigProfile() + "/server_config/serverConfig.properties";
+    }
+
+    private static String resolveInstanceConfigPath(String instanceId) {
+        return "config/" + resolveConfigProfile() + "/server_config/serverConfig_" + instanceId + ".properties";
+    }
+
+    private static String resolveConfigProfile() {
+        String profile = System.getProperty(CONFIG_PROFILE_PROPERTY);
+        if (profile == null || profile.isBlank()) {
+            profile = System.getenv(CONFIG_PROFILE_ENV);
+        }
+        if (profile != null && !profile.isBlank()) {
+            return profile.trim().toLowerCase();
+        }
+
+        String mode = System.getProperty(TRANSPORT_MODE_PROPERTY);
+        if (mode == null || mode.isBlank()) {
+            mode = System.getenv(TRANSPORT_MODE_ENV);
+        }
+        if (mode != null && mode.trim().equalsIgnoreCase("LORA")) {
+            return "lora";
+        }
+        return "ip";
     }
 
 }

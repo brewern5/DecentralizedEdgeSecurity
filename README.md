@@ -57,18 +57,25 @@ DecentralizedEdgeSecurity is a research project for building a basic 3-tiered ed
 ```
 DecentralizedEdgeSecurity/
 ├── pom.xml
-├── run_all.bat | run_all.sh | run_all_2Nodes.bat
 ├── config/
-│   ├── coordinator_config/
-│   ├── node_config/
-│   └── server_config/
-├── src/main/java/
-│   ├── coordinator/    # EdgeCoordinator, config, connections, listener, packet, services
-│   ├── server/         # EdgeServer, config, connections, listener, services
-│   ├── node/           # EdgeNode, config, connections, listener, packet
-│   └── core/           # shared connection, packet, sender utilities
-└── src/main/resources/
-   └── log4j2.xml
+│   ├── ip/
+│   │   ├── coordinator_config/
+│   │   ├── server_config/
+│   │   └── node_config/
+│   └── lora/
+│       ├── coordinator_config/
+│       ├── server_config/
+│       ├── node_config/
+│       └── lora_simulation/
+├── core/
+├── lora-simulation/
+└── scripts/
+   ├── ip/
+   │   ├── windows/
+   │   └── linux/
+   └── lora/
+      ├── windows/
+      └── linux/
 ```
 
 ---
@@ -214,19 +221,27 @@ When a Server connects to the Coordinator, it sends an INITIALIZATION packet. Th
 
 2. **Build and run the entire system:**
    ```bash
-   # Windows
-   run_all.bat
+   # Windows (IP profile)
+   scripts\ip\windows\run-all.bat
+
+   # Linux (IP profile)
+   scripts/ip/linux/run-all.sh
+
+   # Windows (LoRa profile)
+   scripts\lora\windows\run-all.bat
+
+   # Linux (LoRa profile)
+   scripts/lora/linux/run-all.sh
    
    # Or manually with Maven
-   mvn clean compile
-   mvn dependency:copy-dependencies -DoutputDirectory=lib
+   mvn -DskipTests clean package
    ```
 
-3. **The script will:**
+3. **The scripts will:**
    - Clean and compile all Java sources using Maven
-   - Download and copy all dependencies to the `lib/` directory
+   - Download and copy runtime dependencies into module `target/dependency` folders
    - Launch three separate terminal windows for Coordinator, Server, and Node
-   - Each component will start with proper logging and connection handling
+   - Start each component with the selected transport profile (`ip` or `lora`)
 
 ### Manual Execution
 
@@ -234,26 +249,65 @@ If you prefer to run components individually:
 
 ```bash
 # Compile the project
-mvn clean compile
+mvn -DskipTests clean package
+
+# Copy runtime dependencies
+mvn -pl core dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=core/target/dependency
+mvn -pl lora-simulation dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=lora-simulation/target/dependency
 
 # Run Coordinator
-java -cp target/classes;lib/* coordinator.EdgeCoordinator
+java -Ddes.transport.profile=ip -Dtransport.mode=IP -cp core/target/classes;core/target/dependency/* components.coordinator.EdgeCoordinator
 
 # Run Server (in new terminal)
-java -cp target/classes;lib/* server.EdgeServer
+java -Ddes.transport.profile=ip -Dtransport.mode=IP -cp core/target/classes;core/target/dependency/* components.server.EdgeServer
 
 # Run Node (in new terminal)
-java -cp target/classes;lib/* node.EdgeNode
+java -Ddes.transport.profile=ip -Dtransport.mode=IP -cp core/target/classes;core/target/dependency/* components.node.EdgeNode
 ```
 
 ### Configuration
 
-Configuration files are located in the `config/` directory:
-- `coordinator_config/coordinatorConfig.properties`
-- `server_config/serverConfig.properties`  
-- `node_config/nodeConfig.properties`
+Configuration files are profile-based in the `config/` directory:
+
+- `config/ip/coordinator_config/coordinatorConfig.properties`
+- `config/ip/server_config/serverConfig.properties`
+- `config/ip/node_config/nodeConfig.properties`
+- `config/lora/coordinator_config/coordinatorConfig.properties`
+- `config/lora/server_config/serverConfig.properties`
+- `config/lora/node_config/nodeConfig.properties`
+- `config/lora/lora_simulation/loraConfig.properties`
+
+Profile selection is controlled by:
+
+- `-Ddes.transport.profile=ip|lora` (component config profile, default `ip`)
+- `-Dtransport.mode=IP|LORA` (transport implementation mode)
+- `-Dlora.config.path=...` (optional override for LoRa constraints file)
+
+Resolution behavior:
+
+- `des.transport.profile` takes precedence when set.
+- If `des.transport.profile` is unset, `transport.mode=LORA` automatically selects the `lora` component profile.
+- If neither is set, component profile defaults to `ip`.
+- Values are normalized (trimmed and case-insensitive), so values like `"  LoRa  "` are treated as `lora`.
 
 Each component reads its respective configuration on startup.
+
+### Script Matrix
+
+- **IP / Windows**
+   - `scripts\ip\windows\run-all.bat`
+   - `scripts\ip\windows\run-all-2nodes.bat`
+   - `scripts\ip\windows\run-coord-server.bat`
+   - `scripts\ip\windows\run-coord.bat`
+- **IP / Linux**
+   - `scripts/ip/linux/run-all.sh`
+- **LoRa / Windows**
+   - `scripts\lora\windows\run-all.bat`
+   - `scripts\lora\windows\run-all-2nodes.bat`
+   - `scripts\lora\windows\run-coord-server.bat`
+   - `scripts\lora\windows\run-coord.bat`
+- **LoRa / Linux**
+   - `scripts/lora/linux/run-all.sh`
 
 ---
 
