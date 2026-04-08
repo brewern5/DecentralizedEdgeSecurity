@@ -3,21 +3,32 @@
 setlocal
 
 REM Base directory = where this script is located
-set BASEDIR=%~dp0
+set "BASEDIR=%~dp0"
+for %%I in ("%BASEDIR%..\..") do set "ROOTDIR=%%~fI"
+set "BUILD_CLASSES=%ROOTDIR%\.mvn-build\my-project\target\classes"
+set "RUNTIME_CP=%BUILD_CLASSES%;%ROOTDIR%\lib\*"
+
+if not exist "%ROOTDIR%\pom.xml" (
+    echo ERROR: pom.xml not found at "%ROOTDIR%\pom.xml"
+    pause
+    exit /b 1
+)
+
+pushd "%ROOTDIR%"
 
 REM Clean and compile all code for maven
 echo Cleaning and compiling Maven project...
-call mvn clean compile -e
+call mvn -f "%ROOTDIR%\pom.xml" clean compile -e
 echo Finished compiling Maven project
 
 REM Use Maven to copy dependencies into dev\lib folder
 echo Copying Maven dependencies.
-call mvn dependency:copy-dependencies -DoutputDirectory=%BASEDIR%\lib
+call mvn -f "%ROOTDIR%\pom.xml" dependency:copy-dependencies -DoutputDirectory="%ROOTDIR%\lib"
 echo Finished maven dependencies commands.
 pause
 
 REM All compilation handled by Maven above
-echo Maven compilation complete - all classes ready in target/classes
+echo Maven compilation complete - all classes ready in %BUILD_CLASSES%
 pause
 
 REM Get instance IDs from user input or command line arguments
@@ -50,8 +61,7 @@ echo Starting EdgeCoordinator with default configuration
 echo.
 pause
 
-cd /d %BASEDIR%\
+start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.coordinator.EdgeCoordinator"
 
-start cmd /k "cd /d %BASEDIR% && java -cp target/classes;%BASEDIR%\lib\* components.coordinator.EdgeCoordinator"
-
+popd
 endlocal
