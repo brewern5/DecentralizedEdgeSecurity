@@ -12,6 +12,7 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <build.output.root>${maven.multiModuleProjectDirectory}/.mvn-build</build.output.root>
     </properties>
 
     <dependencies>
@@ -38,6 +39,7 @@
     </dependencies>
 
     <build>
+        <directory>${build.output.root}/${project.artifactId}/target</directory>
         <plugins>
             <!-- Maven Compiler Plugin -->
             <plugin>

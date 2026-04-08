@@ -82,7 +82,7 @@ The project uses Maven for dependency management with the following key librarie
 - **Log4j 2.23.1** - Logging framework
 - **Error Prone Annotations** - Code quality annotations
 
-Dependencies are automatically managed by Maven and stored in `target/classes` after compilation.
+Dependencies are automatically managed by Maven and compiled classes are stored in `.mvn-build/my-project/target/classes` after compilation.
 
 ---
 
@@ -237,13 +237,13 @@ If you prefer to run components individually:
 mvn clean compile
 
 # Run Coordinator
-java -cp target/classes;lib/* coordinator.EdgeCoordinator
+java -cp .mvn-build/my-project/target/classes;lib/* coordinator.EdgeCoordinator
 
 # Run Server (in new terminal)
-java -cp target/classes;lib/* server.EdgeServer
+java -cp .mvn-build/my-project/target/classes;lib/* server.EdgeServer
 
 # Run Node (in new terminal)
-java -cp target/classes;lib/* node.EdgeNode
+java -cp .mvn-build/my-project/target/classes;lib/* node.EdgeNode
 ```
 
 ### Configuration

@@ -2,19 +2,27 @@
 
 # Base directory = where this script is located
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOTDIR="$(cd "$BASEDIR/../.." && pwd)"
+BUILD_CLASSES="$ROOTDIR/.mvn-build/my-project/target/classes"
+RUNTIME_CP="$BUILD_CLASSES:$ROOTDIR/lib/*"
+
+if [ ! -f "$ROOTDIR/pom.xml" ]; then
+    echo "ERROR: pom.xml not found at $ROOTDIR/pom.xml"
+    exit 1
+fi
 
 # Clean and compile all code for maven
 echo "Cleaning and compiling Maven project..."
-mvn clean compile -e
+mvn -f "$ROOTDIR/pom.xml" clean compile -e
 echo "Finished compiling Maven project"
 
 # Use Maven to copy dependencies into lib folder
 echo "Copying Maven dependencies."
-mvn dependency:copy-dependencies -DoutputDirectory="$BASEDIR/lib"
+mvn -f "$ROOTDIR/pom.xml" dependency:copy-dependencies -DoutputDirectory="$ROOTDIR/lib"
 echo "Finished maven dependencies commands."
 read -p "Press enter to continue..."
 
-echo "Maven compilation complete - all classes ready in target/classes"
+echo "Maven compilation complete - all classes ready in $BUILD_CLASSES"
 read -p "Press enter to continue..."
 
 # Get instance IDs from user input or command line arguments
@@ -60,18 +68,18 @@ echo "Starting EdgeCoordinator with default configuration"
 echo ""
 read -p "Press enter to start all components..."
 
-cd "$BASEDIR"
+cd "$ROOTDIR"
 
-gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* components.coordinator.EdgeCoordinator; exec bash" &
+gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.coordinator.EdgeCoordinator; exec bash" &
 
 if [ -n "$SERVER_INSTANCE" ]; then
-    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* components.server.EdgeServer $SERVER_INSTANCE; exec bash" &
+    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.server.EdgeServer $SERVER_INSTANCE; exec bash" &
 else
-    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* components.server.EdgeServer; exec bash" &
+    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.server.EdgeServer; exec bash" &
 fi
 
 if [ -n "$NODE_INSTANCE" ]; then
-    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* components.node.EdgeNode $NODE_INSTANCE; exec bash" &
+    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.node.EdgeNode $NODE_INSTANCE; exec bash" &
 else
-    gnome-terminal -- bash -c "cd '$BASEDIR' && java -cp target/classes:'$BASEDIR'/lib/* components.node.EdgeNode; exec bash" &
+    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.node.EdgeNode; exec bash" &
 fi
