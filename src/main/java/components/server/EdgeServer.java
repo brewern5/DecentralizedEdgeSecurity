@@ -33,10 +33,16 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import components.server.config.ServerConfig;
 import components.server.connections.*;
 import components.server.listener.ServerListener;
 import components.server.services.ServerClusterManager;
+
+import components.server.tier_dto.ServerDTO;
+import components.server.config.ServerConfig;
+
+import core.tier_dto.AbstractTierDTO;
+import core.config.AbstractConfig;
+
 import core.connection.ConnectionDto;
 import core.connection.Priority;
 import core.packet.AbstractPacket;
@@ -48,28 +54,28 @@ public class EdgeServer {
 
     private static volatile String serverId = null;
 
-    private static String IP;      // The IP of this devices
+    private static String IP;
+
+    private static volatile AbstractTierDTO instanceDTO;
 
     private static ServerListener coordinatorListener; 
     private static ServerListener nodeListener;     
 
-    private static ServerConfig config;
+    private static AbstractConfig config;
 
-    private static ServerNodeConnectionManager nodeConnectionManager;   // This will manage all connections and check keep alive
+    private static ServerNodeConnectionManager nodeConnectionManager;
     private static ServerCoordinatorConnectionManager coordinatorConnectionManager;
 
     // Timer components
-    private static ScheduledExecutorService timerScheduler; // The timer that will send out to keepAlives to the coordinator and check Node expiry   
+    private static ScheduledExecutorService timerScheduler;  
 
     /*
      *  Initalize the Edge Server
      */
     public static void init() {
 
-        // Create the connection manager
         nodeConnectionManager = ServerNodeConnectionManager.getInstance("", "", "Server");
 
-        // try to generate the IP from the machines IP - Throws UnknownHostException if it cannot determine
         try{
             IP = config.grabIP();
             logger.info("\t\tEDGE SERVER\tStarting Server at " + IP);
@@ -99,7 +105,6 @@ public class EdgeServer {
                 String.valueOf(config.getPortByKey("Server.coordinatorListeningPort"))
             );
 
-            // Create the initalization packet
             AbstractPacket initPacket = new InitalizationPacketManager(
                 "", 
                 "", 
@@ -114,11 +119,9 @@ public class EdgeServer {
 
             coordinatorConnectionManager.sendToConnection("1", initPacket);
             
-            // Try and get created ID from the response packet
             String assignedServerId = coordinatorConnectionManager.getInstanceId();
             setServerId(assignedServerId);
             
-            // Update the nodeConnectionManager with the assigned server ID
             nodeConnectionManager.setInstanceId(assignedServerId);
             logger.info("Updated nodeConnectionManager with server ID: {}", assignedServerId);
 
@@ -129,8 +132,6 @@ public class EdgeServer {
         /*
          *          Listeners
          */
-
-        // Instantiate a listening port for the coordinator
         try {
             coordinatorListener = new ServerListener(
                 config.getPortByKey("Server.coordinatorListeningPort"), 
@@ -146,7 +147,7 @@ public class EdgeServer {
             // TODO: try to grab new port if this one is unavailable
         }
 
-        // Instantiate a listening port for the Nodes
+
         try {
             nodeListener = new ServerListener(
                 config.getPortByKey("Server.nodeListeningPort"),
@@ -194,9 +195,7 @@ public class EdgeServer {
         return serverId;
     }
 
-    /* Creates the timers for KeepAlive sending and keep alive checking */ 
     private static void initializeTimers() {
-        // Creates the timer for 
         timerScheduler = Executors.newScheduledThreadPool(2, r -> {
             Thread t = new Thread(r, "EdgeServer-Timer");
             //t.setDaemon(true);
@@ -215,11 +214,9 @@ public class EdgeServer {
                 }
 
             } catch(core.exception.KeepAliveException e) {
-                // Detailed logging for keep-alive specific failures
                 logger.error("Keep-alive failed at stage: {} for connection: {} - {}", 
                            e.getStage(), e.getConnectionId(), e.getMessage());
                 
-                // Different handling based on failure type
                 if (e.isSendFailure()) {
                     logger.error("Failed to send keep-alive packet - network or socket issue");
                 } else if (e.isAckFailure()) {
@@ -250,25 +247,34 @@ public class EdgeServer {
 
     public static void main(String[] args) {
 
-        // Create instance ID through command-line args
+        String instanceId = args.length > 0 ? args[0] : null;
 
-        String instanceId = args.length > 0 ? args[0] : null; // When starting the server arguments depicting an instance number (i.e. server1, server2)
+        String name = "server";
+        String higherTier = "Coordinator";
 
-        if(instanceId != null) {
-            config = new ServerConfig(instanceId);
-            logger.info("Starting Edge Server Instance: " + instanceId);
+
+        if(instanceId != "DEFAULT_"+name) {
+            logger.info("Starting {} Instance with ID: {}", name, instanceId);
+        } else if(instanceId == null){
+            throw new NullPointerException("Cannot have a null command-line arg!");
         } else {        
-            config = new ServerConfig();
-            logger.info("Starting default server config");
+            logger.warn("Starting with default tier config! ---- DEFAULT_{}",name);
+            logger.warn("Only one instance of Tier.{} can be made with default config!", name);
+        }
+        
+        instanceDTO = new ServerDTO(name, higherTier, instanceId);
+
+        try{
+            config = new ServerConfig(instanceDTO);
+        } catch(Exception e) {
+            logger.error("Could not open the "+name+" config!" + e.getMessage());
         }
 
-        init();         // Begins the initalization process 
+        init();      
 
-        // Starts listening for messages on from the coordinator
         Thread coordinatorThread = new Thread(coordinatorListener); 
         coordinatorThread.start();
 
-        // Starts listening for messages from the Node
         Thread serverThread = new Thread(nodeListener);
         serverThread.start();
 

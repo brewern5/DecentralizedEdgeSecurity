@@ -31,9 +31,13 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import components.coordinator.config.CoordinatorConfig;
 import components.coordinator.connections.CoordinatorConnectionManager;
 import components.coordinator.listener.CoordinatorListener;
+import components.coordinator.tier_dto.CoordinatorDTO;
+import components.coordinator.config.CoordinatorConfig;
+
+import core.config.AbstractConfig;
+import core.tier_dto.AbstractTierDTO;
 
 public class EdgeCoordinator {
 
@@ -45,11 +49,12 @@ public class EdgeCoordinator {
 
     private static String IP;
 
-    private static CoordinatorListener serverListener;  // The socket that will be listening to requests from the Edge server.
+    private static CoordinatorListener serverListener;
 
     private static ScheduledExecutorService timerScheduler;
 
-    private static CoordinatorConfig config;
+    private static AbstractConfig config;
+    private static AbstractTierDTO instanceDTO;
 
     /*
      *  Initalizes the Node Coordinator - This will be the first thing that runs when the Node Coordinator is started up
@@ -57,15 +62,12 @@ public class EdgeCoordinator {
 
     public static void init() {
 
-        // Give the Coordinator an ID
         setCoordinatorId(UUID.randomUUID().toString());
 
         serverConnectionManager = CoordinatorConnectionManager.getInstance(coordinatorId, null, "Coordinator");
 
-        // try/catch to generate the IP from ./Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
             logger.info("\t\tEDGE COORDINATOR");
-            // Get the IP address for this coordinator
             IP = config.grabIP(); 
         } catch (UnknownHostException e) {
             logger.error("Error: Unable to determine local host IP address.\n" + e);
@@ -73,9 +75,7 @@ public class EdgeCoordinator {
             logger.error("Error: Unable to determine IP Address");
         }
 
-        // Try to create a serverSocket to listen to requests 
         try {
-            // Construct the listener - sending the
             serverListener = new CoordinatorListener(
                 config.getPortByKey("Coordinator.listeningPort"),
                  5000
@@ -119,7 +119,6 @@ public class EdgeCoordinator {
      *      Timer creation
      */
     private static void initializeTimers() {
-        // Creates the timer for 
         timerScheduler = Executors.newScheduledThreadPool(2, r -> {
             Thread t = new Thread(r, "EdgeCoordinator-Timer");
             //t.setDaemon(true);
@@ -140,23 +139,31 @@ public class EdgeCoordinator {
      */
     public static void main(String[] args) {
 
-        String instanceId = args.length > 0 ? args[0] : null; // Can start multiple instances of the Coordinator that can load the
+        String instanceId = args.length > 0 ? args[0] : null;
 
-        if(instanceId != null) {
-            // Start up new instance of a coordinator with a specific config file
-            config = new CoordinatorConfig(instanceId);
-            logger.info("Starting Coordinator Instance with ID: {}", instanceId);
+        String name = "coordinator";
+        String higherTier = "Network";
+
+        if(instanceId != "DEFAULT_"+name) {
+            logger.info("Starting {} Instance with ID: {}", name, instanceId);
         } else {
-            config = new CoordinatorConfig();
-            logger.info("Starting default Coordinator Config");
+            logger.warn("Starting with default tier config! ---- DEFAULT_{}",name);
+            logger.warn("Only one instance of Tier.{} can be made with default config!", name);
         }
 
-        init();         // Begins the initalization process 
+        instanceDTO = new CoordinatorDTO(name, higherTier, instanceId);
 
-        // Instaniate the thread and send the serverListener to it
+        
+        try{
+            config = new CoordinatorConfig(instanceDTO);
+        } catch(Exception e) {
+            logger.error("Could not open the "+name+" config!" + e.getMessage());
+        }
+
+        init();
+
         Thread listeningThread = new Thread(serverListener);
 
-        // Start the thread
         listeningThread.start();
 
         /* 
@@ -164,7 +171,6 @@ public class EdgeCoordinator {
         Scanner in = new Scanner(System.in);
         boolean on = true;
         while(on){
-            // TODO: Stuff
             System.out.println("Manually send message to server: ");
             String message = in.nextLine();
 

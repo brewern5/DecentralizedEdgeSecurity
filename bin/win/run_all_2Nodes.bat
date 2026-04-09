@@ -42,21 +42,22 @@ echo.
 REM Use command line arguments if provided, otherwise prompt for input
 if "%1"=="" (
     set /p SERVER_INSTANCE="Enter Server Instance ID (e.g., server1, server2, or leave blank for default): "
+    if "%SERVER_INSTANCE%"=="" set SERVER_INSTANCE=DEFAULT_server
 ) else (
     set SERVER_INSTANCE=%1
     echo Using Server Instance ID from command line: %SERVER_INSTANCE%
 )
 
 echo.
-if "%SERVER_INSTANCE%"=="" (
-    echo Starting EdgeServer with default configuration
+if "%SERVER_INSTANCE%"=="DEFAULT_server" (
+    echo Starting EdgeServer with default configuration (ID: DEFAULT_server)
 ) else (
     echo Starting EdgeServer with instance ID: %SERVER_INSTANCE%
 )
 
 echo Starting EdgeNode with instance ID: node1
 echo Starting EdgeNode with instance ID: node2
-echo Starting EdgeCoordinator with default configuration
+echo Starting EdgeCoordinator with default configuration (ID: DEFAULT_coordinator)
 echo.
 pause
 

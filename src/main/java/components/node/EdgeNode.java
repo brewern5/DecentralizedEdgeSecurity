@@ -30,25 +30,30 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import components.node.config.NodeConfig;
 import components.node.connections.*;
 import components.node.listener.NodeListener;
+
+import components.node.tier_dto.NodeDTO;
+import components.node.config.NodeConfig;
+
 import core.connection.ConnectionDto;
 import core.connection.Priority;
 import core.packet.AbstractPacket;
 import core.packet.initalization.InitalizationPacketManager;
-import core.packet.keep_alive.KeepAliveManager;
+import core.tier_dto.AbstractTierDTO;
+import core.config.AbstractConfig;
 
 public class EdgeNode {
 
     private static volatile String nodeId = null;
-
     private static volatile String clusterId = null;
+
+    private static volatile AbstractTierDTO instanceDTO;
 
     private static String IP;
 
     private static NodeListener serverListener;            // The socket that will be listening to requests from the Edge server.
-    private static NodeListener peerListener;
+    private static NodeListener peerListener;// TODO: Implement P2P comms
 
     // Each class can have its own logger instance
     private static final Logger logger = LogManager.getLogger(EdgeNode.class);
@@ -59,14 +64,13 @@ public class EdgeNode {
     // Timer components
     private static ScheduledExecutorService timerScheduler; //the timer that will send out the keepAlives to server
 
-    private static NodeConfig config;
+    private static AbstractConfig config;
 
-    /*
-     *  Initalizes the Edge Node
-     */
+
+
     public static void init() {
 
-        // try/catch to generate the IP from ../config/Config.java - Throws UnknownHostException if it cannot determine the IP
+        // try/catch to generate the IP from ../../core/config/Config.java - Throws UnknownHostException if it cannot determine the IP
         try{
             IP = config.grabIP();
             logger.info("Starting Node at " + IP);
@@ -79,10 +83,8 @@ public class EdgeNode {
 
         // Try to connect to the server
         try {
-            // init connection with the server
             serverConnectionManager = NodeServerConnectionManager.getInstance("", "", "Node");
 
-            // Add connection to connection manager
             serverConnectionManager.addConnection(
                 new ConnectionDto(
                     "1",
@@ -99,7 +101,6 @@ public class EdgeNode {
                 String.valueOf(config.getPortByKey("Node.listeningPort"))
             );
 
-            // Create the initalization packet
             AbstractPacket initPacket = new InitalizationPacketManager(
                 "", 
                 "", 
@@ -170,6 +171,8 @@ public class EdgeNode {
 
     // Peer list request 
     public static synchronized void peerListReq() {
+
+        // TODO:
         /*         // Try and and get a peer list from the connected server
         try {
             boolean peerListReqSent;
@@ -222,7 +225,7 @@ public class EdgeNode {
                     logger.error("Failed to send keep-alive packet - network or socket issue");
                 } else if (e.isAckFailure()) {
                     if (e.getStage() == core.exception.KeepAliveException.FailureStage.ACK_NOT_RECEIVED) {
-                        logger.error("Keep-alive sent but ACK not received - coordinator may be down");
+                        logger.error("Keep-alive sent but ACK not received - "+instanceDTO.getHigherTier()+" may be down");
                     } else if (e.getStage() == core.exception.KeepAliveException.FailureStage.ACK_NOT_HANDLED) {
                         logger.error("ACK received but not handled properly - handler issue");
                     }
@@ -240,16 +243,27 @@ public class EdgeNode {
     public static void main(String[] args) {
 
         // Create instance ID through command-line args
-
         String instanceId = args.length > 0 ? args[0] : null; // When starting the server arguments depicting an instance number (i.e. server1, server2)
-
-        if(instanceId != null) {
-            config = new NodeConfig(instanceId);
-            logger.info("Starting Edge Node Instance with ID: {}", instanceId);
+        String name = "node";   // TODO: Abstraction of main should have this as a startup argument
+        String higherTier = "Server";
+        
+        if(instanceId != "DEFAULT_"+name) {
+            logger.info("Starting "+name+" Instance with ID: {}", instanceId);
+        } else if(instanceId == null){
+            throw new NullPointerException("Cannot have a null command-line arg!");
         } else {        
-            config = new NodeConfig();
-            logger.info("Starting default Node config");
+            logger.warn("Starting with default tier config! ---- DEFAULT_"+name);
+            logger.warn("Only one instance of Tier."+name+" can be made with default config!");
         }
+
+        instanceDTO = new NodeDTO(name, higherTier, instanceId);
+
+        try{
+            config = new NodeConfig(instanceDTO);
+        } catch(Exception e) {
+            logger.error("Could not open the "+name+" config!" + e.getMessage());
+        }
+        
 
         init();         // Begins the initalization process 
 
