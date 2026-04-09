@@ -5,7 +5,7 @@
 package components.node.config;
 
 import core.config.AbstractConfig;
-import core.tier_dto.AbstractTierDTO;
+import core.identity.AbstractTierIdentity;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,7 +16,7 @@ public class NodeConfig extends AbstractConfig {
     @Override
     protected Logger getLogger() { return logger; }
 
-    public NodeConfig(AbstractTierDTO tieredDto) {
+    public NodeConfig(AbstractTierIdentity tieredDto) {
         super(tieredDto);
     }
 

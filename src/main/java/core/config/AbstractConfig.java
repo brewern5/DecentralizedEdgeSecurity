@@ -19,9 +19,10 @@ import java.net.UnknownHostException;   // Error for trying to grab IP address
 
 import org.apache.logging.log4j.Logger;
 
-import java.util.Properties;            // Utility for getting properties from any .properties file
+import core.identity.AbstractTierIdentity;
+import core.identity.TierRole;
 
-import core.tier_dto.AbstractTierDTO;
+import java.util.Properties;            // Utility for getting properties from any .properties file
 
 public abstract class AbstractConfig {
 
@@ -32,7 +33,7 @@ public abstract class AbstractConfig {
     protected Properties instanceProperties; 
     protected String instanceId; 
 
-    protected AbstractTierDTO tierDTO; // Holds instance ID, config paths
+    protected AbstractTierIdentity tierDTO; // Holds instance ID, config paths
 
     // Needs to create defaultConfigPath on Config instantiation
     protected static String defaultConfigPath; 
@@ -40,7 +41,7 @@ public abstract class AbstractConfig {
 
 
     // Default - single constructor
-    public AbstractConfig(AbstractTierDTO tierDTO) {
+    public AbstractConfig(AbstractTierIdentity tierDTO) {
 
         this.tierDTO = tierDTO;
 
@@ -101,8 +102,7 @@ public abstract class AbstractConfig {
         // For local testing only
         // TODO: REMOVE IN DEPLOYMENT
         writeToConfig("Coordinator.IP", realIp);
-
-        if(tierDTO.getName() != "coordinator") {
+        if(tierDTO.getRole() != TierRole.COORDINATOR) {
             writeToConfig(tierDTO.getHigherTier()+".IP", realIp);
         }
 

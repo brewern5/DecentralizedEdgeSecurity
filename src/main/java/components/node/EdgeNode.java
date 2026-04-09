@@ -31,16 +31,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import components.node.connections.*;
+import components.node.identity.NodeIdentity;
 import components.node.listener.NodeListener;
-
-import components.node.tier_dto.NodeDTO;
 import components.node.config.NodeConfig;
 
 import core.connection.ConnectionDto;
 import core.connection.Priority;
+import core.identity.AbstractTierIdentity;
+import core.identity.TierRole;
 import core.packet.AbstractPacket;
 import core.packet.initalization.InitalizationPacketManager;
-import core.tier_dto.AbstractTierDTO;
 import core.config.AbstractConfig;
 
 public class EdgeNode {
@@ -48,7 +48,7 @@ public class EdgeNode {
     private static volatile String nodeId = null;
     private static volatile String clusterId = null;
 
-    private static volatile AbstractTierDTO instanceDTO;
+    private static volatile AbstractTierIdentity instanceDTO;
 
     private static String IP;
 
@@ -244,24 +244,23 @@ public class EdgeNode {
 
         // Create instance ID through command-line args
         String instanceId = args.length > 0 ? args[0] : null; // When starting the server arguments depicting an instance number (i.e. server1, server2)
-        String name = "node";   // TODO: Abstraction of main should have this as a startup argument
-        String higherTier = "Server";
+    
         
-        if(instanceId != "DEFAULT_"+name) {
-            logger.info("Starting "+name+" Instance with ID: {}", instanceId);
+        if(instanceId != "DEFAULT_"+TierRole.NODE) {
+            logger.info("Starting {} Instance with ID: {}", TierRole.NODE, instanceId);
         } else if(instanceId == null){
             throw new NullPointerException("Cannot have a null command-line arg!");
         } else {        
-            logger.warn("Starting with default tier config! ---- DEFAULT_"+name);
-            logger.warn("Only one instance of Tier."+name+" can be made with default config!");
+            logger.warn("Starting with default tier config! ---- DEFAULT_{}", TierRole.NODE);
+            logger.warn("Only one instance of Tier.{} can be made with default config!", TierRole.NODE);
         }
 
-        instanceDTO = new NodeDTO(name, higherTier, instanceId);
+        instanceDTO = new NodeIdentity(TierRole.NODE, TierRole.SERVER, instanceId);
 
         try{
             config = new NodeConfig(instanceDTO);
         } catch(Exception e) {
-            logger.error("Could not open the "+name+" config!" + e.getMessage());
+            logger.error("Could not open the {} config!" + e.getMessage(), TierRole.NODE);
         }
         
 

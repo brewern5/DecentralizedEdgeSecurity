@@ -32,12 +32,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import components.coordinator.connections.CoordinatorConnectionManager;
+import components.coordinator.identity.CoordinatorIdentity;
 import components.coordinator.listener.CoordinatorListener;
-import components.coordinator.tier_dto.CoordinatorDTO;
 import components.coordinator.config.CoordinatorConfig;
 
 import core.config.AbstractConfig;
-import core.tier_dto.AbstractTierDTO;
+import core.identity.AbstractTierIdentity;
+import core.identity.TierRole;
 
 public class EdgeCoordinator {
 
@@ -54,7 +55,7 @@ public class EdgeCoordinator {
     private static ScheduledExecutorService timerScheduler;
 
     private static AbstractConfig config;
-    private static AbstractTierDTO instanceDTO;
+    private static AbstractTierIdentity instanceDTO;
 
     /*
      *  Initalizes the Node Coordinator - This will be the first thing that runs when the Node Coordinator is started up
@@ -108,7 +109,7 @@ public class EdgeCoordinator {
     // Thread-safe setter for ID assignment
     public static synchronized void setCoordinatorId(String id) {
         coordinatorId = id;
-        logger.info("Coordinator ID assigned: " + id);
+        logger.info("Coordinator ID assigned: {}", id);
     }
 
     public static synchronized String getCoordinatorId() {
@@ -141,23 +142,20 @@ public class EdgeCoordinator {
 
         String instanceId = args.length > 0 ? args[0] : null;
 
-        String name = "coordinator";
-        String higherTier = "Network";
-
-        if(instanceId != "DEFAULT_"+name) {
-            logger.info("Starting {} Instance with ID: {}", name, instanceId);
+        if(instanceId != "DEFAULT_"+TierRole.COORDINATOR) {
+            logger.info("Starting {} Instance with ID: {}", TierRole.COORDINATOR, instanceId);
         } else {
-            logger.warn("Starting with default tier config! ---- DEFAULT_{}",name);
-            logger.warn("Only one instance of Tier.{} can be made with default config!", name);
+            logger.warn("Starting with default tier config! ---- DEFAULT_{}",TierRole.COORDINATOR);
+            logger.warn("Only one instance of Tier.{} can be made with default config!", TierRole.COORDINATOR);
         }
 
-        instanceDTO = new CoordinatorDTO(name, higherTier, instanceId);
+        instanceDTO = new CoordinatorIdentity(TierRole.COORDINATOR, TierRole.NETWORK, instanceId);
 
         
         try{
             config = new CoordinatorConfig(instanceDTO);
         } catch(Exception e) {
-            logger.error("Could not open the "+name+" config!" + e.getMessage());
+            logger.error("Could not open the {} config!" + e.getMessage(), TierRole.COORDINATOR);
         }
 
         init();

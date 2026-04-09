@@ -34,17 +34,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import components.server.connections.*;
+import components.server.identity.ServerIdentity;
 import components.server.listener.ServerListener;
 import components.server.services.ServerClusterManager;
-
-import components.server.tier_dto.ServerDTO;
 import components.server.config.ServerConfig;
-
-import core.tier_dto.AbstractTierDTO;
 import core.config.AbstractConfig;
 
 import core.connection.ConnectionDto;
 import core.connection.Priority;
+import core.identity.AbstractTierIdentity;
+import core.identity.TierRole;
 import core.packet.AbstractPacket;
 import core.packet.initalization.InitalizationPacketManager;
 
@@ -56,7 +55,7 @@ public class EdgeServer {
 
     private static String IP;
 
-    private static volatile AbstractTierDTO instanceDTO;
+    private static volatile AbstractTierIdentity instanceDTO;
 
     private static ServerListener coordinatorListener; 
     private static ServerListener nodeListener;     
@@ -249,25 +248,22 @@ public class EdgeServer {
 
         String instanceId = args.length > 0 ? args[0] : null;
 
-        String name = "server";
-        String higherTier = "Coordinator";
 
-
-        if(instanceId != "DEFAULT_"+name) {
-            logger.info("Starting {} Instance with ID: {}", name, instanceId);
+        if(instanceId != "DEFAULT_"+TierRole.SERVER) {
+            logger.info("Starting {} Instance with ID: {}", TierRole.SERVER, instanceId);
         } else if(instanceId == null){
             throw new NullPointerException("Cannot have a null command-line arg!");
         } else {        
-            logger.warn("Starting with default tier config! ---- DEFAULT_{}",name);
-            logger.warn("Only one instance of Tier.{} can be made with default config!", name);
+            logger.warn("Starting with default tier config! ---- DEFAULT_{}",TierRole.SERVER);
+            logger.warn("Only one instance of Tier.{} can be made with default config!", TierRole.SERVER);
         }
         
-        instanceDTO = new ServerDTO(name, higherTier, instanceId);
+        instanceDTO = new ServerIdentity(TierRole.SERVER, TierRole.COORDINATOR, instanceId);
 
         try{
             config = new ServerConfig(instanceDTO);
         } catch(Exception e) {
-            logger.error("Could not open the "+name+" config!" + e.getMessage());
+            logger.error("Could not open the {} config!" + e.getMessage(),TierRole.SERVER);
         }
 
         init();      
