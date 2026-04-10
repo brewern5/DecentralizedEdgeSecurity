@@ -80,7 +80,7 @@ start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.coordinator.Ed
 
 start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.EdgeServer %SERVER_INSTANCE%"
 
-start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.node.EdgeNode %NODE_INSTANCE%"
+start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.node.NodeComponentMain %NODE_INSTANCE%"
 
 
 popd

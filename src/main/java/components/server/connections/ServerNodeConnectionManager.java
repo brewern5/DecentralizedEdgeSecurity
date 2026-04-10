@@ -13,16 +13,22 @@ import org.apache.logging.log4j.Logger;
 import core.connection.ConnectionDtoManager;
 import core.connection.ConnectionManager;
 import core.connection.Priority;
+
 import core.exception.KeepAliveException;
+
+import core.identity.TierRole;
+
 import core.packet.AbstractPacket;
 import core.packet.keep_alive.KeepAliveManager;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ServerNodeConnectionManager extends ConnectionManager {
 
     private static final Logger logger = LogManager.getLogger(ServerNodeConnectionManager.class);
     
-    private ServerNodeConnectionManager(String instanceId, String clusterId, String role) {
-        super(instanceId, clusterId, role);
+    private ServerNodeConnectionManager(String instanceId, String clusterId, TierRole instantiatorRole) {
+        super(instanceId, clusterId, instantiatorRole);
     }
  
     private static volatile ServerNodeConnectionManager instance;
@@ -31,12 +37,12 @@ public class ServerNodeConnectionManager extends ConnectionManager {
      * 
      * @param instanceId The ID of the instance that is creating this connection manager
      * @param clusterId The ID of the cluster this instance belongs too, if it belongs to one
-     * @param role The Role of the instantiator (In this case: "Coordinator")
+     * @param instantiatorRole The Role of the instantiator (In this case: "Coordinator")
      * @return a singleton instance of the connectionManager
      */
-    public static ServerNodeConnectionManager getInstance(String instanceId, String clusterId, String role) {
+    public static ServerNodeConnectionManager getInstance(String instanceId, String clusterId, TierRole instantiatorRole) {
         return getOrCreateInstance(instance, ServerNodeConnectionManager.class, 
-            () -> instance = new ServerNodeConnectionManager(instanceId, clusterId, role));
+            () -> instance = new ServerNodeConnectionManager(instanceId, clusterId, instantiatorRole));
     }
 
         /**
@@ -52,6 +58,8 @@ public class ServerNodeConnectionManager extends ConnectionManager {
     }
 
     public boolean sendKeepAlive() throws KeepAliveException {
+
+        AtomicReference<KeepAliveException> lastException = new AtomicReference<>();
         
         activeConnections.forEach((connectionId, connection) -> {
 
@@ -60,7 +68,7 @@ public class ServerNodeConnectionManager extends ConnectionManager {
                     instanceId, 
                     clusterId, 
                     connectionId, 
-                    role
+                    instantiatorRole
                 ).createOutgoingPacket();
 
                 boolean keptAlive = new ConnectionDtoManager(connection).send(packet);
@@ -90,8 +98,14 @@ public class ServerNodeConnectionManager extends ConnectionManager {
                     logger.warn("Connection: \"{}\" with criticality status: \"{}\" could not be kept alive!", 
                                connectionId, connection.getPriority());
                 }
+                lastException.set(e);
             }
         });
+
+        if (lastException.get() != null) {
+            throw lastException.get();
+        }
+        
         return true;
     }
 

@@ -33,6 +33,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import components.node.connections.NodePeerConnectionManager;
+import components.node.identity.NodeIdentity;
 import core.exception.NonDelimitedPacket;
 import core.external.PacketTypeAdapterFactory;
 import core.external.RuntimeTypeAdapterFactory;
@@ -61,8 +62,11 @@ public class NodePeerHandler implements Runnable {
     // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private AbstractPacket responsePacket;
 
-    public NodePeerHandler(Socket socket) {
+    private final NodeIdentity identity;
+
+    public NodePeerHandler(Socket socket, NodeIdentity identity) {
         this.peerSocket = socket;
+        this.identity = identity;
     }
 
     /*          
@@ -153,7 +157,7 @@ public class NodePeerHandler implements Runnable {
                             peerPacket,
                             peerConnectionManager.getInstanceId(),
                             peerConnectionManager.getClusterId(),
-                            "Node"
+                            identity.getRole()
                         ); 
 
                 } catch(IllegalArgumentException e) {

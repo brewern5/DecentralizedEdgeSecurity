@@ -3,7 +3,7 @@
 
     This is the concrete implementation of the EdgeComponent. 
 */
-package components.node.runtime;
+package components.server.runtime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,11 +11,13 @@ import org.apache.logging.log4j.Logger;
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
-import components.node.identity.NodeIdentity;
-import components.node.listener.NodeListener;
-import components.node.config.NodeConfig;
+import components.server.identity.ServerIdentity;
+import components.server.listener.ServerListener;
 
-import components.node.connections.NodeServerConnectionManager;
+import components.server.config.ServerConfig;
+
+import components.server.connections.ServerNodeConnectionManager;
+import components.server.connections.ServerCoordinatorConnectionManager;
 
 import core.config.AbstractConfig;
 
@@ -29,31 +31,31 @@ import core.packet.AbstractPacket;
 import core.packet.initalization.InitalizationPacketManager;
 import core.runtime.AbstractEdgeComponent;
 
-public final class NodeComponent extends AbstractEdgeComponent {
+public class ServerComponent extends AbstractEdgeComponent {
+    
+    private static ServerListener nodeListener;
+    private static ServerListener coordinatorListener;
 
-    private static NodeListener serverListener;
-
-
-    private static final Logger logger = LogManager.getLogger(NodeComponent.class);
+    private static final Logger logger = LogManager.getLogger(ServerComponent.class);
     @Override
     protected Logger getLogger() { return logger; }
 
     @Override
     protected void validateStartupArgs(String[] args) {
         if (args == null || args.length == 0 || args[0] == null) {
-            logger.error("Node requires instanceId argument!");
-            throw new IllegalArgumentException("Node requires instanceId argument");
+            logger.error("Server requires instanceId argument!");
+            throw new IllegalArgumentException("Server requires instanceId argument");
         }
     }
 
     @Override
     protected AbstractTierIdentity buildIdentity(String[] args) {
-        return new NodeIdentity(TierRole.NODE, TierRole.SERVER, args[0]);
+        return new ServerIdentity(TierRole.SERVER, TierRole.COORDINATOR, args[0]);
     }
 
     @Override 
     protected AbstractConfig loadConfig(AbstractTierIdentity identity) {
-        return new NodeConfig(identity);
+        return new ServerConfig(identity);
     }
 
     @Override
@@ -62,22 +64,22 @@ public final class NodeComponent extends AbstractEdgeComponent {
         try {
             connectionManagers.put(
                 identity.getHigherTier(), 
-                NodeServerConnectionManager.getInstance("", "", identity.getRole())
+                ServerCoordinatorConnectionManager.getInstance("", "", identity.getRole())
             );
 
             ConnectionManager serverConnection = connectionManagers.get(identity.getHigherTier());
 
             serverConnection.addConnection(new ConnectionDto(
                 "1",
-                config.getIPByKey("Server.IP"),
-                config.getPortByKey("Server.listeningPort"),
+                config.getIPByKey("Coordinator.IP"),
+                config.getPortByKey("Coordinator.listeningPort"),
                 Priority.CRITICAL
             ));
             
             LinkedHashMap<String, String> payload = new LinkedHashMap<>();
             payload.put(
-                "Node.listeningPort",
-                String.valueOf(config.getPortByKey("Node.listeningPort")) 
+                "Server.listeningPort",
+                String.valueOf(config.getPortByKey("Server.listeningPort")) 
             );
 
             AbstractPacket initPacket = new InitalizationPacketManager(
@@ -86,7 +88,7 @@ public final class NodeComponent extends AbstractEdgeComponent {
                 "1",
                 identity.getRole(),
                 serverConnection,
-                config.getIPByKey("Node.IP")
+                config.getIPByKey("Server.IP")
             )
             .createOutgoingPacket();
 
@@ -109,7 +111,7 @@ public final class NodeComponent extends AbstractEdgeComponent {
         int timeoutMs = 2000; 
 
         try {
-            serverListener = new NodeListener(
+            coordinatorListener = new ServerListener(
                 config.getPortByKey("Node.listeningPort"), 
                 timeoutMs,
                 identity
@@ -178,4 +180,5 @@ public final class NodeComponent extends AbstractEdgeComponent {
     protected void afterStart() {
         // TODO: PeerList request
     }
+
 }

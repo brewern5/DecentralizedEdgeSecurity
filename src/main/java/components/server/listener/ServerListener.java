@@ -10,41 +10,92 @@ package components.server.listener;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.w3c.dom.events.Event;
+
+import core.identity.AbstractTierIdentity;
 
 import components.server.handler.ServerCoordinatorHandler;
 import components.server.handler.ServerNodeHandler;
 
 public class ServerListener implements Runnable {
+    private final ExecutorService nodePool;
+    private final ExecutorService coordinatorPool;
+
+    private volatile boolean running = true;
 
     private static final Logger logger = LogManager.getLogger(ServerListener.class);
     
-    private Socket connected;   // This is the socket sent to the handler after the connection has been made by the listener
-    private ServerSocket listenerSocket;    // this is the active listening socket
+    private Socket connected; 
+    private ServerSocket listenerSocket;    
     private int port;   
     private int timeout;
 
-    private String type;
+    private final AbstractTierIdentity identity;
 
-    // Constructor
-    public ServerListener(int port, int timeout, String type) throws IOException {
+    public ServerListener(int port, int timeout, AbstractTierIdentity identity) throws IOException {
         this.port = port;
         this.timeout = timeout;
-        this.type = type;
         this.listenerSocket = new ServerSocket(port);
         this.listenerSocket.setSoTimeout(timeout);
+        this.identity = identity;
+
+        int cpus = Runtime.getRuntime().availableProcessors();
+        // NOTE: These three vars are subject to change based on hardware and how long these threads are ran.
+        int nodePoolSize = Math.max(8, cpus * 2);
+        int nodeMaxPoolSize = Math.max(16, cpus * 4);
+        int nodeWorkQueueCap = 1000;
+
+        this.nodePool = new ThreadPoolExecutor(
+            nodePoolSize,
+            nodeMaxPoolSize,
+            timeout,
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(nodeWorkQueueCap),
+            namedFactory("node"),
+            new ThreadPoolExecutor.AbortPolicy()
+        );
+
+        int coordinatorPoolSize = 1;
+        int coordinatorMaxPoolSize = 1;
+
+        this.coordinatorPool = new ThreadPoolExecutor(
+            coordinatorPoolSize,
+            coordinatorMaxPoolSize,
+            0, 
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(50),
+            namedFactory("coordinator"),
+            new ThreadPoolExecutor.AbortPolicy()
+        );
     }
 
     @Override
     public void run(){  
 
-        logger.info("Listening on port " + this.port);
-
-        boolean on = true;
+        logger.info("Listening on port {}.", this.port);
 
         //TODO: Look into thread pool since the server will have a lot of clients
+
+        while (running) {
+            Event event = waitForEvent();
+            Runnable task = () -> handleEvent(event);
+
+            if (isNode(event)) {
+                nodePool.execute(task);
+            } else if(isCoordinator(event)) {
+                coordinatorPool.execute(task);
+            }
+        }
+
 
         while(on){
             try {
@@ -52,14 +103,14 @@ public class ServerListener implements Runnable {
                     connected = listenerSocket.accept();
                     Thread handlerThread = new Thread(
                         new ServerNodeHandler(connected)
-                    ); // sends the message to a handler
-                    handlerThread.start(); // Begins the new thread
+                    ); 
+                    handlerThread.start(); 
                 } else if (type.equals("coordinator")) {
                     connected = listenerSocket.accept();
                     Thread handlerThread = new Thread(
                         new ServerCoordinatorHandler(connected)
-                    ); // sends the message to a handler
-                    handlerThread.start(); // Begins the new thread
+                    ); 
+                    handlerThread.start(); 
                 }
             } catch (SocketTimeoutException sto) {
                 // You need this exception handling here because it will brick at trying to start the connection
@@ -72,7 +123,49 @@ public class ServerListener implements Runnable {
         }
     }
 
+    public void stop() {
+        running = false;
+        shutdownPool(nodePool, "node");
+        shutdownPool(coordinatorPool, "coordinator");
+    }
+
+    private void handleEvent(Event event) {
+        // business logic
+    }
+
+    private Event waitForEvent() {
+        // blocking listener logic
+        return new Event();
+    }
+
+    private boolean isTypeA(Event event) {
+        // classification logic
+        return event.type == 1;
+    }
+
+    private static ThreadFactory namedFactory(String prefix) {
+        AtomicInteger n = new AtomicInteger(1);
+        return r -> {
+            Thread t = new Thread(r, prefix + "-" + n.getAndIncrement());
+            t.setDaemon(false);
+            return t;
+        };
+    }
+
+    private static void shutdownPool(ExecutorService pool, String name) {
+        pool.shutdown();
+        try {
+            if (!pool.awaitTermination(10, TimeUnit.SECONDS)) {
+                pool.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            pool.shutdownNow();
+        }
+    }
+
     /*          Accessor methods        */
+
     public int getActivePort() {
         return port;
     }
@@ -80,7 +173,6 @@ public class ServerListener implements Runnable {
     public int getActiveTimeout() {
         return timeout;
     }
-
 
     /*          Changer methods        */
 
@@ -108,4 +200,5 @@ public class ServerListener implements Runnable {
         }
         return true;
     }
+
 }

@@ -9,10 +9,15 @@ import org.apache.logging.log4j.Logger;
 import core.connection.ConnectionDtoManager;
 import core.connection.ConnectionManager;
 import core.connection.Priority;
+
 import core.exception.KeepAliveException;
+
 import core.identity.TierRole;
+
 import core.packet.AbstractPacket;
 import core.packet.keep_alive.KeepAliveManager;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class NodeServerConnectionManager extends ConnectionManager {
        
@@ -51,8 +56,7 @@ public class NodeServerConnectionManager extends ConnectionManager {
 
     public boolean sendKeepAlive() throws KeepAliveException {
                 
-        // Track if any keep-alive failed
-        KeepAliveException lastException = null;
+        AtomicReference<KeepAliveException> lastException = new AtomicReference<>();
         
         activeConnections.forEach((connectionId, connection) -> {
 
@@ -67,7 +71,6 @@ public class NodeServerConnectionManager extends ConnectionManager {
                 boolean keptAlive = new ConnectionDtoManager(connection).send(packet);
 
                 if (!keptAlive) {
-                    // Packet failed to send or ACK not received
                     throw new KeepAliveException(
                         KeepAliveException.FailureStage.SEND_FAILED,
                         connectionId,
@@ -77,32 +80,27 @@ public class NodeServerConnectionManager extends ConnectionManager {
                 }
                 
                 // TODO: At this point, packet was sent and ACK received, but we need to verify it was handled
-                // For now, log success
                 logger.debug("Keep-alive sent successfully to connection: {}", connectionId);
 
             } catch (KeepAliveException e) {
                 logger.error("Keep-alive failed for connection: {}", connectionId, e);
                 
-                // Handle based on priority
                 if (connection.getPriority() != Priority.CRITICAL) {
                     logger.warn("Connection: \"{}\" with criticality status: \"{}\" was terminated!", 
                                connectionId, connection.getPriority());
                     terminateConnection(connectionId);
                 } else {
-                    // For critical connections, log but don't terminate immediately
                     logger.error("CRITICAL connection: \"{}\" failed keep-alive! Reason: {}", 
                                 connectionId, e.getStage().getDescription());
                     terminateConnection(connectionId);
                 }
-                
-                // Store the exception to rethrow after forEach (can't throw from lambda)
-                // Note: This will only keep the last exception, but indicates there was a failure
+
+                lastException.set(e);
             }
         });
-        
-        // If we had any failures and stored an exception, throw it
+
         if (lastException != null) {
-            throw lastException;
+            throw lastException.get();
         }
         
         return true;

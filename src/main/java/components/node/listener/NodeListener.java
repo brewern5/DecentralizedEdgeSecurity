@@ -6,13 +6,14 @@
 package components.node.listener;
 
 import java.io.IOException;
-
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import core.identity.AbstractTierIdentity;
 
 import components.node.handler.NodeServerHandler;
 
@@ -26,11 +27,14 @@ public class NodeListener implements Runnable {
     private int port;
     private int timeout;
 
-    public NodeListener(int port, int timeout) throws IOException {
+    private AbstractTierIdentity identity;
+
+    public NodeListener(int port, int timeout, AbstractTierIdentity identity) throws IOException {
         this.port = port;
         this.timeout = timeout;
         this.listenerSocket = new ServerSocket(port);
         this.listenerSocket.setSoTimeout(timeout);
+        this.identity = identity;
     }
 
     @Override
@@ -46,7 +50,7 @@ public class NodeListener implements Runnable {
 
             try {
                 connected = listenerSocket.accept();
-                Thread handlerThread = new Thread(new NodeServerHandler(connected)); // sends the message to a handler
+                Thread handlerThread = new Thread(new NodeServerHandler(connected, identity)); // sends the message to a handler
                 handlerThread.start(); // Begins the new thread
             } catch (SocketTimeoutException sto) {
                 // Timeout is expected; allows loop to observe shutdown quickly.
