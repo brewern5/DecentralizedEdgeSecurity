@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import core.exception.InvalidFormatException;
 import core.exception.UnknownPacketException;
+import core.identity.TierRole;
 import core.packet.AbstractPacket;
 import core.packet.AbstractPacketManager;
 import core.packet.PacketType;
@@ -26,10 +27,10 @@ public class KeepAliveManager extends AbstractPacketManager {
      * @param instantiatorId The id of the node that created this instance
      * @param clusterId The id of the cluster the instantiator is part of
      * @param recipientId The id of the intended reciepient (if there is one)
-     * @param role What class (Node, Server, Coordinator) created this instance
+     * @param instantiatorRole What class (Node, Server, Coordinator) created this instance
      */
-    public KeepAliveManager(String instantiatorId, String clusterId, String recipientId, String role) {
-        super(instantiatorId, clusterId, recipientId, role);
+    public KeepAliveManager(String instantiatorId, String clusterId, String recipientId, TierRole instantiatorRole) {
+        super(instantiatorId, clusterId, recipientId, instantiatorRole);
     }
 
     @Override

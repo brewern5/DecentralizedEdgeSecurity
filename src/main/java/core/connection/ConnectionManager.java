@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import core.exception.KeepAliveException;
+import core.identity.TierRole;
 import core.packet.AbstractPacket;
 import core.packet.PacketType;
 import core.packet.keep_alive.KeepAliveManager;
@@ -28,7 +29,7 @@ public abstract class ConnectionManager {
     protected final ConcurrentHashMap<String, ConnectionDto> activeConnections = new ConcurrentHashMap<>();
     protected String instanceId; // ID of the instance that created this connection manager
     protected String clusterId; // ID of the cluster this instance is assigned to
-    protected String role; 
+    protected TierRole instantiatorRole; 
 
     private static final Logger logger = LogManager.getLogger(ConnectionManager.class);
 
@@ -37,12 +38,12 @@ public abstract class ConnectionManager {
      * 
      * @param instanceId The instance that has created this manager
      * @param clusterId The id of the cluster
-     * @param role What role instantiated this manager (i.e. "Server", "Node", "Coordinator")
+     * @param instantiatorRole What role instantiated this manager (i.e. "Server", "Node", "Coordinator")
      */
-    protected ConnectionManager(String instanceId, String clusterId, String role) {
+    protected ConnectionManager(String instanceId, String clusterId, TierRole instantiatorRole) {
         this.instanceId = instanceId;
         this.clusterId = clusterId;
-        this.role = role;
+        this.instantiatorRole = instantiatorRole;
     }
 
     /*
@@ -155,7 +156,7 @@ public abstract class ConnectionManager {
 
     public String getClusterId() { return clusterId; }
 
-    public String getRole() { return role; }
+    public TierRole getRole() { return instantiatorRole; }
 
     public ConnectionDto getConnectionInfoById(String id) { return activeConnections.get(id); }
 
@@ -186,5 +187,5 @@ public abstract class ConnectionManager {
 
     public void setClusterId(String clusterId) { this.clusterId = clusterId; }
 
-    public void setRole(String role) { this.role = role; }
+    public void setRole(TierRole instantiatorRole) { this.instantiatorRole = instantiatorRole; }
 }

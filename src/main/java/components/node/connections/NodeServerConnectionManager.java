@@ -10,6 +10,7 @@ import core.connection.ConnectionDtoManager;
 import core.connection.ConnectionManager;
 import core.connection.Priority;
 import core.exception.KeepAliveException;
+import core.identity.TierRole;
 import core.packet.AbstractPacket;
 import core.packet.keep_alive.KeepAliveManager;
 
@@ -17,8 +18,8 @@ public class NodeServerConnectionManager extends ConnectionManager {
        
     private static final Logger logger = LogManager.getLogger(NodeServerConnectionManager.class);
 
-    public NodeServerConnectionManager(String instanceId, String clusterId, String role) {
-        super(instanceId, clusterId, role);
+    public NodeServerConnectionManager(String instanceId, String clusterId, TierRole instantiatorRole) {
+        super(instanceId, clusterId, instantiatorRole);
     }
 
     private static volatile NodeServerConnectionManager instance;
@@ -27,12 +28,12 @@ public class NodeServerConnectionManager extends ConnectionManager {
      * 
      * @param instanceId The ID of the instance that is creating this connection manager
      * @param clusterId The ID of the cluster this instance belongs too, if it belongs to one
-     * @param role The Role of the instantiator (In this case: "Coordinator")
+     * @param instantiatorRole The Role of the instantiator (In this case: "Node")
      * @return a singleton instance of the connectionManager
      */
-    public static NodeServerConnectionManager getInstance(String instanceId, String clusterId, String role) {
+    public static NodeServerConnectionManager getInstance(String instanceId, String clusterId, TierRole instantiatorRole) {
         return getOrCreateInstance(instance, NodeServerConnectionManager.class,
-            () -> instance = new NodeServerConnectionManager(instanceId, clusterId, role)
+            () -> instance = new NodeServerConnectionManager(instanceId, clusterId, instantiatorRole)
         );
     }
 
@@ -60,7 +61,7 @@ public class NodeServerConnectionManager extends ConnectionManager {
                     instanceId, 
                     clusterId, 
                     connectionId, 
-                    role
+                    instantiatorRole
                 ).createOutgoingPacket();
 
                 boolean keptAlive = new ConnectionDtoManager(connection).send(packet);

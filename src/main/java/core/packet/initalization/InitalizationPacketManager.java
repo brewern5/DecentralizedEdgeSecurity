@@ -12,8 +12,12 @@ import org.apache.logging.log4j.Logger;
 
 import core.connection.ConnectionDto;
 import core.connection.ConnectionManager;
+
+import core.identity.TierRole;
+
 import core.exception.InvalidFormatException;
 import core.exception.UnknownPacketException;
+
 import core.packet.AbstractPacket;
 import core.packet.AbstractPacketManager;
 import core.packet.PacketType;
@@ -31,12 +35,12 @@ public class InitalizationPacketManager extends AbstractPacketManager {
      * @param instantiatorId The id of the node that created this instance
      * @param clusterId The id of the cluster the instantiator is part of
      * @param recipientId The id of the intended reciepient (if there is one)
-     * @param insantiatorType What type of class (Node, Server, Coordinator) created this instance
+     * @param instantiatorRole What type of class Enum[NODE, SERVER, COORDINATOR] created this instance
      * @param connectionManager The ConnectionManager singleton instance to store connection info
      * @param senderIpAddress The IP address from the socket connection (not from packet payload)
      */
-    public InitalizationPacketManager(String instantiatorId, String clusterId, String recipientId, String role, ConnectionManager connectionManager, String senderIpAddress) {
-        super(instantiatorId, clusterId, recipientId, role);
+    public InitalizationPacketManager(String instantiatorId, String clusterId, String recipientId, TierRole instantiatorRole, ConnectionManager connectionManager, String senderIpAddress) {
+        super(instantiatorId, clusterId, recipientId, instantiatorRole);
         this.connectionManager = connectionManager;
         this.senderIpAddress = senderIpAddress;
     }

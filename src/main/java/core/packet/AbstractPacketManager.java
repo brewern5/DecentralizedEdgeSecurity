@@ -15,6 +15,8 @@
 
 package core.packet;
 
+import core.identity.TierRole;
+
 import core.exception.InvalidFormatException;
 import core.exception.UnknownPacketException;
 
@@ -28,20 +30,20 @@ public abstract class AbstractPacketManager {
     protected String clusterId;
     protected String recipientId;
 
-    protected String role;
+    protected TierRole instantiatorRole;
 
     /**
      * 
      * @param senderId This instance's ID
      * @param clusterId The cluster ID 
      * @param recipientId The ID of the recieving instance
-     * @param role What this particular instance role is. I.e. "Node", "Server", "Coordinator"
+     * @param instantiatorRole What this particular instance role is. I.e. "NODE", "SERVER", "COORDINATOR"
      */
-    protected AbstractPacketManager(String senderId, String clusterId, String recipientId, String role) {
+    protected AbstractPacketManager(String senderId, String clusterId, String recipientId, TierRole instantiatorRole) {
         this.senderId = senderId;
         this.clusterId = clusterId;
         this.recipientId = recipientId;
-        this.role = role;
+        this.instantiatorRole = instantiatorRole;
     }
 
     /*

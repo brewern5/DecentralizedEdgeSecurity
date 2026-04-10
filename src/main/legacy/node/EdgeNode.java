@@ -105,7 +105,8 @@ public class EdgeNode {
                 "", 
                 "", 
                 "1", 
-                "Node", serverConnectionManager, 
+                "Node", 
+                serverConnectionManager, 
                 IP
             )
             .createOutgoingPacket();

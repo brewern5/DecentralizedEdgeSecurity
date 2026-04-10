@@ -38,14 +38,23 @@ public class NodeListener implements Runnable {
 
         logger.info("Listening on port " + port);
 
-        boolean on = true;
-        while(on){
+        while(!Thread.currentThread().isInterrupted()) {
+            if (listenerSocket.isClosed()) {
+                logger.info("Listener socket closed on port {}, exiting listener loop", port);
+                break;
+            }
+
             try {
                 connected = listenerSocket.accept();
                 Thread handlerThread = new Thread(new NodeServerHandler(connected)); // sends the message to a handler
                 handlerThread.start(); // Begins the new thread
             } catch (SocketTimeoutException sto) {
+                // Timeout is expected; allows loop to observe shutdown quickly.
             } catch (IOException ioe) {
+                if (listenerSocket.isClosed()) {
+                    logger.info("Listener socket closed on port {}, stopping listener", port);
+                    break;
+                }
                 logger.error("I/O Exception! " + ioe);
             }
         }

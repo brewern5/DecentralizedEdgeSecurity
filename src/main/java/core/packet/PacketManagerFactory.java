@@ -26,6 +26,7 @@
 package core.packet;
 
 import core.connection.ConnectionManager;
+import core.identity.TierRole;
 import core.packet.initalization.InitalizationPacketManager;
 import core.packet.keep_alive.KeepAliveManager;
 import core.packet.peerlist_packet.PeerListPacketManager;
@@ -39,7 +40,7 @@ public class PacketManagerFactory {
      * @param receivedPacket The deserialized packet received from the network
      * @param responderId The ID of the instance creating this manager (to send responses)
      * @param clusterId The cluster ID
-     * @param role The role of this instance ("Node", "Server", "Coordinator")
+     * @param instantiatorRole The role of this instance ("Node", "Server", "Coordinator")
      * @return The appropriate AbstractPacketManager subclass
      * @throws IllegalArgumentException if packet type is unknown or unsupported
      */
@@ -47,9 +48,9 @@ public class PacketManagerFactory {
             AbstractPacket receivedPacket,
             String responderId,
             String clusterId,
-            String role) {
+            TierRole instantiatorRole) {
         
-        return createManager(receivedPacket, responderId, clusterId, role, null, null);
+        return createManager(receivedPacket, responderId, clusterId, instantiatorRole, null, null);
     }
 
     /**
@@ -59,7 +60,7 @@ public class PacketManagerFactory {
      * @param receivedPacket The deserialized packet received from the network
      * @param responderId The ID of the instance creating this manager (to send responses)
      * @param clusterId The cluster ID
-     * @param role The role of this instance ("Node", "Server", "Coordinator")
+     * @param instantiatorRole The role of this instance ("Node", "Server", "Coordinator")
      * @param connectionManager ConnectionManager instance (required for INITIALIZATION packets)
      * @param senderIpAddress IP address from socket connection (required for INITIALIZATION packets)
      * @return The appropriate AbstractPacketManager subclass
@@ -69,7 +70,7 @@ public class PacketManagerFactory {
             AbstractPacket receivedPacket,
             String responderId,
             String clusterId,
-            String role,
+            TierRole instantiatorRole,
             ConnectionManager connectionManager,
             String senderIpAddress) {
         
@@ -97,7 +98,7 @@ public class PacketManagerFactory {
                     responderId,
                     clusterId,
                     senderId,  // recipient is the sender of the incoming packet
-                    role,
+                    instantiatorRole,
                     connectionManager,
                     senderIpAddress
                 );
@@ -108,7 +109,7 @@ public class PacketManagerFactory {
                     responderId,
                     clusterId,
                     senderId,  // recipient is the sender of the incoming packet
-                    role
+                    instantiatorRole
                 );
                 break;
                 
@@ -117,7 +118,7 @@ public class PacketManagerFactory {
                     responderId,
                     clusterId,
                     senderId,  // recipient is the sender of the incoming packet
-                    role
+                    instantiatorRole
                 );
                 break;
                 

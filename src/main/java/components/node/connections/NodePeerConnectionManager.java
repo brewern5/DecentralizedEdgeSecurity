@@ -13,16 +13,18 @@ import org.apache.logging.log4j.Logger;
 import core.connection.ConnectionDtoManager;
 import core.connection.ConnectionManager;
 import core.connection.Priority;
+
+import core.identity.TierRole;
+
 import core.exception.KeepAliveException;
+
 import core.packet.AbstractPacket;
 import core.packet.keep_alive.KeepAliveManager;
 
 public class NodePeerConnectionManager extends ConnectionManager {
-    
-    private static final Logger logger = LogManager.getLogger(NodePeerConnectionManager.class);
 
-    public NodePeerConnectionManager(String instanceId, String clusterId, String role) {
-        super(instanceId, clusterId, role);
+    public NodePeerConnectionManager(String instanceId, String clusterId, TierRole instantiatorRole) {
+        super(instanceId, clusterId, instantiatorRole);
     }
 
     private static volatile NodePeerConnectionManager instance;
@@ -31,12 +33,12 @@ public class NodePeerConnectionManager extends ConnectionManager {
      * 
      * @param instanceId The ID of the instance that is creating this connection manager
      * @param clusterId The ID of the cluster this instance belongs too, if it belongs to one
-     * @param role The Role of the instantiator (In this case: "Coordinator")
+     * @param instantiatorRole The Role of the instantiator (In this case: "Coordinator")
      * @return a singleton instance of the connectionManager
      */
-    public static NodePeerConnectionManager getInstance(String instanceId, String clusterId, String role) {
+    public static NodePeerConnectionManager getInstance(String instanceId, String clusterId, TierRole instantiatorRole) {
         return getOrCreateInstance(instance, NodePeerConnectionManager.class,
-            () -> instance = new NodePeerConnectionManager(instanceId, clusterId, role)
+            () -> instance = new NodePeerConnectionManager(instanceId, clusterId, instantiatorRole)
         );
     }
 
