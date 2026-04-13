@@ -1,16 +1,17 @@
 /*
-        Author: Nathaniel Brewer
+    Author: Nathaniel Brewer
 
 */
 
 package core.packet.response_packet;
 
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
 import core.packet.PacketType;
 
 public class ErrorResponse extends AbstractPacket{
 
-    public ErrorResponse(String senderId, String clusterId, String recipientId) {
-        super(senderId, PacketType.ERROR, clusterId, recipientId);
+    public ErrorResponse(RuntimeMembershipState membershipState, String recipientId) {
+        super(membershipState.assignedId(), PacketType.ERROR, membershipState.clusterId(), recipientId);
     }
 }

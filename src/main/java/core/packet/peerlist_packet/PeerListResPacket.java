@@ -6,13 +6,14 @@
 
 package core.packet.peerlist_packet;
 
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
 import core.packet.PacketType;
 
 public class PeerListResPacket extends AbstractPacket {
     
-    public PeerListResPacket(String senderId, String clusterId, String recipientId) {
-        super(senderId, PacketType.PEER_LIST_RES, clusterId, recipientId);
+    public PeerListResPacket(RuntimeMembershipState membershipState, String recipientId) {
+        super(membershipState.assignedId(), PacketType.PEER_LIST_RES, membershipState.clusterId(), recipientId);
 
         // TODO: Populate with the reponse
     }

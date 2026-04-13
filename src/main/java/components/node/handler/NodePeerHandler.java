@@ -37,6 +37,7 @@ import components.node.identity.NodeIdentity;
 import core.exception.NonDelimitedPacket;
 import core.external.PacketTypeAdapterFactory;
 import core.external.RuntimeTypeAdapterFactory;
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
 import core.packet.AbstractPacketManager;
 import core.packet.PacketManagerFactory;
@@ -63,10 +64,12 @@ public class NodePeerHandler implements Runnable {
     private AbstractPacket responsePacket;
 
     private final NodeIdentity identity;
+    private final RuntimeMembershipState membershipState;
 
-    public NodePeerHandler(Socket socket, NodeIdentity identity) {
+    public NodePeerHandler(Socket socket, NodeIdentity identity, RuntimeMembershipState membershipState) {
         this.peerSocket = socket;
         this.identity = identity;
+        this.membershipState = membershipState;
     }
 
     /*          
@@ -153,12 +156,21 @@ public class NodePeerHandler implements Runnable {
                         logger.warn("Received response packet type: " + peerPacket.getPacketType());
                         return; // Response packets don't need managers
                     }
+                    if (peerPacket.getPacketType() == PacketType.INITIALIZATION) {
                         peerPacketManager = PacketManagerFactory.createManager(
                             peerPacket,
-                            peerConnectionManager.getInstanceId(),
-                            peerConnectionManager.getClusterId(),
+                            membershipState,
+                            identity.getRole(),
+                            peerConnectionManager,
+                            peerSocket.getInetAddress().getHostAddress()
+                        );
+                    } else {
+                        peerPacketManager = PacketManagerFactory.createManager(
+                            peerPacket,
+                            membershipState,
                             identity.getRole()
-                        ); 
+                        );
+                    }
 
                 } catch(IllegalArgumentException e) {
                     logger.error("Recieved unknown packet!" + e);

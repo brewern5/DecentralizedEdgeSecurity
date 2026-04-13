@@ -19,16 +19,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import core.exception.KeepAliveException;
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 import core.packet.AbstractPacket;
-import core.packet.PacketType;
 import core.packet.keep_alive.KeepAliveManager;
 
 public abstract class ConnectionManager {
 
     protected final ConcurrentHashMap<String, ConnectionDto> activeConnections = new ConcurrentHashMap<>();
-    protected String instanceId; // ID of the instance that created this connection manager
-    protected String clusterId; // ID of the cluster this instance is assigned to
+    protected RuntimeMembershipState membershipState;
     protected TierRole instantiatorRole; 
 
     private static final Logger logger = LogManager.getLogger(ConnectionManager.class);
@@ -36,13 +35,11 @@ public abstract class ConnectionManager {
     /** 
      *  Subclass will NEED to implement a static getInstance() Method with sunchronized initialization
      * 
-     * @param instanceId The instance that has created this manager
-     * @param clusterId The id of the cluster
+     * @param membershipState The DTO for the membership of the cluster 
      * @param instantiatorRole What role instantiated this manager (i.e. "Server", "Node", "Coordinator")
      */
-    protected ConnectionManager(String instanceId, String clusterId, TierRole instantiatorRole) {
-        this.instanceId = instanceId;
-        this.clusterId = clusterId;
+    protected ConnectionManager(RuntimeMembershipState membershipState, TierRole instantiatorRole) {
+        this.membershipState = membershipState;
         this.instantiatorRole = instantiatorRole;
     }
 
@@ -88,26 +85,19 @@ public abstract class ConnectionManager {
     */
 
     public void sendToConnection(String connectionId, AbstractPacket packet) {
-        ConnectionDtoManager  dtoManager = new ConnectionDtoManager(activeConnections.get(connectionId));
-
+        ConnectionDtoManager dtoManager = new ConnectionDtoManager(activeConnections.get(connectionId), membershipState);
         dtoManager.send(packet);
-
-        if(packet.getPacketType() == PacketType.INITIALIZATION) {
-            setInstanceId(dtoManager.getAssignedId());
-        }
     }
     
     public void checkExpiredConnections() {
-        // Create an iterator for the ConccurentHashMap since it needs an iterator
         Iterator<Map.Entry<String, ConnectionDto>> iterator =
             activeConnections.entrySet().iterator();
 
         while(iterator.hasNext()) {
-            // Check if each entry is expired, if it is, check the priority to see if it needs to be removed or kept alive
             Map.Entry<String, ConnectionDto> entry = iterator.next();
             if(new ConnectionDtoManager(entry.getValue()).isExpired()){
 
-                KeepAliveManager manager = new KeepAliveManager(instanceId, clusterId, entry.getValue().getId(), null);
+                KeepAliveManager manager = new KeepAliveManager(membershipState, entry.getValue().getId(), null);
                 
                 if(entry.getValue().getPriority() == Priority.CRITICAL){
 
@@ -141,7 +131,6 @@ public abstract class ConnectionManager {
     }
 
 
-    // Can allow for multiple connections to be added at once(if needed)
     public void addConnection(ConnectionDto... connection) {
         for(ConnectionDto connected : connection) {
             activeConnections.put(connected.getId(), connected);
@@ -152,9 +141,6 @@ public abstract class ConnectionManager {
     /*
      *      Getters
      */
-    public String getInstanceId() { return instanceId; }
-
-    public String getClusterId() { return clusterId; }
 
     public TierRole getRole() { return instantiatorRole; }
 
@@ -182,10 +168,6 @@ public abstract class ConnectionManager {
     /*
         Mutators
     */ 
-
-    public void setInstanceId(String instanceId) { this.instanceId = instanceId; }
-
-    public void setClusterId(String clusterId) { this.clusterId = clusterId; }
 
     public void setRole(TierRole instantiatorRole) { this.instantiatorRole = instantiatorRole; }
 }

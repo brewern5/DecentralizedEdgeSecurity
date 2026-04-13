@@ -16,7 +16,6 @@ public class ConnectionDto {
     private String ip;
     private int port;
 
-    // This is when the expiration happens, which is twice the send time of each KeepAlive packet.
     private int keepAliveTimeoutSeconds;
 
     private Priority priority;

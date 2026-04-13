@@ -5,12 +5,13 @@
 
 package core.packet.response_packet;
 
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
 import core.packet.PacketType;
 
 public class InitializationResponse extends AbstractPacket {
     
-    public InitializationResponse(String senderId, String clusterId, String recipientId) {
-        super(senderId, PacketType.INITIALIZATION_RES, clusterId, recipientId);
+    public InitializationResponse(RuntimeMembershipState membershipState, String recipientId) {
+        super(membershipState.assignedId(), PacketType.INITIALIZATION_RES, membershipState.clusterId(), recipientId);
     }
 }

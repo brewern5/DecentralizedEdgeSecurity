@@ -13,13 +13,14 @@
 
 package core.packet.peerlist_packet;
 
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
 import core.packet.PacketType;
 
 public class PeerListReqPacket extends AbstractPacket {
 
-    public PeerListReqPacket(String senderId, String clusterId, String recipientId) {
-        super(senderId, PacketType.PEER_LIST_REQ, clusterId, recipientId);
+    public PeerListReqPacket(RuntimeMembershipState membershipState, String recipientId) {
+        super(membershipState.assignedId(), PacketType.PEER_LIST_REQ, membershipState.clusterId(), recipientId);
 
         // TODO: Populate the payload with the req
     }

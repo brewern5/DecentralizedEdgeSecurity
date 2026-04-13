@@ -41,6 +41,7 @@ import core.packet.PacketManagerFactory;
 import core.packet.PacketType;
 
 import core.identity.AbstractTierIdentity;
+import core.identity.RuntimeMembershipState;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,9 +64,12 @@ public class ServerCoordinatorHandler implements Runnable {
 
     private final AbstractTierIdentity identity;
 
-    public ServerCoordinatorHandler(Socket socket, AbstractTierIdentity identity) {
+    private volatile RuntimeMembershipState membershipState;
+
+    public ServerCoordinatorHandler(Socket socket, AbstractTierIdentity identity, RuntimeMembershipState membershipState) {
         this.coordinatorSocket = socket;
         this.identity = identity;
+        this.membershipState = membershipState;
     }
 
     /*
@@ -132,6 +136,15 @@ public class ServerCoordinatorHandler implements Runnable {
                     coordinatorPacket = gson.fromJson(json, AbstractPacket.class);
 
                     if (!PacketManagerFactory.requiresManager(coordinatorPacket.getPacketType())) {
+                        if (coordinatorPacket.getPacketType() == PacketType.INITIALIZATION_RES) {
+                            membershipState.assignId(coordinatorPacket.getRecipientId());
+                            membershipState.assignClusterId(coordinatorPacket.getClusterId());
+                            logger.info(
+                                "Runtime membership updated from INITIALIZATION_RES: assignedId={}, clusterId={}",
+                                membershipState.assignedId(),
+                                membershipState.clusterId()
+                            );
+                        }
                         logger.warn("Received response packet type: " + coordinatorPacket.getPacketType());
                         return;
                     }
@@ -139,8 +152,7 @@ public class ServerCoordinatorHandler implements Runnable {
                     if (coordinatorPacket.getPacketType() == PacketType.INITIALIZATION) {
                         coordinatorPacketManager = PacketManagerFactory.createManager(
                             coordinatorPacket,
-                            coordinatorConnectionManager.getInstanceId(),
-                            coordinatorConnectionManager.getClusterId(),
+                            membershipState,
                             identity.getRole(),
                             coordinatorConnectionManager,
                             coordinatorSocket.getInetAddress().getHostAddress() 
@@ -148,8 +160,7 @@ public class ServerCoordinatorHandler implements Runnable {
                     } else {
                         coordinatorPacketManager = PacketManagerFactory.createManager(
                             coordinatorPacket,
-                            coordinatorConnectionManager.getInstanceId(),
-                            coordinatorConnectionManager.getClusterId(),
+                            membershipState,
                             identity.getRole()
                         ); 
                     } 

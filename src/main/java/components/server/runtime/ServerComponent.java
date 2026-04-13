@@ -79,7 +79,7 @@ public class ServerComponent extends AbstractEdgeComponent {
         try {
             connectionManagers.put(
                 identity.getHigherTier(), 
-                ServerCoordinatorConnectionManager.getInstance("", "", identity.getRole())
+                ServerCoordinatorConnectionManager.getInstance(membershipState, identity.getRole())
             );
 
             ConnectionManager serverConnection = connectionManagers.get(identity.getHigherTier());
@@ -98,8 +98,7 @@ public class ServerComponent extends AbstractEdgeComponent {
             );
 
             AbstractPacket initPacket = new InitalizationPacketManager(
-                "",
-                "",
+                membershipState,
                 "1",
                 identity.getRole(),
                 serverConnection,
@@ -111,11 +110,8 @@ public class ServerComponent extends AbstractEdgeComponent {
 
             serverConnection.sendToConnection("1", initPacket);
 
-            membershipState.assignId(serverConnection.getInstanceId());
-            membershipState.assignClusterId(serverConnection.getClusterId());
-
         } catch(Exception e) {
-            logger.error("Error Sending Initalization Packet: " + e);
+            logger.error("Error sending initialization packet", e);
         }
 
         try{
@@ -123,8 +119,7 @@ public class ServerComponent extends AbstractEdgeComponent {
                 identity.getLowerTier()
                     .orElseThrow(() -> new IllegalStateException("Server must have a lower tier")), 
                 ServerNodeConnectionManager.getInstance(
-                    membershipState.assignedId(),
-                    membershipState.clusterId(), 
+                    membershipState, 
                     identity.getRole()
                 )
             );
@@ -144,7 +139,8 @@ public class ServerComponent extends AbstractEdgeComponent {
                 config.getPortByKey("Server.coordinatorListeningPort"), 
                 timeoutMs,
                 TierRole.COORDINATOR,
-                identity
+                identity,
+                membershipState
             );
 
             listenerExecutor.execute(coordinatorListener);
@@ -163,7 +159,8 @@ public class ServerComponent extends AbstractEdgeComponent {
                 config.getPortByKey("Server.nodeListeningPort"), 
                 timeoutMs,
                 TierRole.NODE,
-                identity
+                identity,
+                membershipState
             );
 
             listenerExecutor.execute(nodeListener);

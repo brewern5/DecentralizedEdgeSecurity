@@ -26,6 +26,7 @@
 package core.packet;
 
 import core.connection.ConnectionManager;
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 import core.packet.initalization.InitalizationPacketManager;
 import core.packet.keep_alive.KeepAliveManager;
@@ -38,19 +39,17 @@ public class PacketManagerFactory {
      * The manager will be pre-configured with the received packet.
      * 
      * @param receivedPacket The deserialized packet received from the network
-     * @param responderId The ID of the instance creating this manager (to send responses)
-     * @param clusterId The cluster ID
+     * @param membershipState The DTO for the membership of this device 
      * @param instantiatorRole The role of this instance ("Node", "Server", "Coordinator")
      * @return The appropriate AbstractPacketManager subclass
      * @throws IllegalArgumentException if packet type is unknown or unsupported
      */
     public static AbstractPacketManager createManager(
             AbstractPacket receivedPacket,
-            String responderId,
-            String clusterId,
+            RuntimeMembershipState membershipState,
             TierRole instantiatorRole) {
         
-        return createManager(receivedPacket, responderId, clusterId, instantiatorRole, null, null);
+        return createManager(receivedPacket, membershipState, instantiatorRole, null, null);
     }
 
     /**
@@ -58,8 +57,7 @@ public class PacketManagerFactory {
      * This overload includes additional parameters needed for certain packet types.
      * 
      * @param receivedPacket The deserialized packet received from the network
-     * @param responderId The ID of the instance creating this manager (to send responses)
-     * @param clusterId The cluster ID
+     * @param membershipState The DTO for the membership of this device 
      * @param instantiatorRole The role of this instance ("Node", "Server", "Coordinator")
      * @param connectionManager ConnectionManager instance (required for INITIALIZATION packets)
      * @param senderIpAddress IP address from socket connection (required for INITIALIZATION packets)
@@ -68,8 +66,7 @@ public class PacketManagerFactory {
      */
     public static AbstractPacketManager createManager(
             AbstractPacket receivedPacket,
-            String responderId,
-            String clusterId,
+            RuntimeMembershipState membershipState,
             TierRole instantiatorRole,
             ConnectionManager connectionManager,
             String senderIpAddress) {
@@ -79,7 +76,7 @@ public class PacketManagerFactory {
         }
 
         PacketType packetType = receivedPacket.getPacketType();
-        String senderId = receivedPacket.getSenderId();
+        String senderId = receivedPacket.getInstanceId();
         
         AbstractPacketManager manager;
 
@@ -95,8 +92,7 @@ public class PacketManagerFactory {
                     );
                 }
                 manager = new InitalizationPacketManager(
-                    responderId,
-                    clusterId,
+                    membershipState,
                     senderId,  // recipient is the sender of the incoming packet
                     instantiatorRole,
                     connectionManager,
@@ -106,8 +102,7 @@ public class PacketManagerFactory {
                 
             case KEEP_ALIVE:
                 manager = new KeepAliveManager(
-                    responderId,
-                    clusterId,
+                    membershipState,
                     senderId,  // recipient is the sender of the incoming packet
                     instantiatorRole
                 );
@@ -115,8 +110,7 @@ public class PacketManagerFactory {
                 
             case PEER_LIST_REQ:
                 manager = new PeerListPacketManager(
-                    responderId,
-                    clusterId,
+                    membershipState,
                     senderId,  // recipient is the sender of the incoming packet
                     instantiatorRole
                 );
@@ -132,7 +126,6 @@ public class PacketManagerFactory {
             case ACK:
             case ERROR:
             case PEER_LIST_RES:
-                // These are response packets, typically don't need managers
                 throw new IllegalArgumentException(
                     "Response packet types should not be used to create managers: " + packetType
                 );
@@ -141,7 +134,6 @@ public class PacketManagerFactory {
                 throw new IllegalArgumentException("Unknown packet type: " + packetType);
         }
         
-        // Automatically set the incoming packet in the manager
         manager.recreateIncomingPacket(receivedPacket);
         
         return manager;

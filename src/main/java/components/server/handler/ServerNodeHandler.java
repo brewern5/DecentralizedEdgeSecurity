@@ -37,7 +37,7 @@ import core.exception.NonDelimitedPacket;
 import core.external.*;
 
 import core.identity.AbstractTierIdentity;
-
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
 import core.packet.AbstractPacketManager;
 import core.packet.PacketManagerFactory;
@@ -54,6 +54,8 @@ public class ServerNodeHandler implements Runnable {
 
     private final AbstractTierIdentity identity;
 
+    private volatile RuntimeMembershipState membershipState;
+
     private Socket nodeSocket;
     private String nodeIP;
 
@@ -64,9 +66,10 @@ public class ServerNodeHandler implements Runnable {
 
     private AbstractPacket responsePacket;
  
-    public ServerNodeHandler(Socket socket, AbstractTierIdentity identity) {
+    public ServerNodeHandler(Socket socket, AbstractTierIdentity identity, RuntimeMembershipState membershipState) {
         this.nodeSocket = socket;
         this.identity = identity;
+        this.membershipState = membershipState;
     }
 
     /*          
@@ -142,8 +145,7 @@ public class ServerNodeHandler implements Runnable {
                     if (nodePacket.getPacketType() == PacketType.INITIALIZATION) {
                         nodePacketManager = PacketManagerFactory.createManager(
                             nodePacket,
-                            nodeConnectionManager.getInstanceId(),
-                            nodeConnectionManager.getClusterId(),
+                            membershipState,
                             identity.getRole(),
                             nodeConnectionManager,
                             nodeSocket.getInetAddress().getHostAddress()
@@ -151,8 +153,7 @@ public class ServerNodeHandler implements Runnable {
                     } else {
                         nodePacketManager = PacketManagerFactory.createManager(
                             nodePacket,
-                            nodeConnectionManager.getInstanceId(),
-                            nodeConnectionManager.getClusterId(),
+                            membershipState,
                             identity.getRole() 
                         ); 
                     }

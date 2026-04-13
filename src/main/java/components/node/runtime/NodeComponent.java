@@ -74,7 +74,7 @@ public final class NodeComponent extends AbstractEdgeComponent {
         try {
             connectionManagers.put(
                 identity.getHigherTier(), 
-                NodeServerConnectionManager.getInstance("", "", identity.getRole())
+                NodeServerConnectionManager.getInstance(membershipState, identity.getRole())
             );
 
             ConnectionManager serverConnection = connectionManagers.get(identity.getHigherTier());
@@ -93,8 +93,7 @@ public final class NodeComponent extends AbstractEdgeComponent {
             );
 
             AbstractPacket initPacket = new InitalizationPacketManager(
-                "",
-                "",
+                membershipState,
                 "1",
                 identity.getRole(),
                 serverConnection,
@@ -105,9 +104,6 @@ public final class NodeComponent extends AbstractEdgeComponent {
             initPacket.addPayload(payload);
 
             serverConnection.sendToConnection("1", initPacket);
-
-            membershipState.assignId(serverConnection.getInstanceId());
-            membershipState.assignClusterId(serverConnection.getClusterId());
 
         } catch(Exception e) {
             logger.error("Error Sending Initalization Packet: " + e);
@@ -124,7 +120,8 @@ public final class NodeComponent extends AbstractEdgeComponent {
             serverListener = new NodeListener(
                 config.getPortByKey("Node.listeningPort"), 
                 timeoutMs,
-                identity
+                identity,
+                membershipState
             );
 
             listenerExecutor.execute(serverListener);

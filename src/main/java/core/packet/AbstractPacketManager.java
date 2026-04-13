@@ -15,6 +15,7 @@
 
 package core.packet;
 
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 
 import core.exception.InvalidFormatException;
@@ -22,26 +23,23 @@ import core.exception.UnknownPacketException;
 
 public abstract class AbstractPacketManager {
     
-    protected AbstractPacket outgoingPacket; // The packet we are using to send
-    protected AbstractPacket incomingPacket; // The packet we recieved and need to handle
-    protected AbstractPacket responsePacket; // The response to the incoming packet
+    protected AbstractPacket outgoingPacket; 
+    protected AbstractPacket incomingPacket; 
+    protected AbstractPacket responsePacket; 
     
-    protected String senderId;
-    protected String clusterId;
+    protected RuntimeMembershipState membershipState;
     protected String recipientId;
 
     protected TierRole instantiatorRole;
 
     /**
      * 
-     * @param senderId This instance's ID
-     * @param clusterId The cluster ID 
+     * @param membershipState The DTO for the membership of this device 
      * @param recipientId The ID of the recieving instance
      * @param instantiatorRole What this particular instance role is. I.e. "NODE", "SERVER", "COORDINATOR"
      */
-    protected AbstractPacketManager(String senderId, String clusterId, String recipientId, TierRole instantiatorRole) {
-        this.senderId = senderId;
-        this.clusterId = clusterId;
+    protected AbstractPacketManager(RuntimeMembershipState membershipState, String recipientId, TierRole instantiatorRole) {
+        this.membershipState = membershipState;
         this.recipientId = recipientId;
         this.instantiatorRole = instantiatorRole;
     }

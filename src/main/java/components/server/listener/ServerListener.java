@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import core.identity.AbstractTierIdentity;
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 
 import components.server.handler.ServerCoordinatorHandler;
@@ -44,16 +45,18 @@ public class ServerListener implements Runnable {
     private int timeout;
 
     private final AbstractTierIdentity identity;
+    private volatile RuntimeMembershipState membershipState;
 
     private final TierRole type;
 
-    public ServerListener(int port, int timeout, TierRole type, AbstractTierIdentity identity) throws IOException {
+    public ServerListener(int port, int timeout, TierRole type, AbstractTierIdentity identity, RuntimeMembershipState membershipState) throws IOException {
         this.port = port;
         this.timeout = timeout;
         this.listenerSocket = new ServerSocket(port);
         this.listenerSocket.setSoTimeout(timeout);
         this.type = type;
         this.identity = identity;
+        this.membershipState = membershipState;
 
         int cpus = Runtime.getRuntime().availableProcessors();
         // NOTE: These three vars are subject to change based on hardware and how long these threads are ran.
@@ -97,10 +100,10 @@ public class ServerListener implements Runnable {
                 accepted = listenerSocket.accept();
 
                 if (TierRole.NODE == type) {
-                    nodePool.execute(new ServerNodeHandler(accepted, identity));
+                    nodePool.execute(new ServerNodeHandler(accepted, identity, membershipState));
                     accepted = null;
                 } else if(TierRole.COORDINATOR == type) {
-                    coordinatorPool.execute(new ServerCoordinatorHandler(accepted, identity));
+                    coordinatorPool.execute(new ServerCoordinatorHandler(accepted, identity, membershipState));
                     accepted = null;
                 } else {
                     logger.error("Unknown connection with type: {}", type);

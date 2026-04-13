@@ -8,6 +8,7 @@ package core.sender;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
 
 public class PacketSender extends AbstractSender{
@@ -21,8 +22,13 @@ public class PacketSender extends AbstractSender{
     private boolean ackRecieved;
 
     public PacketSender(String ip, int sendingPort) {
+        this(ip, sendingPort, null);
+    }
+
+    public PacketSender(String ip, int sendingPort, RuntimeMembershipState membershipState) {
         this.ip = ip;
         this.sendingPort = sendingPort;
+        this.membershipState = membershipState;
     }
 
     @Override

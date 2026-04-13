@@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
 
 import core.connection.ConnectionDto;
 import core.connection.ConnectionManager;
-
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 
 import core.exception.InvalidFormatException;
@@ -28,19 +28,18 @@ public class InitalizationPacketManager extends AbstractPacketManager {
 
     private static final Logger logger = LogManager.getLogger(InitalizationPacketManager.class);
     private final ConnectionManager connectionManager;
-    private final String senderIpAddress; // IP from the socket connection
+    private final String senderIpAddress;
 
     /**
      * 
-     * @param instantiatorId The id of the node that created this instance
-     * @param clusterId The id of the cluster the instantiator is part of
+     * @param membershipState The DTO for the membership of this device
      * @param recipientId The id of the intended reciepient (if there is one)
      * @param instantiatorRole What type of class Enum[NODE, SERVER, COORDINATOR] created this instance
      * @param connectionManager The ConnectionManager singleton instance to store connection info
      * @param senderIpAddress The IP address from the socket connection (not from packet payload)
      */
-    public InitalizationPacketManager(String instantiatorId, String clusterId, String recipientId, TierRole instantiatorRole, ConnectionManager connectionManager, String senderIpAddress) {
-        super(instantiatorId, clusterId, recipientId, instantiatorRole);
+    public InitalizationPacketManager(RuntimeMembershipState membershipState, String recipientId, TierRole instantiatorRole, ConnectionManager connectionManager, String senderIpAddress) {
+        super(membershipState, recipientId, instantiatorRole);
         this.connectionManager = connectionManager;
         this.senderIpAddress = senderIpAddress;
     }
@@ -48,7 +47,7 @@ public class InitalizationPacketManager extends AbstractPacketManager {
     @Override
     public AbstractPacket createOutgoingPacket() {
 
-        outgoingPacket = new InitalizationPacket(senderId, clusterId, recipientId);
+        outgoingPacket = new InitalizationPacket(membershipState, recipientId);
 
         return outgoingPacket;
     }
@@ -57,9 +56,9 @@ public class InitalizationPacketManager extends AbstractPacketManager {
     public AbstractPacket createGoodResponsePacket() {
         
         logger.debug("Creating response packet - senderId: {}, clusterId: {}, recipientId: {}", 
-                    senderId, clusterId, recipientId);
+                    membershipState, recipientId);
 
-        responsePacket = new InitializationResponse(senderId, clusterId, recipientId);
+        responsePacket = new InitializationResponse(membershipState, recipientId);
 
         return responsePacket;
     }
@@ -67,7 +66,7 @@ public class InitalizationPacketManager extends AbstractPacketManager {
     @Override
     public AbstractPacket createBadResponsePacket() {
 
-        responsePacket = new ErrorResponse(senderId, clusterId, recipientId);
+        responsePacket = new ErrorResponse(membershipState, recipientId);
 
         return responsePacket;
     }
@@ -109,7 +108,7 @@ public class InitalizationPacketManager extends AbstractPacketManager {
             );
             connectionManager.addConnection(connectionInfo);
             
-            logger.info("Added new connection from initialization packet: {}", incomingPacket.getSenderId());
+            logger.info("Added new connection from initialization packet: {}", incomingPacket.getInstanceId());
             
             responsePacket = createGoodResponsePacket();
  

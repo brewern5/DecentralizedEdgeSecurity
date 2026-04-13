@@ -14,6 +14,7 @@ import core.connection.ConnectionDtoManager;
 import core.connection.ConnectionManager;
 import core.connection.Priority;
 
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 
 import core.exception.KeepAliveException;
@@ -23,33 +24,32 @@ import core.packet.keep_alive.KeepAliveManager;
 
 public class NodePeerConnectionManager extends ConnectionManager {
 
-    public NodePeerConnectionManager(String instanceId, String clusterId, TierRole instantiatorRole) {
-        super(instanceId, clusterId, instantiatorRole);
+    private NodePeerConnectionManager(RuntimeMembershipState membershipState, TierRole instantiatorRole) {
+        super(membershipState, instantiatorRole);
     }
 
     private static volatile NodePeerConnectionManager instance;
 
     /** 
      * 
-     * @param instanceId The ID of the instance that is creating this connection manager
-     * @param clusterId The ID of the cluster this instance belongs too, if it belongs to one
+     * @param membershipState The runtime membership state for this instance
      * @param instantiatorRole The Role of the instantiator (In this case: "Coordinator")
      * @return a singleton instance of the connectionManager
      */
-    public static NodePeerConnectionManager getInstance(String instanceId, String clusterId, TierRole instantiatorRole) {
+    public static NodePeerConnectionManager getInstance(RuntimeMembershipState membershipState, TierRole instantiatorRole) {
         return getOrCreateInstance(instance, NodePeerConnectionManager.class,
-            () -> instance = new NodePeerConnectionManager(instanceId, clusterId, instantiatorRole)
+            () -> instance = new NodePeerConnectionManager(membershipState, instantiatorRole)
         );
     }
 
     /**
-     * Gets the existing singleton instance. Must call getInstance(instanceId, clusterId, role) first.
+     * Gets the existing singleton instance. Must call getInstance(membershipState, role) first.
      * @return the singleton instance
      * @throws IllegalStateException if getInstance with parameters hasn't been called yet
      */
         public static NodePeerConnectionManager getInstance() {
         if (instance == null) {
-            throw new IllegalStateException("ConnectionManager not initialized. Call getInstance(instanceId, clusterId, role) first.");
+            throw new IllegalStateException("ConnectionManager not initialized. Call getInstance(membershipState, role) first.");
         }
         return instance;
     }

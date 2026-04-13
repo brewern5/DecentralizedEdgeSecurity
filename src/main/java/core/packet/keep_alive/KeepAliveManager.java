@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import core.exception.InvalidFormatException;
 import core.exception.UnknownPacketException;
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 import core.packet.AbstractPacket;
 import core.packet.AbstractPacketManager;
@@ -29,17 +30,17 @@ public class KeepAliveManager extends AbstractPacketManager {
      * @param recipientId The id of the intended reciepient (if there is one)
      * @param instantiatorRole What class (Node, Server, Coordinator) created this instance
      */
-    public KeepAliveManager(String instantiatorId, String clusterId, String recipientId, TierRole instantiatorRole) {
-        super(instantiatorId, clusterId, recipientId, instantiatorRole);
+    public KeepAliveManager(RuntimeMembershipState membershipState, String recipientId, TierRole instantiatorRole) {
+        super(membershipState, recipientId, instantiatorRole);
     }
 
     @Override
     public AbstractPacket createOutgoingPacket() {
 
         if(terminate) {
-            outgoingPacket = new KeepAlivePacket(senderId, clusterId, recipientId, true);
+            outgoingPacket = new KeepAlivePacket(membershipState, recipientId, true);
         } else{
-            outgoingPacket = new KeepAlivePacket(senderId, clusterId, recipientId, false);
+            outgoingPacket = new KeepAlivePacket(membershipState, recipientId, false);
         }
 
         return outgoingPacket;
@@ -48,7 +49,7 @@ public class KeepAliveManager extends AbstractPacketManager {
     @Override
     public AbstractPacket createGoodResponsePacket() {
 
-        responsePacket = new AckResponse(senderId, clusterId, recipientId);
+        responsePacket = new AckResponse(membershipState, recipientId);
 
         return responsePacket;
     }
@@ -56,7 +57,7 @@ public class KeepAliveManager extends AbstractPacketManager {
     @Override
     public AbstractPacket createBadResponsePacket() {
 
-        responsePacket = new ErrorResponse(senderId, clusterId, recipientId);
+        responsePacket = new ErrorResponse(membershipState, recipientId);
 
         return responsePacket;
     }
@@ -76,7 +77,6 @@ public class KeepAliveManager extends AbstractPacketManager {
 
         try{
 
-            // Get all the values from the payload
             String[] values = incomingPacket.getAllPayloadValues();
 
             validatePayload(values);
@@ -102,13 +102,10 @@ public class KeepAliveManager extends AbstractPacketManager {
 
         PacketType incomingPacketType = incomingPacket.getPacketType();
 
-        // See if there is a termination string then handle accordingly
         if(incomingPacketType == PacketType.KEEP_ALIVE) {
             
             // TODO: check termination status and then respond with keep alive packet
                 
-            
-
         } else {
             throw new UnknownPacketException("Expected packet type of KEEP_ALIVE. Recieved: " + incomingPacketType.toString());
         }

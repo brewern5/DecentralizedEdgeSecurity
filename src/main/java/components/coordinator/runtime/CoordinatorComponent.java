@@ -72,7 +72,7 @@ public class CoordinatorComponent extends AbstractEdgeComponent {
         try {
             connectionManagers.put(
                 identity.getHigherTier(), 
-                CoordinatorConnectionManager.getInstance(membershipState.assignedId(), membershipState.clusterId(), identity.getRole())
+                CoordinatorConnectionManager.getInstance(membershipState, identity.getRole())
             );
             
         } catch(Exception e) {
@@ -88,8 +88,7 @@ public class CoordinatorComponent extends AbstractEdgeComponent {
             connectionManagers.put(
                 lowerTier, 
                 ServerNodeConnectionManager.getInstance(
-                    membershipState.assignedId(),
-                    membershipState.clusterId(), 
+                    membershipState,
                     identity.getRole()
                 )
             );
@@ -108,7 +107,8 @@ public class CoordinatorComponent extends AbstractEdgeComponent {
             coordinatorListener = new CoordinatorListener(
                 config.getPortByKey("Coordinator.listeningPort"), 
                 timeoutMs,
-                identity
+                identity,
+                membershipState
             );
 
             listenerExecutor.execute(coordinatorListener);

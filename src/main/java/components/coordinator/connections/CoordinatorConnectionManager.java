@@ -7,6 +7,7 @@ import core.connection.ConnectionDtoManager;
 import core.connection.ConnectionManager;
 import core.connection.Priority;
 
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 
 import core.exception.KeepAliveException;
@@ -18,32 +19,31 @@ public class CoordinatorConnectionManager extends ConnectionManager {
 
     private static final Logger logger = LogManager.getLogger(CoordinatorConnectionManager.class);
 
-    private CoordinatorConnectionManager(String instanceId, String clusterId, TierRole instantiatorRole) {
-        super(instanceId, clusterId, instantiatorRole);
+    private CoordinatorConnectionManager(RuntimeMembershipState membershipState, TierRole instantiatorRole) {
+        super(membershipState, instantiatorRole);
     }
 
     private static volatile CoordinatorConnectionManager instance;
 
     /** 
      * 
-     * @param instanceId The ID of the instance that is creating this connection manager
-     * @param clusterId The ID of the cluster this instance belongs too, if it belongs to one
+     * @param membershipState The runtime membership state for this instance
      * @param instantiatorRole The Role of the instantiator (In this case: "COORDINATOR")
      * @return a singleton instance of the connectionManager
      */
-    public static CoordinatorConnectionManager getInstance(String instanceId, String clusterId, TierRole instantiatorRole) {
+    public static CoordinatorConnectionManager getInstance(RuntimeMembershipState membershipState, TierRole instantiatorRole) {
         return getOrCreateInstance(instance, CoordinatorConnectionManager.class, 
-            () -> instance = new CoordinatorConnectionManager(instanceId, clusterId, instantiatorRole));
+            () -> instance = new CoordinatorConnectionManager(membershipState, instantiatorRole));
     }
 
     /**
-     * Gets the existing singleton instance. Must call getInstance(instanceId, clusterId, instantiatorRole) first.
+     * Gets the existing singleton instance. Must call getInstance(membershipState, instantiatorRole) first.
      * @return the singleton instance
      * @throws IllegalStateException if getInstance with parameters hasn't been called yet
      */
     public static CoordinatorConnectionManager getInstance() {
         if (instance == null) {
-            throw new IllegalStateException("ConnectionManager not initialized. Call getInstance(instanceId, clusterId, instantiatorRole) first.");
+            throw new IllegalStateException("ConnectionManager not initialized. Call getInstance(membershipState, instantiatorRole) first.");
         }
         return instance;
     }
@@ -54,8 +54,7 @@ public class CoordinatorConnectionManager extends ConnectionManager {
 
             try {
                 AbstractPacket packet = new KeepAliveManager(
-                    instanceId, 
-                    clusterId, 
+                    membershipState,
                     connectionId, 
                     instantiatorRole
                 ).createOutgoingPacket();
@@ -66,7 +65,7 @@ public class CoordinatorConnectionManager extends ConnectionManager {
                     throw new KeepAliveException(
                         KeepAliveException.FailureStage.SEND_FAILED,
                         connectionId,
-                        instanceId,
+                        membershipState.assignedId(),
                         "Failed to send keep-alive packet or receive ACK"
                     );
                 }

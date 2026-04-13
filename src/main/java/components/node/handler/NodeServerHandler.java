@@ -37,6 +37,7 @@ import core.exception.NonDelimitedPacket;
 import core.external.PacketTypeAdapterFactory;
 
 import core.identity.AbstractTierIdentity;
+import core.identity.RuntimeMembershipState;
 
 import core.packet.AbstractPacket;
 import core.packet.AbstractPacketManager;
@@ -63,10 +64,12 @@ public class NodeServerHandler implements Runnable {
     private AbstractPacket responsePacket;
 
     private final AbstractTierIdentity identity;
+    private final RuntimeMembershipState membershipState;
 
-    public NodeServerHandler(Socket socket, AbstractTierIdentity identity) {
+    public NodeServerHandler(Socket socket, AbstractTierIdentity identity, RuntimeMembershipState membershipState) {
         this.serverSocket = socket;
-        this.identity = identity;   
+        this.identity = identity;
+        this.membershipState = membershipState;
     }
 
     /*        
@@ -143,8 +146,7 @@ public class NodeServerHandler implements Runnable {
                     if (serverPacket.getPacketType() == PacketType.INITIALIZATION) {
                         serverPacketManager = PacketManagerFactory.createManager(
                             serverPacket,
-                            serverConnectionManager.getInstanceId(),
-                            serverConnectionManager.getClusterId(),
+                            membershipState,
                             identity.getRole(),
                             serverConnectionManager,
                             serverSocket.getInetAddress().getHostAddress()  
@@ -152,8 +154,7 @@ public class NodeServerHandler implements Runnable {
                     } else {
                         serverPacketManager = PacketManagerFactory.createManager(
                             serverPacket,
-                            serverConnectionManager.getInstanceId(),
-                            serverConnectionManager.getClusterId(),
+                            membershipState,
                             identity.getRole()
                         ); 
                     } 

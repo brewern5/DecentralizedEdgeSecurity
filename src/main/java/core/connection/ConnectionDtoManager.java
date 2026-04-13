@@ -15,8 +15,9 @@ import java.time.LocalDateTime;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
-import core.packet.PacketType;
+
 import core.sender.AbstractSender;
 import core.sender.PacketSender;
 
@@ -25,14 +26,18 @@ public class ConnectionDtoManager {
     private static final Logger logger = LogManager.getLogger(ConnectionDtoManager.class);
     
     private ConnectionDto connectionInfo;
-
-    private String assignedId;
+    private final RuntimeMembershipState membershipState;
 
     private AbstractSender sender;
     private Boolean hasSender = false;
 
     public ConnectionDtoManager(ConnectionDto connectionInfo) {
+        this(connectionInfo, null);
+    }
+
+    public ConnectionDtoManager(ConnectionDto connectionInfo, RuntimeMembershipState membershipState) {
         this.connectionInfo = connectionInfo;
+        this.membershipState = membershipState;
     }
 
     /*
@@ -50,9 +55,9 @@ public class ConnectionDtoManager {
             logger.error("Port is not set for connection " + connectionInfo.getId() +"!");
             return;
         }
-        // Create sender for this node
+        
         try {
-            this.sender = new PacketSender(connectionInfo.getIp(), connectionInfo.getPort());
+            this.sender = new PacketSender(connectionInfo.getIp(), connectionInfo.getPort(), membershipState);
             hasSender = true;
             logger.info("Sender Created for connection: " + connectionInfo.getId() + " - " + connectionInfo.getIp() +":" + connectionInfo.getPort());
         } catch (Exception e) {
@@ -62,7 +67,7 @@ public class ConnectionDtoManager {
 
     public boolean send(AbstractPacket packet) {
         if (sender == null || !hasSender) {
-            // if no sender, create one
+            
             createSender();
             if (sender == null || !hasSender) {
                 logger.error("Sender was not created for Connection: {}! Cannot send packet", connectionInfo.getId());
@@ -82,21 +87,13 @@ public class ConnectionDtoManager {
                 return false;
             } else {
                 logger.info("Retry succeeded for connection: {} - packet sent and ACK received", connectionInfo.getId());
-                if(packet.getPacketType() == PacketType.INITIALIZATION) {
-                    assignedId = sender.getAssignedId();
-                }
                 return true;
             }
         } else {
             logger.debug("Successfully sent {} packet to connection: {} and received ACK", 
                         packet.getPacketType(), connectionInfo.getId());
-            if(packet.getPacketType() == PacketType.INITIALIZATION) {
-                assignedId = sender.getAssignedId();
-            }
             return true;
         }
     }
-
-    public String getAssignedId() { return assignedId; }
 
 }

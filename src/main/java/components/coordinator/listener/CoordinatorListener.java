@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 
 import components.coordinator.handler.CoordinatorServerHandler;
 import core.identity.AbstractTierIdentity;
+import core.identity.RuntimeMembershipState;
 
 public class CoordinatorListener implements Runnable {
 
@@ -34,11 +35,13 @@ public class CoordinatorListener implements Runnable {
     private int port;
 
     private final AbstractTierIdentity identity;
+    private final RuntimeMembershipState membershipState;
 
-    public CoordinatorListener(int port, int timeout, AbstractTierIdentity identity) throws IOException {
+    public CoordinatorListener(int port, int timeout, AbstractTierIdentity identity, RuntimeMembershipState membershipState) throws IOException {
         this.port = port;
         this.timeout = timeout;
         this.identity = identity;
+        this.membershipState = membershipState;
 
         this.listenerSocket = new ServerSocket(port);
         this.listenerSocket.setSoTimeout(timeout);
@@ -58,7 +61,7 @@ public class CoordinatorListener implements Runnable {
 
             try {
                 connected = listenerSocket.accept();       
-                Thread handlerThread = new Thread(new CoordinatorServerHandler(connected, identity));
+                Thread handlerThread = new Thread(new CoordinatorServerHandler(connected, identity, membershipState));
                 handlerThread.start();
             } catch (SocketTimeoutException sto) {  
                 // Timeout is expected;

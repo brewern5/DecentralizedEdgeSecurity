@@ -20,30 +20,34 @@ public abstract class AbstractPacket {
 
     protected int payloadPairCounter = 0;
 
-    protected String senderId = null;
+    protected String instanceId = null;
     protected String clusterId = null;
     protected String recipientId = null;
 
     protected String packetId = null;
 
-    protected PacketType packetType;     // Enum for easy constant assignment
+    protected PacketType packetType; 
 
     protected String timeStamp;
 
     // This is where all information will be stored that is either in the request or response format.
     // NO IDs should be stored here, only information to be handled
     protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();  
-    
-    protected AbstractPacket(String senderId, PacketType packetType, String clusterId, String recipientId) {
-        this.senderId = senderId;
+    /**
+     * 
+     * @param instanceId The id of the instance that is sending the packet 
+     * @param packetType The enum type of the packet
+     * @param clusterId The id of the cluster this instance belongs to
+     * @param recipientId The id of the intended recipient of the packet
+     */
+    protected AbstractPacket(String instanceId, PacketType packetType, String clusterId, String recipientId) {
+        this.instanceId = instanceId;
         this.packetType = packetType;
         this.clusterId = clusterId;
         this.recipientId = recipientId;
 
-        // Create packetId for backtracking
         this.packetId = UUID.randomUUID().toString();
 
-        // Create Time stamp
         this.setTimeStamp();
         
     }
@@ -54,7 +58,7 @@ public abstract class AbstractPacket {
 
     public PacketType getPacketType() { return packetType; }
 
-    public String getSenderId() { return senderId; }
+    public String getInstanceId() { return instanceId; }
 
     public String getClusterId() { return clusterId; }
 
@@ -73,10 +77,8 @@ public abstract class AbstractPacket {
         Object[] objValues;
         String[] values;
 
-        // Since LinkedHashMap .values returns an array of Objects, we need to convert it to an array of strings
         objValues = payload.values().toArray();
 
-        // Copies the obj array to string array
         values = Arrays.copyOf(objValues, objValues.length, String[].class);
 
         return values;
@@ -92,7 +94,7 @@ public abstract class AbstractPacket {
 
     public void setPacketType(PacketType packetType) { this.packetType = packetType; }
 
-    public void setSenderId(String senderId) { this.senderId = senderId; }
+    public void setSenderId(String senderId) { this.instanceId = senderId; }
 
     public void setClusterId(String clusterId) { this.clusterId = clusterId; }
 
@@ -118,11 +120,8 @@ public abstract class AbstractPacket {
         Stringify Methods
     */
 
-    // converts the packet to a key/value String
     public String toJson() { return new Gson().toJson(this); }
 
-    // adds a clear end of message line that will be handled 
     public String toDelimitedString() { return new Gson().toJson(this) + "||END||"; }
 
-    
 }

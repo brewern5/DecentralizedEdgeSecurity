@@ -12,6 +12,7 @@ import core.connection.Priority;
 
 import core.exception.KeepAliveException;
 
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 
 import core.packet.AbstractPacket;
@@ -23,33 +24,32 @@ public class NodeServerConnectionManager extends ConnectionManager {
        
     private static final Logger logger = LogManager.getLogger(NodeServerConnectionManager.class);
 
-    public NodeServerConnectionManager(String instanceId, String clusterId, TierRole instantiatorRole) {
-        super(instanceId, clusterId, instantiatorRole);
+    private NodeServerConnectionManager(RuntimeMembershipState membershipState, TierRole instantiatorRole) {
+        super(membershipState, instantiatorRole);
     }
 
     private static volatile NodeServerConnectionManager instance;
 
     /** 
      * 
-     * @param instanceId The ID of the instance that is creating this connection manager
-     * @param clusterId The ID of the cluster this instance belongs too, if it belongs to one
+     * @param membershipState The runtime membership state for this instance
      * @param instantiatorRole The Role of the instantiator (In this case: "Node")
      * @return a singleton instance of the connectionManager
      */
-    public static NodeServerConnectionManager getInstance(String instanceId, String clusterId, TierRole instantiatorRole) {
+    public static NodeServerConnectionManager getInstance(RuntimeMembershipState membershipState, TierRole instantiatorRole) {
         return getOrCreateInstance(instance, NodeServerConnectionManager.class,
-            () -> instance = new NodeServerConnectionManager(instanceId, clusterId, instantiatorRole)
+            () -> instance = new NodeServerConnectionManager(membershipState, instantiatorRole)
         );
     }
 
     /**
-     * Gets the existing singleton instance. Must call getInstance(instanceId, clusterId, role) first.
+     * Gets the existing singleton instance. Must call getInstance(membershipState, role) first.
      * @return the singleton instance
      * @throws IllegalStateException if getInstance with parameters hasn't been called yet
      */
         public static NodeServerConnectionManager getInstance() {
         if (instance == null) {
-            throw new IllegalStateException("ConnectionManager not initialized. Call getInstance(instanceId, clusterId, role) first.");
+            throw new IllegalStateException("ConnectionManager not initialized. Call getInstance(membershipState, role) first.");
         }
         return instance;
     }
@@ -62,8 +62,7 @@ public class NodeServerConnectionManager extends ConnectionManager {
 
             try {
                 AbstractPacket packet = new KeepAliveManager(
-                    instanceId, 
-                    clusterId, 
+                    membershipState,
                     connectionId, 
                     instantiatorRole
                 ).createOutgoingPacket();
@@ -74,7 +73,7 @@ public class NodeServerConnectionManager extends ConnectionManager {
                     throw new KeepAliveException(
                         KeepAliveException.FailureStage.SEND_FAILED,
                         connectionId,
-                        instanceId,
+                        membershipState.assignedId(),
                         "Failed to send keep-alive packet or receive ACK"
                     );
                 }
@@ -99,7 +98,7 @@ public class NodeServerConnectionManager extends ConnectionManager {
             }
         });
 
-        if (lastException != null) {
+        if (lastException.get() != null) {
             throw lastException.get();
         }
         

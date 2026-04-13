@@ -11,7 +11,7 @@ import core.connection.ConnectionManager;
 import core.connection.Priority;
 
 import core.exception.KeepAliveException;
-
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 
 import core.packet.AbstractPacket;
@@ -23,22 +23,21 @@ public class ServerCoordinatorConnectionManager extends ConnectionManager {
     
     private static final Logger logger = LogManager.getLogger(ServerCoordinatorConnectionManager.class);
 
-    private ServerCoordinatorConnectionManager(String instanceId, String clusterId, TierRole instantiatorRole) {
-        super(instanceId, clusterId, instantiatorRole); 
+    private ServerCoordinatorConnectionManager(RuntimeMembershipState membershipState, TierRole instantiatorRole) {
+        super(membershipState, instantiatorRole); 
     }
 
     private static volatile ServerCoordinatorConnectionManager instance;
 
     /** 
      * 
-     * @param instanceId The ID of the instance that is creating this connection manager
-     * @param clusterId The ID of the cluster this instance belongs too, if it belongs to one
+     * @param membershipState The DTO for the membership of this device 
      * @param instantiatorRole The Role of the instantiator (In this case: "Coordinator")
      * @return a singleton instance of the connectionManager
      */
-    public static ServerCoordinatorConnectionManager getInstance(String instanceId, String clusterId, TierRole instantiatorRole) {
+    public static ServerCoordinatorConnectionManager getInstance(RuntimeMembershipState membershipState, TierRole instantiatorRole) {
         return getOrCreateInstance(instance, ServerCoordinatorConnectionManager.class, 
-            () -> instance = new ServerCoordinatorConnectionManager(instanceId, clusterId, instantiatorRole)
+            () -> instance = new ServerCoordinatorConnectionManager(membershipState, instantiatorRole)
         );
     }
 
@@ -62,8 +61,7 @@ public class ServerCoordinatorConnectionManager extends ConnectionManager {
 
             try {
                 AbstractPacket packet = new KeepAliveManager(
-                    instanceId, 
-                    clusterId, 
+                    membershipState, 
                     connectionId, 
                     instantiatorRole
                 ).createOutgoingPacket();
@@ -74,7 +72,7 @@ public class ServerCoordinatorConnectionManager extends ConnectionManager {
                     throw new KeepAliveException(
                         KeepAliveException.FailureStage.SEND_FAILED,
                         connectionId,
-                        instanceId,
+                        membershipState.assignedId(),
                         "Failed to send keep-alive packet or receive ACK"
                     );
                 }

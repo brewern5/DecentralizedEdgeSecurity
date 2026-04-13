@@ -6,6 +6,7 @@
 */
 package core.packet.peerlist_packet;
 
+import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
 import core.packet.AbstractPacket;
 import core.packet.AbstractPacketManager;
@@ -15,26 +16,25 @@ public class PeerListPacketManager extends AbstractPacketManager {
     
     /**
      * 
-     * @param instantiatorId The id of the node that created this instance
-     * @param clusterId The id of the cluster the instantiator is part of
+     * @param membershipState The DTO for the membership of this device 
      * @param recipientId The id of the intended reciepient (if there is one)
      * @param instantiatorRole What type of class (Node, Server, Coordinator) created this instance
      */
-    public PeerListPacketManager(String senderId, String clusterId, String recipientId, TierRole instantiatorRole) {
-        super(senderId, clusterId, recipientId, instantiatorRole);
+    public PeerListPacketManager(RuntimeMembershipState membershipState, String recipientId, TierRole instantiatorRole) {
+        super(membershipState, recipientId, instantiatorRole);
     }
 
     @Override
     // Creates the Peer List Request packet
     public AbstractPacket createOutgoingPacket() {
-        outgoingPacket = new PeerListReqPacket(senderId, clusterId, recipientId);
+        outgoingPacket = new PeerListReqPacket(membershipState, recipientId);
         return outgoingPacket;
     }
 
     
     @Override
     public AbstractPacket createGoodResponsePacket() {
-        responsePacket = new PeerListResPacket(senderId, clusterId, recipientId);
+        responsePacket = new PeerListResPacket(membershipState, recipientId);
 
         return responsePacket;
     }
@@ -42,7 +42,7 @@ public class PeerListPacketManager extends AbstractPacketManager {
     @Override
     public AbstractPacket createBadResponsePacket() {
 
-        responsePacket = new ErrorResponse(senderId, clusterId, recipientId);
+        responsePacket = new ErrorResponse(membershipState, recipientId);
 
         return responsePacket;
     }

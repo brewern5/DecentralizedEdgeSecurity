@@ -4,12 +4,13 @@
  */
 package core.packet.initalization;
 
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
 import core.packet.PacketType;
 
 public class InitalizationPacket extends AbstractPacket{
 
-    public InitalizationPacket(String senderId, String clusterId, String recipientId) {
-        super(senderId, PacketType.INITIALIZATION, clusterId, recipientId);
+    public InitalizationPacket(RuntimeMembershipState membershipState, String recipientId) {
+        super(membershipState.assignedId(), PacketType.INITIALIZATION, membershipState.clusterId(), recipientId);
     }
 }

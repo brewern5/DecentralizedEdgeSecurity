@@ -38,6 +38,7 @@ import org.apache.logging.log4j.Logger;
 import core.exception.NonDelimitedPacket;
 import core.external.PacketTypeAdapterFactory;
 import core.identity.AbstractTierIdentity;
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
 import core.packet.AbstractPacketManager;
 import core.packet.PacketManagerFactory;
@@ -58,10 +59,12 @@ public class CoordinatorServerHandler implements Runnable {
     private AbstractPacket responsePacket;
 
     private final AbstractTierIdentity identity;
+    private final RuntimeMembershipState membershipState;
 
-    public CoordinatorServerHandler(Socket socket, AbstractTierIdentity identity) {
+    public CoordinatorServerHandler(Socket socket, AbstractTierIdentity identity, RuntimeMembershipState membershipState) {
         this.serverSocket = socket;
         this.identity = identity;
+        this.membershipState = membershipState;
     }
 
 
@@ -139,15 +142,12 @@ public class CoordinatorServerHandler implements Runnable {
                     }   
 
                     CoordinatorConnectionManager connectionManager = CoordinatorConnectionManager.getInstance();
-                    
-                    String coordinatorId = connectionManager.getInstanceId();
-                    logger.info("Coordinator Instance ID: " + coordinatorId);
+                    logger.info("Coordinator Instance ID: {}", membershipState.assignedId());
 
                     if (serverPacket.getPacketType() == PacketType.INITIALIZATION) {
                         serverPacketManager = PacketManagerFactory.createManager(
                             serverPacket,
-                            coordinatorId,
-                            connectionManager.getClusterId(),
+                            membershipState,
                             identity.getRole(),
                             connectionManager,
                             serverSocket.getInetAddress().getHostAddress()
@@ -155,8 +155,7 @@ public class CoordinatorServerHandler implements Runnable {
                     } else {
                         serverPacketManager = PacketManagerFactory.createManager(
                             serverPacket,
-                            coordinatorId,
-                            connectionManager.getClusterId(),
+                            membershipState,
                             identity.getRole()
                         ); 
                     } 

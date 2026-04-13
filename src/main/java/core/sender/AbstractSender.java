@@ -23,6 +23,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import core.external.PacketTypeAdapterFactory;
+import core.identity.RuntimeMembershipState;
 import core.packet.AbstractPacket;
 import core.packet.PacketType;
 
@@ -36,7 +37,7 @@ public abstract class AbstractSender {
     protected String ip;
     protected int sendingPort;
 
-    protected String assignedId;
+    protected RuntimeMembershipState membershipState;
 
     protected static final Gson gson = new GsonBuilder()
         .registerTypeAdapterFactory(PacketTypeAdapterFactory.create())
@@ -117,7 +118,7 @@ public abstract class AbstractSender {
 
                 getLogger().info(
                     "Response Recieved:"
-                    + "\n\tSender ID:\t" + responsePacket.getSenderId() 
+                    + "\n\tSender ID:\t" + responsePacket.getInstanceId() 
                     + "\n\tPacket Type:\t" + responsePacket.getPacketType() 
                     + "\n\tAssigned ID:\t" + responsePacket.getRecipientId()
                 );
@@ -129,9 +130,12 @@ public abstract class AbstractSender {
                 */
 
                 if(responsePacket.getPacketType() == PacketType.INITIALIZATION_RES) {
-                    String assignedId = responsePacket.getRecipientId();
-                    this.assignedId = assignedId; 
-                    getLogger().info("Received assigned ID: {}", assignedId);
+                    if (membershipState != null) {
+                        membershipState.assignId(responsePacket.getRecipientId());
+                        membershipState.assignClusterId(responsePacket.getClusterId());
+                        getLogger().info("Received assigned ID: {}", membershipState.assignedId());
+                        getLogger().info("Received cluster ID: {}", membershipState.clusterId());
+                    }
                     ackReceived = true;
                 }
                 else if (responsePacket.getPacketType() != PacketType.ACK) {
@@ -161,7 +165,4 @@ public abstract class AbstractSender {
 
         return false;
     }
-
-    public String getAssignedId() { return assignedId; }
-
 }

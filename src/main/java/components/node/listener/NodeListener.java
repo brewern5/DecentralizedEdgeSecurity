@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import core.identity.AbstractTierIdentity;
+import core.identity.RuntimeMembershipState;
 
 import components.node.handler.NodeServerHandler;
 
@@ -27,13 +28,15 @@ public class NodeListener implements Runnable {
     private int timeout;
 
     private final AbstractTierIdentity identity;
+    private final RuntimeMembershipState membershipState;
 
-    public NodeListener(int port, int timeout, AbstractTierIdentity identity) throws IOException {
+    public NodeListener(int port, int timeout, AbstractTierIdentity identity, RuntimeMembershipState membershipState) throws IOException {
         this.port = port;
         this.timeout = timeout;
         this.listenerSocket = new ServerSocket(port);
         this.listenerSocket.setSoTimeout(timeout);
         this.identity = identity;
+        this.membershipState = membershipState;
     }
 
     @Override
@@ -49,7 +52,7 @@ public class NodeListener implements Runnable {
 
             try {
                 connected = listenerSocket.accept();
-                Thread handlerThread = new Thread(new NodeServerHandler(connected, identity));
+                Thread handlerThread = new Thread(new NodeServerHandler(connected, identity, membershipState));
                 handlerThread.start();
             } catch (SocketTimeoutException sto) {
                 // Timeout is expected;
