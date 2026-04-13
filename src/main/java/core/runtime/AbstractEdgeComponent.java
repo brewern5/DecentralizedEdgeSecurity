@@ -51,9 +51,11 @@ public abstract class AbstractEdgeComponent implements EdgeComponent{
             scheduler = Executors.newScheduledThreadPool(timerPoolSize());
             listenerExecutor = Executors.newCachedThreadPool();
 
+            refreshRuntimeIp();
             initializeConnections();
-            ensureConnectionBaseline();
+            wait(100);
             startListeners();
+            ensureConnectionBaseline();
             scheduleTimers();
             afterStart();
 
@@ -105,6 +107,9 @@ public abstract class AbstractEdgeComponent implements EdgeComponent{
     protected abstract void validateStartupArgs(String[] args);
     protected abstract AbstractTierIdentity buildIdentity(String[] args);
     protected abstract AbstractConfig loadConfig(AbstractTierIdentity identity);
+    protected void refreshRuntimeIp() {
+        // Optional hook for subclasses
+    }
     protected abstract void initializeConnections();
     protected abstract void startListeners();
     protected abstract void scheduleTimers();

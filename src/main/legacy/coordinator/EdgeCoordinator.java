@@ -57,10 +57,6 @@ public class EdgeCoordinator {
     private static AbstractConfig config;
     private static AbstractTierIdentity instanceDTO;
 
-    /*
-     *  Initalizes the Node Coordinator - This will be the first thing that runs when the Node Coordinator is started up
-     */
-
     public static void init() {
 
         setCoordinatorId(UUID.randomUUID().toString());
@@ -106,7 +102,6 @@ public class EdgeCoordinator {
      *      ID assignment 
      */
 
-    // Thread-safe setter for ID assignment
     public static synchronized void setCoordinatorId(String id) {
         coordinatorId = id;
         logger.info("Coordinator ID assigned: {}", id);
@@ -116,7 +111,7 @@ public class EdgeCoordinator {
         return coordinatorId;
     }
 
-        /*
+    /*
      *      Timer creation
      */
     private static void initializeTimers() {
@@ -125,7 +120,7 @@ public class EdgeCoordinator {
             //t.setDaemon(true);
             return t;
         });
-        // Schedules overdue packet check every 20 seconds
+
         timerScheduler.scheduleAtFixedRate(() -> {
             try{
                 serverConnectionManager.checkExpiredConnections();

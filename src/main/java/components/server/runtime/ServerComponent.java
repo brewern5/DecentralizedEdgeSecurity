@@ -8,6 +8,8 @@ package components.server.runtime;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -27,8 +29,10 @@ import core.connection.ConnectionManager;
 
 import core.identity.AbstractTierIdentity;
 import core.identity.TierRole;
+
 import core.packet.AbstractPacket;
 import core.packet.initalization.InitalizationPacketManager;
+
 import core.runtime.AbstractEdgeComponent;
 
 public class ServerComponent extends AbstractEdgeComponent {
@@ -50,12 +54,23 @@ public class ServerComponent extends AbstractEdgeComponent {
 
     @Override
     protected AbstractTierIdentity buildIdentity(String[] args) {
-        return new ServerIdentity(TierRole.SERVER, TierRole.COORDINATOR, args[0]);
+        return new ServerIdentity(TierRole.SERVER, TierRole.COORDINATOR, TierRole.NODE, args[0]);
     }
 
     @Override 
     protected AbstractConfig loadConfig(AbstractTierIdentity identity) {
         return new ServerConfig(identity);
+    }
+
+    @Override
+    protected void refreshRuntimeIp() {
+        try{
+            config.grabIP();
+        } catch (SocketException se){
+            logger.error("Exception thrown for socket creations!", se);
+        } catch(UnknownHostException uhe) {
+            logger.error("Could not determine machine IP!", uhe);
+        }
     }
 
     @Override
@@ -79,7 +94,7 @@ public class ServerComponent extends AbstractEdgeComponent {
             LinkedHashMap<String, String> payload = new LinkedHashMap<>();
             payload.put(
                 "Server.listeningPort",
-                String.valueOf(config.getPortByKey("Server.listeningPort")) 
+                String.valueOf(config.getPortByKey("Server.coordinatorListeningPort")) 
             );
 
             AbstractPacket initPacket = new InitalizationPacketManager(
@@ -103,6 +118,20 @@ public class ServerComponent extends AbstractEdgeComponent {
             logger.error("Error Sending Initalization Packet: " + e);
         }
 
+        try{
+            connectionManagers.put(
+                identity.getLowerTier()
+                    .orElseThrow(() -> new IllegalStateException("Server must have a lower tier")), 
+                ServerNodeConnectionManager.getInstance(
+                    membershipState.assignedId(),
+                    membershipState.clusterId(), 
+                    identity.getRole()
+                )
+            );
+        } catch (Exception e){
+            logger.error("Unhandled Exception in Node Connection manager creation!");
+        }
+
     }
 
     @Override
@@ -112,18 +141,38 @@ public class ServerComponent extends AbstractEdgeComponent {
 
         try {
             coordinatorListener = new ServerListener(
-                config.getPortByKey("Node.listeningPort"), 
+                config.getPortByKey("Server.coordinatorListeningPort"), 
                 timeoutMs,
+                TierRole.COORDINATOR,
                 identity
             );
 
-            listenerExecutor.execute(serverListener);
-            logger.info("Node listener submitted on port {}", serverListener.getActivePort());
+            listenerExecutor.execute(coordinatorListener);
+            logger.info("Coordinator listener submitted on port {}", coordinatorListener.getActivePort());
         } catch (Exception e) {
             logger.error(
                 "Error creating Listening Socket on port " 
-                + config.getPortByKey("Node.listeningPort")
+                + config.getPortByKey("Server.coordinatorListeningPort")
                 + e
+            );
+            // TODO: try to grab new port if this one is unavailable
+        }
+
+        try {
+            nodeListener = new ServerListener(
+                config.getPortByKey("Server.nodeListeningPort"), 
+                timeoutMs,
+                TierRole.NODE,
+                identity
+            );
+
+            listenerExecutor.execute(nodeListener);
+            logger.info("Node listener submitted on port {}", nodeListener.getActivePort());
+        } catch (Exception e) {
+            logger.error(
+                "Error creating Listening Socket on port {}", 
+                config.getPortByKey("Server.nodeListeningPort"),
+                e
             );
             // TODO: try to grab new port if this one is unavailable
         }
@@ -147,11 +196,9 @@ public class ServerComponent extends AbstractEdgeComponent {
                     }
 
                 } catch(core.exception.KeepAliveException e) {
-                    // Detailed logging for keep-alive specific failures
                     logger.error("Keep-alive failed at stage: {} for connection: {} - {}", 
                                e.getStage(), e.getConnectionId(), e.getMessage());
                 
-                    // Different handling based on failure type
                     if (e.isSendFailure()) {
                         logger.error("Failed to send keep-alive packet - network or socket issue");
                     } else if (e.isAckFailure()) {
@@ -171,14 +218,19 @@ public class ServerComponent extends AbstractEdgeComponent {
 
     @Override
     protected void beforeStop() {
-        if (serverListener != null) {
-            serverListener.closeSocket();
+        if (coordinatorListener != null) {
+            coordinatorListener.closeSocket();
+            logger.warn("Coordinator listener socket closed!");
+        }
+        if(nodeListener != null) {
+            nodeListener.closeSocket();
+            logger.warn("Node listener socket closed!");
         }
     }
 
     @Override
     protected void afterStart() {
-        // TODO: PeerList request
+        return;
     }
 
 }

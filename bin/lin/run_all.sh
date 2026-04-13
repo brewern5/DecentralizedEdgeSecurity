@@ -70,16 +70,16 @@ read -p "Press enter to start all components..."
 
 cd "$ROOTDIR"
 
-gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.coordinator.EdgeCoordinator; exec bash" &
+gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.coordinator.CoordinatorComponentMain; exec bash" &
 
 if [ -n "$SERVER_INSTANCE" ]; then
-    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.server.EdgeServer $SERVER_INSTANCE; exec bash" &
+    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.server.ServerComponentMain $SERVER_INSTANCE; exec bash" &
 else
-    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.server.EdgeServer; exec bash" &
+    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.server.ServerComponentMain; exec bash" &
 fi
 
 if [ -n "$NODE_INSTANCE" ]; then
-    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.node.EdgeNode $NODE_INSTANCE; exec bash" &
+    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.node.NodeComponentMain $NODE_INSTANCE; exec bash" &
 else
-    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.node.EdgeNode; exec bash" &
+    gnome-terminal -- bash -c "cd '$ROOTDIR' && java -cp '$RUNTIME_CP' components.node.NodeComponentMain; exec bash" &
 fi

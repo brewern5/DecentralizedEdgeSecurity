@@ -30,12 +30,17 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import components.server.connections.ServerCoordinatorConnectionManager;
+
 import core.exception.NonDelimitedPacket;
+
 import core.external.PacketTypeAdapterFactory;
+
 import core.packet.AbstractPacket;
 import core.packet.AbstractPacketManager;
 import core.packet.PacketManagerFactory;
 import core.packet.PacketType;
+
+import core.identity.AbstractTierIdentity;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,31 +59,28 @@ public class ServerCoordinatorHandler implements Runnable {
 
     private ServerCoordinatorConnectionManager coordinatorConnectionManager = ServerCoordinatorConnectionManager.getInstance();
 
-    // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private AbstractPacket responsePacket;
 
-    // Constructor
-    public ServerCoordinatorHandler(Socket socket) {
+    private final AbstractTierIdentity identity;
+
+    public ServerCoordinatorHandler(Socket socket, AbstractTierIdentity identity) {
         this.coordinatorSocket = socket;
+        this.identity = identity;
     }
 
     /*
      *          Respond
      */
 
-    // Takes an already initalized response packet and returns to sender
     private void respond() {
 
-        // Puts the contents of the packet to JSON with a non-JSON compatable delimiter at the end to be handled prior to pakcet content hanlding
         String json = responsePacket.toDelimitedString();
 
         try{
-            // The responder object
             PrintWriter output = new PrintWriter(
                 coordinatorSocket.getOutputStream(), 
                 true
             );
-            // Send the jsonified packet as a response
             output.println(json);
         } catch (IOException e) {
             logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + "\n", e);
@@ -97,19 +99,15 @@ public class ServerCoordinatorHandler implements Runnable {
             + coordinatorSocket.getPort()
         );
 
-        // Handle client events
         try{
-            // This is what decodes the incoming packet
             reader = new BufferedReader(
                 new InputStreamReader(
                     coordinatorSocket.getInputStream()
                 )
             );
             
-            // Stores the payload as a string to check (and potentially remove) the delimiter
             String jsonPacket = reader.readLine();
 
-            // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
             if(jsonPacket.endsWith("||END||")){
                 jsonPacket = jsonPacket.substring(
                     0, 
@@ -119,47 +117,40 @@ public class ServerCoordinatorHandler implements Runnable {
             else{
                 throw new NonDelimitedPacket("Recieved Packet does not end with \" ||END|| \".");
             }
-            // Reads the packet as json
             String json = jsonPacket;
 
-            // Checks if empty packet
             if (json != null) {    
                 
-                // Grabs the server IP in order to be saved in config file
                 coordinatorIP = coordinatorSocket.getInetAddress().toString();
-                coordinatorIP = coordinatorIP.substring(1); // Removes the forward slash
+                coordinatorIP = coordinatorIP.substring(1);
 
                 try {
-                    // Set's up the Factory to be able to reconstruct the packet to it's correct class
                     Gson gson = new GsonBuilder()
                         .registerTypeAdapterFactory(PacketTypeAdapterFactory.create())
                         .create();
 
-                    // Reconstructs the packet to it's desired type
                     coordinatorPacket = gson.fromJson(json, AbstractPacket.class);
 
-                    // Check if packet type needs a manager
                     if (!PacketManagerFactory.requiresManager(coordinatorPacket.getPacketType())) {
                         logger.warn("Received response packet type: " + coordinatorPacket.getPacketType());
-                        return; // Response packets don't need managers
+                        return;
                     }
 
-                    // Initialization packets need to be handled differently
                     if (coordinatorPacket.getPacketType() == PacketType.INITIALIZATION) {
                         coordinatorPacketManager = PacketManagerFactory.createManager(
                             coordinatorPacket,
                             coordinatorConnectionManager.getInstanceId(),
                             coordinatorConnectionManager.getClusterId(),
-                            "Server",
+                            identity.getRole(),
                             coordinatorConnectionManager,
-                            coordinatorSocket.getInetAddress().getHostAddress()  // From socket - convert to String
+                            coordinatorSocket.getInetAddress().getHostAddress() 
                         );
                     } else {
                         coordinatorPacketManager = PacketManagerFactory.createManager(
                             coordinatorPacket,
                             coordinatorConnectionManager.getInstanceId(),
                             coordinatorConnectionManager.getClusterId(),
-                            "Server"
+                            identity.getRole()
                         ); 
                     } 
 
@@ -168,7 +159,7 @@ public class ServerCoordinatorHandler implements Runnable {
 
                 } catch(IllegalArgumentException e) {
                     logger.error("Recieved unknown packet!");
-                    return; // Early exit
+                    return; 
                 }
             }
         } catch (IOException e) {

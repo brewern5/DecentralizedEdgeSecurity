@@ -83,8 +83,9 @@ public class NodeServerHandler implements Runnable {
                 true
             );
             output.println(json);
+            output.close();
         } catch (IOException e) {
-            logger.error("Error sending response packet of type: " + responsePacket.getPacketType() + "\n"+ e);
+            logger.error("Error sending response packet of type: {}\n", responsePacket.getPacketType(), e);
         }
     }
     /*
@@ -124,7 +125,7 @@ public class NodeServerHandler implements Runnable {
             if (json != null) {
 
                 serverIP = serverSocket.getInetAddress().toString();
-                serverIP = serverIP.substring(1); // Removes the forward slash
+                serverIP = serverIP.substring(1); 
 
                 try {
 

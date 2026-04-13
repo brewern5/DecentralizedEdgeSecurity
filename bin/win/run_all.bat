@@ -76,9 +76,9 @@ echo Starting EdgeCoordinator with default configuration (ID: DEFAULT_coordinato
 echo.
 pause
 
-start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.coordinator.EdgeCoordinator DEFAULT_coordinator"
+start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.coordinator.CoordinatorComponentMain DEFAULT_coordinator"
 
-start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.EdgeServer %SERVER_INSTANCE%"
+start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.ServerComponentMain %SERVER_INSTANCE%"
 
 start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.node.NodeComponentMain %NODE_INSTANCE%"
 

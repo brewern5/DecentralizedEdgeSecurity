@@ -54,10 +54,12 @@ public abstract class AbstractConfig {
         instanceId = tierDTO.getInstanceId();
 
         this.instanceProperties = properties;
+        this.instanceProperties.clear();
 
         // load default properties file
-        try{
-            openFile(defaultConfigPath);
+        try(FileInputStream in = new FileInputStream(defaultConfigPath)){
+            instanceProperties.load(in);
+            getLogger().info("Loaded default config from: {}", defaultConfigPath);
         } catch(IOException e) {
             getLogger().error("Could not open default properties file!", e);
         }
@@ -103,7 +105,16 @@ public abstract class AbstractConfig {
         // TODO: REMOVE IN DEPLOYMENT
         writeToConfig("Coordinator.IP", realIp);
         if(tierDTO.getRole() != TierRole.COORDINATOR) {
-            writeToConfig(tierDTO.getHigherTier()+".IP", realIp);
+            String higherTierEnumKey = tierDTO.getHigherTier() + ".IP";
+            writeToConfig(higherTierEnumKey, realIp);
+
+            String higherTierName = tierDTO.getHigherTier().name();
+            String higherTierCanonicalKey =
+                higherTierName.substring(0, 1) + higherTierName.substring(1).toLowerCase() + ".IP";
+
+            if(!higherTierCanonicalKey.equals(higherTierEnumKey)) {
+                writeToConfig(higherTierCanonicalKey, realIp);
+            }
         }
 
         return realIp;
@@ -133,7 +144,7 @@ public abstract class AbstractConfig {
 
         String IP = "";
         try{
-            IP = properties.getProperty(key);
+            IP = instanceProperties.getProperty(key);
         } catch (Exception e) {
             getLogger().error("Error getting " + key + "'s IP from config file!\n" + e);
         }

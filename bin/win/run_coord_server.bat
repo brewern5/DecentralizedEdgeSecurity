@@ -64,12 +64,12 @@ echo Starting EdgeCoordinator with default configuration
 echo.
 pause
 
-start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.coordinator.EdgeCoordinator"
+start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.coordinator.CoordinatorComponentMain"
 
 if "%SERVER_INSTANCE%"=="" (
-    start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.EdgeServer"
+    start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.ServerComponentMain"
 ) else (
-    start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.EdgeServer %SERVER_INSTANCE%"
+    start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.ServerComponentMain %SERVER_INSTANCE%"
 )
 
 popd

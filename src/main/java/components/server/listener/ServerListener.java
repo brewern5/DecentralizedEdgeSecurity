@@ -8,10 +8,15 @@
  */
 package components.server.listener;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+
+import java.net.Socket;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
+
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -19,9 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.w3c.dom.events.Event;
 
 import core.identity.AbstractTierIdentity;
+import core.identity.TierRole;
 
 import components.server.handler.ServerCoordinatorHandler;
 import components.server.handler.ServerNodeHandler;
@@ -34,18 +39,20 @@ public class ServerListener implements Runnable {
 
     private static final Logger logger = LogManager.getLogger(ServerListener.class);
     
-    private Socket connected; 
     private ServerSocket listenerSocket;    
     private int port;   
     private int timeout;
 
     private final AbstractTierIdentity identity;
 
-    public ServerListener(int port, int timeout, AbstractTierIdentity identity) throws IOException {
+    private final TierRole type;
+
+    public ServerListener(int port, int timeout, TierRole type, AbstractTierIdentity identity) throws IOException {
         this.port = port;
         this.timeout = timeout;
         this.listenerSocket = new ServerSocket(port);
         this.listenerSocket.setSoTimeout(timeout);
+        this.type = type;
         this.identity = identity;
 
         int cpus = Runtime.getRuntime().availableProcessors();
@@ -83,65 +90,51 @@ public class ServerListener implements Runnable {
 
         logger.info("Listening on port {}.", this.port);
 
-        //TODO: Look into thread pool since the server will have a lot of clients
-
         while (running) {
-            Event event = waitForEvent();
-            Runnable task = () -> handleEvent(event);
+            Socket accepted = null;
 
-            if (isNode(event)) {
-                nodePool.execute(task);
-            } else if(isCoordinator(event)) {
-                coordinatorPool.execute(task);
-            }
-        }
+            try{
+                accepted = listenerSocket.accept();
 
-
-        while(on){
-            try {
-                if(type.equals("node")) {
-                    connected = listenerSocket.accept();
-                    Thread handlerThread = new Thread(
-                        new ServerNodeHandler(connected)
-                    ); 
-                    handlerThread.start(); 
-                } else if (type.equals("coordinator")) {
-                    connected = listenerSocket.accept();
-                    Thread handlerThread = new Thread(
-                        new ServerCoordinatorHandler(connected)
-                    ); 
-                    handlerThread.start(); 
+                if (TierRole.NODE == type) {
+                    nodePool.execute(new ServerNodeHandler(accepted, identity));
+                    accepted = null;
+                } else if(TierRole.COORDINATOR == type) {
+                    coordinatorPool.execute(new ServerCoordinatorHandler(accepted, identity));
+                    accepted = null;
+                } else {
+                    logger.error("Unknown connection with type: {}", type);
                 }
-            } catch (SocketTimeoutException sto) {
-                // You need this exception handling here because it will brick at trying to start the connection
-                // Did not add any handling to this exception as it would constatly throw an error, so this just prevents it from clogging up the console
+            } catch (SocketTimeoutException ignored) {
+
+            } catch (RejectedExecutionException ree) {
+                logger.error("Handler pool rejected connection for type {}", type, ree);
             } catch (IOException ioe) {
-                logger.error("IOException!\n" + ioe);
+                if (running) {
+                    logger.error("IOException in lister loop", ioe);
+                }
             } catch (Exception e) {
-                logger.error("Unknown Exception!\n" + e);
-            }
+                logger.error("Unknown exception in listener loop", e);
+            } finally {
+                if (accepted != null) {
+                    try{
+                        accepted.close();
+                    } catch (IOException closeEx) {
+                        logger.warn("Failed to close unhandled socket.", closeEx);
+                    }
+                    
+                }
+            }   
         }
     }
 
     public void stop() {
         running = false;
+        closeSocket();
         shutdownPool(nodePool, "node");
         shutdownPool(coordinatorPool, "coordinator");
     }
 
-    private void handleEvent(Event event) {
-        // business logic
-    }
-
-    private Event waitForEvent() {
-        // blocking listener logic
-        return new Event();
-    }
-
-    private boolean isTypeA(Event event) {
-        // classification logic
-        return event.type == 1;
-    }
 
     private static ThreadFactory namedFactory(String prefix) {
         AtomicInteger n = new AtomicInteger(1);

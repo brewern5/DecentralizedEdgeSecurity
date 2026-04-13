@@ -16,20 +16,18 @@ package components.coordinator.packet;
 import java.util.LinkedHashMap;
 import java.util.Arrays;
 
-import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
-
-import components.coordinator.EdgeCoordinator;
+import com.google.gson.Gson;
 
 public abstract class CoordinatorPacket {
 
     protected int payloadPairCounter = 0;
-
-    protected String id = EdgeCoordinator.getCoordinatorId();
     
-    protected CoordinatorPacketType packetType;     // Enum for easy constant assignment
+    protected CoordinatorPacketType packetType;
     protected LinkedHashMap<String, String> payload;
 
-    public CoordinatorPacket() {} // No-args constructor
+    protected String id = null;
+
+    public CoordinatorPacket() {}
 
     /*
      *      Packet Type Methods 
@@ -80,10 +78,8 @@ public abstract class CoordinatorPacket {
         Object[] objKeys;
         String[] keys;
 
-        // Since LinkedHashMap .keySet returns an array of Objects, we need to convert it to an array of strings
         objKeys = payload.keySet().toArray();
 
-        // Copies the obj array to string array
         keys = Arrays.copyOf(objKeys, objKeys.length, String[].class);
 
         return keys;
@@ -94,10 +90,8 @@ public abstract class CoordinatorPacket {
         Object[] objValues;
         String[] values;
 
-        // Since LinkedHashMap .values returns an array of Objects, we need to convert it to an array of strings
         objValues = payload.values().toArray();
 
-        // Copies the obj array to string array
         values = Arrays.copyOf(objValues, objValues.length, String[].class);
 
         return values;
@@ -111,12 +105,10 @@ public abstract class CoordinatorPacket {
      *      Stringify Methods
      */
 
-    // converts the packet to a jsonified key/value String 
     public String toJson() {
         return new Gson().toJson(this);
     }
 
-    // adds a clear end of message line that will be handled 
     public String toDelimitedString() {
         return new Gson().toJson(this) + "||END||";
     }

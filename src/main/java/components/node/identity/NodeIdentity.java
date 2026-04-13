@@ -1,4 +1,11 @@
+/*
+    Author: Nathaniel Brewer
+
+    Concrete implemenetation of the Node's Tier identity. 
+*/
 package components.node.identity;
+
+import java.util.Optional;
 
 import core.identity.AbstractTierIdentity;
 import core.identity.TierRole;
@@ -12,7 +19,7 @@ public class NodeIdentity extends AbstractTierIdentity{
      * @param instanceId The ID passed as startup arguments. Ex. Node1, Server2
      */
     public NodeIdentity(TierRole role, TierRole higherTier, String instanceId) {
-        super(role, higherTier, instanceId);
+        super(role, higherTier, Optional.empty() , instanceId);
     }
 
 }

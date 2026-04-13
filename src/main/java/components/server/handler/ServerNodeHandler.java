@@ -31,8 +31,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import components.server.connections.ServerNodeConnectionManager;
+
 import core.exception.NonDelimitedPacket;
+
 import core.external.*;
+
+import core.identity.AbstractTierIdentity;
+
 import core.packet.AbstractPacket;
 import core.packet.AbstractPacketManager;
 import core.packet.PacketManagerFactory;
@@ -47,6 +52,8 @@ public class ServerNodeHandler implements Runnable {
 
     private static ServerNodeConnectionManager nodeConnectionManager = ServerNodeConnectionManager.getInstance();
 
+    private final AbstractTierIdentity identity;
+
     private Socket nodeSocket;
     private String nodeIP;
 
@@ -55,30 +62,26 @@ public class ServerNodeHandler implements Runnable {
 
     private BufferedReader reader;  
 
-    // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private AbstractPacket responsePacket;
  
-    public ServerNodeHandler(Socket socket) {
+    public ServerNodeHandler(Socket socket, AbstractTierIdentity identity) {
         this.nodeSocket = socket;
+        this.identity = identity;
     }
 
     /*          
      *          Respond
      */
 
-    // Takes an already initalized response packet and returns to sender
     private void respond() {
 
-        // Puts the contents of the packet to JSON with a non-JSON compatable delimiter at the end to be handled prior to pakcet content hanlding
         String json = responsePacket.toDelimitedString();
 
         try{
-            // The responder object
             PrintWriter output = new PrintWriter(
                 nodeSocket.getOutputStream(), 
                 true
             );
-            // Send the jsonified packet as a response
             output.println(json);
             output.close();
         } catch (IOException e) {
@@ -100,20 +103,16 @@ public class ServerNodeHandler implements Runnable {
             + nodeSocket.getPort()
         );
 
-        // Handle client events
         try {
 
-            // This is what decodes the incoming packet
             reader = new BufferedReader(
                 new InputStreamReader(
                     nodeSocket.getInputStream()
                 )
             );
 
-            // Stores the payload as a string to check (and potentially remove) the delimiter
             String payload = reader.readLine();
 
-            // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
             if(payload.endsWith("||END||")){
                 payload = payload.substring(0, payload.length() - "||END||".length());
             }
@@ -121,47 +120,40 @@ public class ServerNodeHandler implements Runnable {
                 throw new NonDelimitedPacket("Recieved Packet does not end with \" ||END|| \".");
             }
 
-            // Reads the packet as json
             String json = payload;
 
-            // Checks if empty packet
             if (json != null) {
 
-                // Grabs the server IP in order to be saved in config file
                 nodeIP = nodeSocket.getInetAddress().toString();
-                nodeIP = nodeIP.substring(1); // Removes the forward slash
+                nodeIP = nodeIP.substring(1);
 
                 try {
-                    // Set's up the Factory to be able to reconstruct the packet to it's correct class
                     Gson gson = new GsonBuilder()
                         .registerTypeAdapterFactory(PacketTypeAdapterFactory.create())
                         .create();
 
-                    // Reconstructs the packet to it's desired type
                     nodePacket = gson.fromJson(json, AbstractPacket.class);
 
-                    // Check if packet type needs a manager
                     if (!PacketManagerFactory.requiresManager(nodePacket.getPacketType())) {
                         logger.warn("Received response packet type: " + nodePacket.getPacketType());
-                        return; // Response packets don't need managers
+                        return;
                     }
 
-                    // Initialization packets need to be handled differently
                     if (nodePacket.getPacketType() == PacketType.INITIALIZATION) {
                         nodePacketManager = PacketManagerFactory.createManager(
                             nodePacket,
                             nodeConnectionManager.getInstanceId(),
                             nodeConnectionManager.getClusterId(),
-                            "Server",
+                            identity.getRole(),
                             nodeConnectionManager,
-                            nodeSocket.getInetAddress().getHostAddress()  // From socket - convert to String
+                            nodeSocket.getInetAddress().getHostAddress()
                         );
                     } else {
                         nodePacketManager = PacketManagerFactory.createManager(
                             nodePacket,
                             nodeConnectionManager.getInstanceId(),
                             nodeConnectionManager.getClusterId(),
-                            "Server" 
+                            identity.getRole() 
                         ); 
                     }
 
@@ -170,7 +162,7 @@ public class ServerNodeHandler implements Runnable {
 
                 } catch(IllegalArgumentException e) {
                     logger.error("Recieved unknown packet");
-                    return; // Early exit
+                    return;
                 }
             }
         } catch (IOException e) {

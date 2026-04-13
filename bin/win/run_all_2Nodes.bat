@@ -61,17 +61,17 @@ echo Starting EdgeCoordinator with default configuration (ID: DEFAULT_coordinato
 echo.
 pause
 
-start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.coordinator.EdgeCoordinator"
+start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.coordinator.CoordinatorComponentMain"
 
 if "%SERVER_INSTANCE%"=="" (
-    start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.EdgeServer"
+    start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.ServerComponentMain"
 ) else (
-    start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.EdgeServer %SERVER_INSTANCE%"
+    start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.server.ServerComponentMain %SERVER_INSTANCE%"
 )
 
 REM Start two nodes with specific IDs
-start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.node.EdgeNode node1"
-start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.node.EdgeNode node2"
+start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.node.NodeComponentMain node1"
+start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.node.NodeComponentMain node2"
 
 popd
 endlocal

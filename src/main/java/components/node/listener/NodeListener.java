@@ -19,7 +19,6 @@ import components.node.handler.NodeServerHandler;
 
 public class NodeListener implements Runnable {
 
-    // Each class can have its own logger instance
     private static final Logger logger = LogManager.getLogger(NodeListener.class);
     
     private Socket connected;
@@ -27,7 +26,7 @@ public class NodeListener implements Runnable {
     private int port;
     private int timeout;
 
-    private AbstractTierIdentity identity;
+    private final AbstractTierIdentity identity;
 
     public NodeListener(int port, int timeout, AbstractTierIdentity identity) throws IOException {
         this.port = port;
@@ -40,7 +39,7 @@ public class NodeListener implements Runnable {
     @Override
     public void run(){  
 
-        logger.info("Listening on port " + port);
+        logger.info("Listening on port {}", port);
 
         while(!Thread.currentThread().isInterrupted()) {
             if (listenerSocket.isClosed()) {
@@ -50,16 +49,15 @@ public class NodeListener implements Runnable {
 
             try {
                 connected = listenerSocket.accept();
-                Thread handlerThread = new Thread(new NodeServerHandler(connected, identity)); // sends the message to a handler
-                handlerThread.start(); // Begins the new thread
+                Thread handlerThread = new Thread(new NodeServerHandler(connected, identity));
+                handlerThread.start();
             } catch (SocketTimeoutException sto) {
-                // Timeout is expected; allows loop to observe shutdown quickly.
+                // Timeout is expected;
             } catch (IOException ioe) {
                 if (listenerSocket.isClosed()) {
                     logger.info("Listener socket closed on port {}, stopping listener", port);
                     break;
                 }
-                logger.error("I/O Exception! " + ioe);
             }
         }
     }
@@ -86,16 +84,16 @@ public class NodeListener implements Runnable {
         try {
             listenerSocket.setSoTimeout(timeout);
         } catch (Exception e) {
-            logger.error("Error setting new timeout on socket: ( " + port + " ) " + e);
+            logger.error("Error setting new timeout on socket: ( {} )\n ", port, e);
         }
     }
 
     public boolean closeSocket() {
         try{
             listenerSocket.close();
-            logger.warn("Listening Socket Closed on port " + port + "!");
+            logger.warn("Listening Socket Closed on port {}!", port);
         } catch(Exception e) {
-            logger.error("Error Closing socket on port" + port + "! " + e);
+            logger.error("Error Closing socket on port {}\n", port,  e);
             return false;
         }
         return true;

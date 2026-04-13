@@ -17,7 +17,7 @@ package components.node.packet;
 import java.util.LinkedHashMap;
 import java.util.Arrays;
 
-import com.google.gson.Gson;    // external library that allows for jsonify of java objects. Located in root/lib 
+import com.google.gson.Gson;
 
 public abstract class NodePacket {
 
@@ -25,11 +25,11 @@ public abstract class NodePacket {
 
     protected String id = null;
 
-    protected NodePacketType packetType;     // Enum for easy constant assignment
+    protected NodePacketType packetType;
 
     protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();    
 
-    public NodePacket() {} // No-args constructor
+    public NodePacket() {}
 
     /*
      *      Packet Type Methods
@@ -80,10 +80,8 @@ public abstract class NodePacket {
         Object[] objKeys;
         String[] keys;
 
-        // Since LinkedHashMap .keySet returns an array of Objects, we need to convert it to an array of strings
         objKeys = payload.keySet().toArray();
 
-        // Copies the obj array to string array
         keys = Arrays.copyOf(objKeys, objKeys.length, String[].class);
 
         return keys;
@@ -94,10 +92,8 @@ public abstract class NodePacket {
         Object[] objValues;
         String[] values;
 
-        // Since LinkedHashMap .values returns an array of Objects, we need to convert it to an array of strings
         objValues = payload.values().toArray();
 
-        // Copies the obj array to string array
         values = Arrays.copyOf(objValues, objValues.length, String[].class);
 
         return values;
@@ -111,12 +107,10 @@ public abstract class NodePacket {
      *      Stringify Methods
      */
 
-    // converts the packet to a key/value String
     public String toJson() {
         return new Gson().toJson(this);
     }
 
-    // adds a clear end of message line that will be handled 
     public String toDelimitedString() {
         return new Gson().toJson(this) + "||END||";
     }

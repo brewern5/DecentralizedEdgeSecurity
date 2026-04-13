@@ -8,6 +8,8 @@ package components.node.runtime;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +35,6 @@ public final class NodeComponent extends AbstractEdgeComponent {
 
     private static NodeListener serverListener;
 
-
     private static final Logger logger = LogManager.getLogger(NodeComponent.class);
     @Override
     protected Logger getLogger() { return logger; }
@@ -54,6 +55,17 @@ public final class NodeComponent extends AbstractEdgeComponent {
     @Override 
     protected AbstractConfig loadConfig(AbstractTierIdentity identity) {
         return new NodeConfig(identity);
+    }
+
+    @Override
+    protected void refreshRuntimeIp() {
+        try{
+            config.grabIP();
+        } catch (SocketException se){
+            logger.error("Exception thrown for socket creations!", se);
+        } catch(UnknownHostException uhe) {
+            logger.error("Could not determine machine IP!", uhe);
+        }
     }
 
     @Override

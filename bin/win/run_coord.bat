@@ -61,7 +61,7 @@ echo Starting EdgeCoordinator with default configuration
 echo.
 pause
 
-start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.coordinator.EdgeCoordinator"
+start cmd /k "cd /d %ROOTDIR% && java -cp %RUNTIME_CP% components.coordinator.CoordinatorComponentMain"
 
 popd
 endlocal
