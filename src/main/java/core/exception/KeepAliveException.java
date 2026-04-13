@@ -8,38 +8,19 @@ package core.exception;
  */
 public class KeepAliveException extends Exception {
     
-    /**
-     * Enumeration of possible keep-alive failure stages
-     */
+
     public enum FailureStage {
-        /**
-         * Failed to send the keep-alive packet (socket/connection error)
-         */
+
         SEND_FAILED("Keep-alive packet failed to send"),
         
-        /**
-         * Keep-alive packet was sent but no ACK was received
-         */
         ACK_NOT_RECEIVED("Keep-alive sent but ACK not received"),
-        
-        /**
-         * ACK was received but not handled/processed correctly
-         */
+
         ACK_NOT_HANDLED("ACK received but not handled properly"),
-        
-        /**
-         * ACK received but contained an error response
-         */
+
         ACK_ERROR_RESPONSE("ACK received with error response"),
-        
-        /**
-         * Connection timeout during keep-alive operation
-         */
+
         TIMEOUT("Keep-alive operation timed out"),
-        
-        /**
-         * General/unknown failure
-         */
+
         UNKNOWN("Unknown keep-alive failure");
         
         private final String description;

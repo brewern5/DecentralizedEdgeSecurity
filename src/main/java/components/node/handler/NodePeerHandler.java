@@ -60,7 +60,6 @@ public class NodePeerHandler implements Runnable {
    
     private NodePeerConnectionManager peerConnectionManager = NodePeerConnectionManager.getInstance();
 
-    // Packet designed to be sent back to the initial sender, generic type so the type will need to be specified on instantiation
     private AbstractPacket responsePacket;
 
     private final NodeIdentity identity;
@@ -76,19 +75,15 @@ public class NodePeerHandler implements Runnable {
      *          Respond
      */
 
-    // Takes an already initalized response packet and returns to sender
     private void respond() {
 
-        // Puts the contents of the packet to JSON with a non-JSON compatable delimiter at the end to be handled prior to pakcet content hanlding
         String json = responsePacket.toDelimitedString();
 
         try{
-            // The responder object
             PrintWriter output = new PrintWriter(
                 peerSocket.getOutputStream(), 
                 true
             );
-            // Send the jsonified packet as a response
             output.println(json);
             output.close();
         } catch (IOException e) {
@@ -109,19 +104,15 @@ public class NodePeerHandler implements Runnable {
             + peerSocket.getPort()
         );
 
-        // Handle client events
         try {
-            // This is what decodes the incoming packet
             reader = new BufferedReader(
                 new InputStreamReader(
                     peerSocket.getInputStream()
                 )
             );
 
-            // Stores the payload as a string to check (and potentially remove) the delimiter
             String jsonPacket = reader.readLine();
 
-            // Checks if the payload is properly terminated. If not, the packet is incomplete or an unsafe packet was sent
             if(jsonPacket.endsWith("||END||")){
                 jsonPacket = jsonPacket.substring(
                     0, 
@@ -132,29 +123,23 @@ public class NodePeerHandler implements Runnable {
                 throw new NonDelimitedPacket("Recieved Packet does not end with \" ||END|| \".");
             }
 
-            // Reads the packet as json
             String json = jsonPacket;
 
-            // Checks if empty packet
             if (json != null) {
 
-                // Grabs the server IP in order to be saved in config file
                 peerIP = peerSocket.getInetAddress().toString();
-                peerIP = peerIP.substring(1); // Removes the forward slash
+                peerIP = peerIP.substring(1);
 
                 try {
-                   // Set's up the Factory to be able to reconstruct the packet to it's correct class
                     Gson gson = new GsonBuilder()
                         .registerTypeAdapterFactory(PacketTypeAdapterFactory.create())
                         .create();
 
-                    // Reconstructs the packet to it's desired type
                     peerPacket = gson.fromJson(json, AbstractPacket.class);
 
-                    // Check if packet type needs a manager
                     if (!PacketManagerFactory.requiresManager(peerPacket.getPacketType())) {
                         logger.warn("Received response packet type: " + peerPacket.getPacketType());
-                        return; // Response packets don't need managers
+                        return; 
                     }
                     if (peerPacket.getPacketType() == PacketType.INITIALIZATION) {
                         peerPacketManager = PacketManagerFactory.createManager(
@@ -174,7 +159,7 @@ public class NodePeerHandler implements Runnable {
 
                 } catch(IllegalArgumentException e) {
                     logger.error("Recieved unknown packet!" + e);
-                    return; // Early exit
+                    return;
                 }
             }
         } catch(NonDelimitedPacket e) {

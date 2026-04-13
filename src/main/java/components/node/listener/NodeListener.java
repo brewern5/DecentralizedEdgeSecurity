@@ -55,7 +55,7 @@ public class NodeListener implements Runnable {
                 Thread handlerThread = new Thread(new NodeServerHandler(connected, identity, membershipState));
                 handlerThread.start();
             } catch (SocketTimeoutException sto) {
-                // Timeout is expected;
+                // Timeout is expected handling will throw constantly
             } catch (IOException ioe) {
                 if (listenerSocket.isClosed()) {
                     logger.info("Listener socket closed on port {}, stopping listener", port);

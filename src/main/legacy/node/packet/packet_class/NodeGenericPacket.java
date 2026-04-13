@@ -14,13 +14,12 @@ import components.node.packet.*;
 
 public class NodeGenericPacket extends NodePacket {
 
-    // No payload
     public NodeGenericPacket(NodePacketType packetType, String id) {
         this.packetType = packetType;
         this.id = id;
         this.payload = new LinkedHashMap<>();
     }
-    // Constructor for setting a LinkdHashMap payload
+    
     public NodeGenericPacket(NodePacketType packetType, String id, LinkedHashMap<String, String> payload) {
         this.packetType = packetType;
         this.id = id;
@@ -30,7 +29,7 @@ public class NodeGenericPacket extends NodePacket {
             payloadPairCounter++;
         });
     }
-    // Contructor with multiple value strings with no key
+    
     public NodeGenericPacket(NodePacketType packetType, String id, String... value) {
         this.packetType = packetType;
         this.id = id;

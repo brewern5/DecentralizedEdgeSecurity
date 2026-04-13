@@ -154,11 +154,9 @@ public final class NodeComponent extends AbstractEdgeComponent {
                     }
 
                 } catch(core.exception.KeepAliveException e) {
-                    // Detailed logging for keep-alive specific failures
                     logger.error("Keep-alive failed at stage: {} for connection: {} - {}", 
                                e.getStage(), e.getConnectionId(), e.getMessage());
                 
-                    // Different handling based on failure type
                     if (e.isSendFailure()) {
                         logger.error("Failed to send keep-alive packet - network or socket issue");
                     } else if (e.isAckFailure()) {

@@ -12,17 +12,17 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import java.net.Inet4Address;
-import java.net.InetAddress;            // Used for grabbing the machine's IP address
+import java.net.InetAddress;            
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;   // Error for trying to grab IP address
+import java.net.UnknownHostException;   
 
 import org.apache.logging.log4j.Logger;
 
 import core.identity.AbstractTierIdentity;
 import core.identity.TierRole;
 
-import java.util.Properties;            // Utility for getting properties from any .properties file
+import java.util.Properties;          
 
 public abstract class AbstractConfig {
 
@@ -33,14 +33,12 @@ public abstract class AbstractConfig {
     protected Properties instanceProperties; 
     protected String instanceId; 
 
-    protected AbstractTierIdentity tierDTO; // Holds instance ID, config paths
+    protected AbstractTierIdentity tierDTO; 
 
-    // Needs to create defaultConfigPath on Config instantiation
     protected static String defaultConfigPath; 
     protected String instanceConfigPath;
 
 
-    // Default - single constructor
     public AbstractConfig(AbstractTierIdentity tierDTO) {
 
         this.tierDTO = tierDTO;
@@ -56,7 +54,6 @@ public abstract class AbstractConfig {
         this.instanceProperties = properties;
         this.instanceProperties.clear();
 
-        // load default properties file
         try(FileInputStream in = new FileInputStream(defaultConfigPath)){
             instanceProperties.load(in);
             getLogger().info("Loaded default config from: {}", defaultConfigPath);
@@ -65,7 +62,6 @@ public abstract class AbstractConfig {
         }
         
 
-        // Try to open a specific instance file, if not, it will create one
         try {
             getLogger().info("Loaded instance config for: " + instanceId);
             FileInputStream in = new FileInputStream(instanceConfigPath);
@@ -78,7 +74,7 @@ public abstract class AbstractConfig {
         } catch(IOException e) {
             getLogger().error("No instance config found for: " + instanceId + ". using default config instead.");
             instanceProperties = properties;
-            instanceConfigPath = null; // Clear the failed path so writeToConfig uses default
+            instanceConfigPath = null; 
             getLogger().info("Fallback to default config contains " + instanceProperties.size() + " properties:");
             for (String key : instanceProperties.stringPropertyNames()) {
                 getLogger().info("  " + key + " = " + instanceProperties.getProperty(key));
@@ -173,23 +169,17 @@ public abstract class AbstractConfig {
      */
     public void writeToConfig(String key, String value) {
 
-        // Trying to check to see if the config file has the node key, whatever that may be
         try{
-
-            // Set the property in the instance properties
             instanceProperties.setProperty(key, value);
 
-            // Determine which file path to use - instance config if available, otherwise default
             String configPath = (instanceId != null && instanceConfigPath != null) ? instanceConfigPath : defaultConfigPath;
 
-            // Write the key/value back to the appropriate file
             try(OutputStream outputStream = openFile(configPath)){
                 instanceProperties.store(outputStream, null);
                 getLogger().info("Overwrote:\t Key: ( " + key + " )\t Value: ( " + value + " ) in file: " + configPath);
             } catch(IOException ioe) {
                 getLogger().error("Error adding value: ( " + value + " ) to key: ( " + key + " ) to config file: " + configPath + "\n" + ioe);
                 
-                // If instance config fails and we were trying to write to instance, fall back to default
                 if(instanceId != null && instanceConfigPath != null && !configPath.equals(defaultConfigPath)) {
                     getLogger().info("Falling back to default config file...");
                     try(OutputStream outputStream = openFile(defaultConfigPath)) {
@@ -203,7 +193,7 @@ public abstract class AbstractConfig {
                 getLogger().error("Unknown error adding value: ( " + value + " ) to key: ( " + key + " ) to config file!\n" + e);
             }
 
-        }catch (Exception e) { // Generic Exception
+        }catch (Exception e) {
             getLogger().error("Error writing key: ( " + key + " ) to config file!\n" + e);
         }
 

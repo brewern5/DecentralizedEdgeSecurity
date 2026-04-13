@@ -93,7 +93,7 @@ public class PacketManagerFactory {
                 }
                 manager = new InitalizationPacketManager(
                     membershipState,
-                    senderId,  // recipient is the sender of the incoming packet
+                    senderId, 
                     instantiatorRole,
                     connectionManager,
                     senderIpAddress
@@ -103,7 +103,7 @@ public class PacketManagerFactory {
             case KEEP_ALIVE:
                 manager = new KeepAliveManager(
                     membershipState,
-                    senderId,  // recipient is the sender of the incoming packet
+                    senderId, 
                     instantiatorRole
                 );
                 break;
@@ -111,7 +111,7 @@ public class PacketManagerFactory {
             case PEER_LIST_REQ:
                 manager = new PeerListPacketManager(
                     membershipState,
-                    senderId,  // recipient is the sender of the incoming packet
+                    senderId,
                     instantiatorRole
                 );
                 break;

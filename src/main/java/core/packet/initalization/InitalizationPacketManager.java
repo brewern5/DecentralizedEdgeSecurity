@@ -86,25 +86,20 @@ public class InitalizationPacketManager extends AbstractPacketManager {
 
         try{
 
-            // Get all the values from the payload
             String[] values = incomingPacket.getAllPayloadValues();
 
             validatePayload(values);
 
-            // Retrieve the port from the payload
             int port = Integer.parseInt(values[0]);
 
-            // Create ID for the new connection
             recipientId = UUID.randomUUID().toString();
             logger.info("Assigned new connection with ID \" {} \".", recipientId);
 
-            // Create connection DTO and add to the connection manager
-            // Use the IP from the socket connection, not from the packet
             ConnectionDto connectionInfo = new ConnectionDto(
                 recipientId,
-                senderIpAddress,  // From socket connection (trusted source)
+                senderIpAddress, 
                 port,
-                core.connection.Priority.CRITICAL // Adjust priority as needed
+                core.connection.Priority.CRITICAL
             );
             connectionManager.addConnection(connectionInfo);
             
@@ -131,12 +126,12 @@ public class InitalizationPacketManager extends AbstractPacketManager {
         PacketType incomingPacketType = incomingPacket.getPacketType();
 
         if(incomingPacketType == PacketType.INITIALIZATION) {
-            // If there are either less or more than 1 value, throw error - we need only one value
+
             if(values.length < 1 || values.length > 1) {
                 throw new InvalidFormatException("Expected Payload length of 1. Recieved length of " + values.length);
             }
     
-            // Check if the payload is an integer, implying it is a port
+
             try {
                 Integer.parseInt(values[0]);
             } catch(NumberFormatException nfe) {
