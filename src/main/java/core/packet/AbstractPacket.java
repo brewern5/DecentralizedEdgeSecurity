@@ -1,13 +1,3 @@
-/*
- *      Author: Nathaniel Brewer
- *
- *      Packet class that easily allows for creation of packets that will be transformed into Json Format for
- *      digestability and ease of use.
- * 
- *      This is an abstract class that's child classes will handle unique logic. Such as Keep Alive having
- *      the need for a timer.
- * 
- */
 package core.packet;
 
 import java.util.Arrays;
@@ -16,6 +6,23 @@ import java.util.UUID;
 
 import com.google.gson.Gson;
 
+/**
+ * Base packet model shared by all request and response packet types.
+ *
+ * <p>All packets are serialized as JSON and terminated with the {@code ||END||}
+ * delimiter when sent over sockets. Subclasses should only add payload semantics,
+ * not transport logic.
+ *
+ * <p>Identity fields:
+ * <ul>
+ *   <li>{@code instanceId}: sender instance ID at send time</li>
+ *   <li>{@code recipientId}: intended target instance ID</li>
+ *   <li>{@code clusterId}: cluster scope associated with sender</li>
+ *   <li>{@code packetId}: unique packet UUID generated on construction</li>
+ * </ul>
+ *
+ * <p>Payload is represented as ordered key-value pairs to preserve write order.
+ */
 public abstract class AbstractPacket {
 
     protected int payloadPairCounter = 0;
@@ -30,15 +37,16 @@ public abstract class AbstractPacket {
 
     protected String timeStamp;
 
-    // This is where all information will be stored that is either in the request or response format.
-    // NO IDs should be stored here, only information to be handled
+    // Payload should contain message data only; transport and identity fields are separate members.
     protected LinkedHashMap<String, String> payload = new LinkedHashMap<>();  
+
     /**
-     * 
-     * @param instanceId The id of the instance that is sending the packet 
-     * @param packetType The enum type of the packet
-     * @param clusterId The id of the cluster this instance belongs to
-     * @param recipientId The id of the intended recipient of the packet
+     * Constructs a packet with identity metadata and an auto-generated packet ID.
+     *
+     * @param instanceId sender instance ID
+     * @param packetType packet type discriminator
+     * @param clusterId cluster ID for sender context
+     * @param recipientId intended recipient instance ID
      */
     protected AbstractPacket(String instanceId, PacketType packetType, String clusterId, String recipientId) {
         this.instanceId = instanceId;
@@ -52,26 +60,52 @@ public abstract class AbstractPacket {
         
     }
 
-    /*
-     *      Getters
+    /**
+     * @return packet type discriminator.
      */
-
     public PacketType getPacketType() { return packetType; }
 
+    /**
+     * @return sender instance ID.
+     */
     public String getInstanceId() { return instanceId; }
 
+    /**
+     * @return sender cluster ID.
+     */
     public String getClusterId() { return clusterId; }
 
+    /**
+     * @return intended recipient instance ID.
+     */
     public String getRecipientId() { return recipientId; }
 
+    /**
+     * @return globally unique packet ID.
+     */
     public String getPacketId() { return packetId; }
 
+    /**
+     * @return Unix epoch milliseconds (string) when packet was created.
+     */
     public String getTimeStamp() { return timeStamp; }
     
+    /**
+     * @return ordered payload key-value map.
+     */
     public LinkedHashMap<String, String> getPayload() { return payload; }
     
+    /**
+     * @return number of payload entries added through helper methods.
+     */
     public int getPayloadPairCounter() { return payloadPairCounter; }
     
+    /**
+     * Returns payload values in insertion order.
+     *
+     * <p>Use this for manager validation when only values are relevant.
+     * Prefer getPayload() when keys matter semantically.
+     */
     public String[] getAllPayloadValues() {
 
         Object[] objValues;
@@ -87,10 +121,6 @@ public abstract class AbstractPacket {
     public String getValueByKey(String key) {
         return payload.get(key);
     }
-    
-    /*
-     *      Mutators
-     */
 
     public void setPacketType(PacketType packetType) { this.packetType = packetType; }
 
@@ -106,8 +136,14 @@ public abstract class AbstractPacket {
 
     public void setPayloadPairCounter(int payloadPairCounter) { this.payloadPairCounter = payloadPairCounter; }
 
+    /**
+     * Adds one payload entry and increments payload counter.
+     */
     public void addKeyValueToPayload(String key, String value) { payload.put(key, value); payloadPairCounter++; }
 
+    /**
+     * Adds values under generated Message keys in sequence.
+     */
     public void addStringValue(String... value) {
         for(String val : value) {
             addKeyValueToPayload("Message" + payloadPairCounter, val);
@@ -116,12 +152,14 @@ public abstract class AbstractPacket {
 
     public void addPayload(LinkedHashMap<String, String> payload) { this.payload = payload; }
 
-    /*
-        Stringify Methods
-    */
-
+    /**
+     * @return JSON representation of this packet.
+     */
     public String toJson() { return new Gson().toJson(this); }
 
+    /**
+     * @return JSON packet terminated with network delimiter.
+     */
     public String toDelimitedString() { return new Gson().toJson(this) + "||END||"; }
 
 }

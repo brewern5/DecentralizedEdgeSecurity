@@ -1,8 +1,3 @@
-/*
-    Author: Nathaniel Brewer
-
-    This is the concrete implementation of the EdgeComponent. 
-*/
 package components.server.runtime;
 
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +30,12 @@ import core.packet.initalization.InitalizationPacketManager;
 
 import core.runtime.AbstractEdgeComponent;
 
+/**
+ * Concrete server runtime component.
+ *
+ * <p>Server currently acts as a bridge between coordinator and nodes with separate
+ * listeners and connection managers for each direction.
+ */
 public class ServerComponent extends AbstractEdgeComponent {
     
     private static ServerListener nodeListener;

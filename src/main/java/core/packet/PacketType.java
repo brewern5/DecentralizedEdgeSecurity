@@ -1,24 +1,26 @@
-/*
- *      Author: Nathaniel Brewer
- *
- *      Enumeration for easily setting the packetType with visualizable header options
- * 
- *      Setup example
- *          EdgePacket packet = new EdgePacket(PacketType.MESSAGE, "Sender", "Payload");
- * 
- *      Will pull these and use a switch statement to handle them accordingly.
- *      For example, AUTH will be sent to whatever auth system we decide to use 
- * 
- */
 package core.packet;
 
+/**
+ * Packet type taxonomy for all wire messages.
+ *
+ * <p>Request packet types are expected to resolve to a packet manager provider.
+ * Response packet types are terminal in handlers and generally do not require
+ * manager dispatch.
+ *
+ * <p>When adding a new packet type:
+ * <ol>
+ *   <li>Add enum value here.</li>
+ *   <li>Add a packet subtype provider for Gson registration.</li>
+ *   <li>Add a packet manager provider if request processing is required.</li>
+ * </ol>
+ */
 public enum PacketType {
-    INITIALIZATION,     // For handshake or setup - Will send the preferred listening port 
-    INITIALIZATION_RES, // Response for the initalization packet
-    MESSAGE,            // Generic text/data message
-    KEEP_ALIVE,         // Keep-alive or ping
-    ERROR,              // Error or exception reporting
-    ACK,                // Acknowledgement of receipt
-    PEER_LIST_REQ,      // Request of peer list from the servers
-    PEER_LIST_RES       // Response of the peer list
+    INITIALIZATION,
+    INITIALIZATION_RES,
+    MESSAGE,
+    KEEP_ALIVE,
+    ERROR,
+    ACK,
+    PEER_LIST_REQ,
+    PEER_LIST_RES
 }

@@ -7,20 +7,10 @@
 */
 package components.node.connections;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import core.connection.ConnectionDtoManager;
 import core.connection.ConnectionManager;
-import core.connection.Priority;
 
 import core.identity.RuntimeMembershipState;
 import core.identity.TierRole;
-
-import core.exception.KeepAliveException;
-
-import core.packet.AbstractPacket;
-import core.packet.keep_alive.KeepAliveManager;
 
 public class NodePeerConnectionManager extends ConnectionManager {
 

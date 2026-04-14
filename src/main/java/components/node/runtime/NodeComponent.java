@@ -1,8 +1,3 @@
-/*
-    Author: Nathaniel Brewer
-
-    This is the concrete implementation of the EdgeComponent. 
-*/
 package components.node.runtime;
 
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +26,12 @@ import core.packet.AbstractPacket;
 import core.packet.initalization.InitalizationPacketManager;
 import core.runtime.AbstractEdgeComponent;
 
+/**
+ * Concrete node runtime component.
+ *
+ * <p>Current behavior assumes SERVER as node's upstream tier. Extension to alternate
+ * topologies should keep packet flow contracts unchanged while changing connection wiring.
+ */
 public final class NodeComponent extends AbstractEdgeComponent {
 
     private static NodeListener serverListener;

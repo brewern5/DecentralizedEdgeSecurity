@@ -1,60 +1,94 @@
 package core.external;
-/*
- *      Author: Nathaniel Brewer
- *
- *      Factory class for registering all packet types with Gson's RuntimeTypeAdapterFactory.
- *      This ensures proper serialization/deserialization of AbstractPacket subclasses.
- * 
- *      Usage:
- *          Gson gson = new GsonBuilder()
- *              .registerTypeAdapterFactory(PacketTypeAdapterFactory.create())
- *              .create();
- */
 
 import com.google.gson.TypeAdapterFactory;
 
-import core.packet.AbstractPacket;
-import core.packet.initalization.InitalizationPacket;
-import core.packet.keep_alive.KeepAlivePacket;
-import core.packet.peerlist_packet.PeerListReqPacket;
-import core.packet.peerlist_packet.PeerListResPacket;
-import core.packet.response_packet.AckResponse;
-import core.packet.response_packet.ErrorResponse;
-import core.packet.response_packet.InitializationResponse;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.ServiceLoader;
 
+import core.external.providers.AckResponseSubtypeProvider;
+import core.external.providers.ErrorResponseSubtypeProvider;
+import core.external.providers.InitalizationPacketSubtypeProvider;
+import core.external.providers.InitializationResponseSubtypeProvider;
+import core.external.providers.KeepAlivePacketSubtypeProvider;
+import core.external.providers.MessagePacketSubtypeProvider;
+import core.external.providers.PeerListReqPacketSubtypeProvider;
+import core.external.providers.PeerListResPacketSubtypeProvider;
+import core.packet.AbstractPacket;
+
+/**
+ * Central factory for registering packet subtype mappings with Gson.
+ *
+ * <p>Subtype providers are loaded through ServiceLoader so packet classes can be
+ * added without editing this file.
+ */
 public class PacketTypeAdapterFactory {
 
-    /**
-     * Creates and configures a RuntimeTypeAdapterFactory for all packet types.
-     * The type field "packetType" will be used to determine which packet class to instantiate.
-     * 
-     * @return TypeAdapterFactory configured with all packet types
-     */
-    public static TypeAdapterFactory create() {
-        return RuntimeTypeAdapterFactory.of(AbstractPacket.class, "packetType")
-            .registerSubtype(InitalizationPacket.class, "INITIALIZATION")
-            .registerSubtype(InitializationResponse.class, "INITIALIZATION_RES")
-            .registerSubtype(KeepAlivePacket.class, "KEEP_ALIVE")
-            .registerSubtype(ErrorResponse.class, "ERROR")
-            .registerSubtype(AckResponse.class, "ACK")
-            .registerSubtype(PeerListReqPacket.class, "PEER_LIST_REQ")
-            .registerSubtype(PeerListResPacket.class, "PEER_LIST_RES");
+    private static final List<PacketSubtypeProvider> SUBTYPE_PROVIDERS = loadProviders();
+
+    private PacketTypeAdapterFactory() {
+    }
+
+    private static List<PacketSubtypeProvider> loadProviders() {
+        List<PacketSubtypeProvider> providers = new ArrayList<>();
+
+        ServiceLoader<PacketSubtypeProvider> loader = ServiceLoader.load(PacketSubtypeProvider.class);
+        for (PacketSubtypeProvider provider : loader) {
+            providers.add(provider);
+        }
+
+        // Built-ins are a fallback for environments where service files are not resolved.
+        registerBuiltIns(providers);
+
+        providers.sort(Comparator.comparing(PacketSubtypeProvider::typeLabel));
+        return Collections.unmodifiableList(providers);
+    }
+
+    private static void registerBuiltIns(List<PacketSubtypeProvider> providers) {
+        registerIfMissing(providers, new InitalizationPacketSubtypeProvider());
+        registerIfMissing(providers, new InitializationResponseSubtypeProvider());
+        registerIfMissing(providers, new KeepAlivePacketSubtypeProvider());
+        registerIfMissing(providers, new ErrorResponseSubtypeProvider());
+        registerIfMissing(providers, new AckResponseSubtypeProvider());
+        registerIfMissing(providers, new PeerListReqPacketSubtypeProvider());
+        registerIfMissing(providers, new PeerListResPacketSubtypeProvider());
+        registerIfMissing(providers, new MessagePacketSubtypeProvider());
+    }
+
+    private static void registerIfMissing(List<PacketSubtypeProvider> providers, PacketSubtypeProvider candidate) {
+        for (PacketSubtypeProvider existing : providers) {
+            if (existing.typeLabel().equals(candidate.typeLabel())) {
+                return;
+            }
+        }
+        providers.add(candidate);
+    }
+
+    private static RuntimeTypeAdapterFactory<AbstractPacket> buildFactory(boolean maintainTypeField) {
+        RuntimeTypeAdapterFactory<AbstractPacket> factory = maintainTypeField
+            ? RuntimeTypeAdapterFactory.of(AbstractPacket.class, "packetType", true)
+            : RuntimeTypeAdapterFactory.of(AbstractPacket.class, "packetType");
+
+        for (PacketSubtypeProvider provider : SUBTYPE_PROVIDERS) {
+            factory = factory.registerSubtype(provider.packetClass(), provider.typeLabel());
+        }
+
+        return factory;
     }
 
     /**
-     * Creates a RuntimeTypeAdapterFactory that maintains the type field in deserialized objects.
-     * Useful for debugging or when you need to preserve the type field.
-     * 
-     * @return TypeAdapterFactory configured with all packet types and type field preservation
+     * Creates a runtime adapter with packetType-based subtype mapping.
+     */
+    public static TypeAdapterFactory create() {
+        return buildFactory(false);
+    }
+
+    /**
+     * Creates a runtime adapter that preserves the packetType field during deserialization.
      */
     public static TypeAdapterFactory createWithTypeField() {
-        return RuntimeTypeAdapterFactory.of(AbstractPacket.class, "packetType", true)
-            .registerSubtype(InitalizationPacket.class, "INITIALIZATION")
-            .registerSubtype(InitializationResponse.class, "INITIALIZATION_RES")
-            .registerSubtype(KeepAlivePacket.class, "KEEP_ALIVE")
-            .registerSubtype(ErrorResponse.class, "ERROR")
-            .registerSubtype(AckResponse.class, "ACK")
-            .registerSubtype(PeerListReqPacket.class, "PEER_LIST_REQ")
-            .registerSubtype(PeerListResPacket.class, "PEER_LIST_RES");
+        return buildFactory(true);
     }
 }

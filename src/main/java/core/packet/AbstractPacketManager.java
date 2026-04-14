@@ -1,18 +1,3 @@
-/*
- *      Author: Nathaniel Brewer
- *
- *      Packet class that easily allows for creation of packets that are in the Json Format for
- *      digestability and ease of use.
- * 
- *      I chose the Json format for easy formatting purposes and the preservation of variables
- * 
- *      Gson Docs: https://github.com/google/gson/blob/main/UserGuide.md
- * 
- *      This is an abstract class that's child classes will handle unique logic. Such as heartbeat having
- *      the need for a timer.
- * 
- */
-
 package core.packet;
 
 import core.identity.RuntimeMembershipState;
@@ -21,6 +6,19 @@ import core.identity.TierRole;
 import core.exception.InvalidFormatException;
 import core.exception.UnknownPacketException;
 
+/**
+ * Base contract for packet processing logic.
+ *
+ * <p>A concrete manager owns one packet type's behavior for outgoing packet creation,
+ * incoming validation, and response generation.
+ *
+ * <p>Implementation guidance for extensibility:
+ * <ul>
+ *   <li>Keep transport concerns out of managers. Socket I/O belongs to handlers.</li>
+ *   <li>Validate payload shape in validatePayload before processing business logic.</li>
+ *   <li>Return a non-null response packet when a request expects acknowledgement.</li>
+ * </ul>
+ */
 public abstract class AbstractPacketManager {
     
     protected AbstractPacket outgoingPacket; 
@@ -33,10 +31,9 @@ public abstract class AbstractPacketManager {
     protected TierRole instantiatorRole;
 
     /**
-     * 
-     * @param membershipState The DTO for the membership of this device 
-     * @param recipientId The ID of the recieving instance
-     * @param instantiatorRole What this particular instance role is. I.e. "NODE", "SERVER", "COORDINATOR"
+     * @param membershipState runtime membership state of current instance
+     * @param recipientId recipient for outgoing or response packet construction
+     * @param instantiatorRole role of current runtime instance
      */
     protected AbstractPacketManager(RuntimeMembershipState membershipState, String recipientId, TierRole instantiatorRole) {
         this.membershipState = membershipState;
@@ -44,30 +41,38 @@ public abstract class AbstractPacketManager {
         this.instantiatorRole = instantiatorRole;
     }
 
-    /*
-     *      Abstract Methods
+    /**
+     * Builds an outgoing request packet.
      */
-    
     public abstract AbstractPacket createOutgoingPacket();
-    
+
+    /**
+     * Builds a successful response packet.
+     */
     public abstract AbstractPacket createGoodResponsePacket();
 
+    /**
+     * Builds an error response packet.
+     */
     public abstract AbstractPacket createBadResponsePacket();
 
+    /**
+     * Rehydrates manager state from an incoming packet payload.
+     */
     public abstract void recreateIncomingPacket(AbstractPacket incomingPacket);
 
+    /**
+     * Processes the incoming packet and returns the response packet.
+     */
     public abstract AbstractPacket processIncomingPacket();
 
     /**
-     * @param values - the payload of the incoming packet  
-     * @exception InvalidFormatException - Packet has incorrect format such as no delimiter.
-     * @exception UnknownPacketException - Packet type is not of a type that can be handled by the concrete manager.
+     * Validates incoming payload values before business logic is executed.
+     *
+     * @param values payload values extracted from incoming packet
+     * @throws InvalidFormatException if payload structure is invalid
+     * @throws UnknownPacketException if packet type is not supported by this manager
      */
     protected abstract void validatePayload(String[] values) throws InvalidFormatException, UnknownPacketException;
-
-    /*  
-     *      End Abstraction
-     */
-
 
 }

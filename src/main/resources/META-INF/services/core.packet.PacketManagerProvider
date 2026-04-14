@@ -1,0 +1,4 @@
+core.packet.providers.InitalizationPacketManagerProvider
+core.packet.providers.KeepAliveManagerProvider
+core.packet.providers.PeerListPacketManagerProvider
+core.packet.providers.MessagePacketManagerProvider

@@ -1,13 +1,17 @@
-/*
-    Author: Nathniel Brewer
-
-    This DTO is where all localized data will be held. All of this data should be immutable after instantiation.
-*/  
-
 package core.identity;
 
 import java.util.Optional;
 
+/**
+ * Immutable identity model for a runtime tier instance.
+ *
+ * <p>Current implementation models topology as a linear chain with one required
+ * higher tier and an optional lower tier. This reflects current coordinator-server-node
+ * behavior.
+ *
+ * <p>For future topologies (multi-parent, mesh, additional tiers), evolve this class
+ * toward collections of adjacent roles rather than singular higher/lower fields.
+ */
 public abstract class AbstractTierIdentity {
     private final TierRole role;
     private final TierRole higherTier;
@@ -17,12 +21,11 @@ public abstract class AbstractTierIdentity {
     private final String instanceConfigPath;
     private final String instanceId;
 
-
     /**
-     * 
-     * @param role The name of the tier. Ex. NODE, SERVER, COORDINATOR
-     * @param higherTier The tier that is above the current tier. Ex. Node's higher tier is Server, Server's is the Coordinator. Coordinator will default to network.
-     * @param instanceId The ID passed as startup arguments. Ex. Node1, Server2
+    * @param role role of this instance
+    * @param higherTier immediate upstream role in current topology
+    * @param lowerTier immediate downstream role when present
+    * @param instanceId startup instance ID (for config path selection)
      */
     protected AbstractTierIdentity(TierRole role, TierRole higherTier, Optional<TierRole> lowerTier, String instanceId) {
         this.role = role;

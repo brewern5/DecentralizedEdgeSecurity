@@ -50,6 +50,21 @@ DecentralizedEdgeSecurity is a research project for building a basic 3-tiered ed
 - Keep-alives: Coordinator and Server timers check for expired connections; Node timers handle keep-alives to Server.
 - Message routing: Servers bridge messages between Nodes and Coordinator; payloads remain JSON packets with `packetType/sender/payload`.
 
+### Packet Dispatch and Extension Model
+
+Packet handling in the refactored architecture is based on provider registries:
+
+- `PacketSubtypeProvider`: maps packet classes to wire packetType values for Gson polymorphic deserialization.
+- `PacketManagerProvider`: maps request packet types to manager implementations.
+- `PacketManagerFactory`: resolves managers from providers using `PacketProcessingContext`.
+- `AbstractSocketPacketHandler`: shared transport flow for coordinator/server/node handlers.
+
+This design keeps packet-specific business logic in managers and avoids per-handler packet-type switch logic.
+
+### Current Topology vs Future Extension
+
+Current runtime behavior is still coordinator-server-node (3-tier). The extension model is intentionally packet-centric so packet growth does not require topology rewrites. For topology expansion (new tiers or non-linear links), update identity/connection wiring while reusing the same packet provider workflow.
+
 ---
 
 ## Project Structure

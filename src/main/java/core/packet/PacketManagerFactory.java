@@ -25,146 +25,169 @@
 
 package core.packet;
 
-import core.connection.ConnectionManager;
-import core.identity.RuntimeMembershipState;
-import core.identity.TierRole;
-import core.packet.initalization.InitalizationPacketManager;
-import core.packet.keep_alive.KeepAliveManager;
-import core.packet.peerlist_packet.PeerListPacketManager;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
 
+import core.connection.ConnectionManager;
+import core.identity.TierRole;
+import core.packet.providers.InitalizationPacketManagerProvider;
+import core.packet.providers.KeepAliveManagerProvider;
+import core.packet.providers.MessagePacketManagerProvider;
+import core.packet.providers.PeerListPacketManagerProvider;
+
+/**
+ * Factory for resolving packet managers from a pluggable provider registry.
+ *
+ * <p>Providers are loaded using ServiceLoader, allowing new packet manager
+ * implementations to be added without editing this factory class.
+ */
 public class PacketManagerFactory {
 
-    /**
-     * Creates the appropriate PacketManager based on the packet type.
-     * The manager will be pre-configured with the received packet.
-     * 
-     * @param receivedPacket The deserialized packet received from the network
-     * @param membershipState The DTO for the membership of this device 
-     * @param instantiatorRole The role of this instance ("Node", "Server", "Coordinator")
-     * @return The appropriate AbstractPacketManager subclass
-     * @throws IllegalArgumentException if packet type is unknown or unsupported
-     */
-    public static AbstractPacketManager createManager(
-            AbstractPacket receivedPacket,
-            RuntimeMembershipState membershipState,
-            TierRole instantiatorRole) {
-        
-        return createManager(receivedPacket, membershipState, instantiatorRole, null, null);
+    private static final Map<PacketType, PacketManagerProvider> PROVIDERS = loadProviders();
+
+    private PacketManagerFactory() {
+    }
+
+    private static Map<PacketType, PacketManagerProvider> loadProviders() {
+        EnumMap<PacketType, PacketManagerProvider> discovered = new EnumMap<>(PacketType.class);
+
+        ServiceLoader<PacketManagerProvider> loader = ServiceLoader.load(PacketManagerProvider.class);
+        for (PacketManagerProvider provider : loader) {
+            registerProvider(discovered, provider);
+        }
+
+        // Built-in providers are a fallback for environments where service resources are not resolved.
+        registerIfMissing(discovered, new InitalizationPacketManagerProvider());
+        registerIfMissing(discovered, new KeepAliveManagerProvider());
+        registerIfMissing(discovered, new PeerListPacketManagerProvider());
+        registerIfMissing(discovered, new MessagePacketManagerProvider());
+
+        return Collections.unmodifiableMap(discovered);
+    }
+
+    private static void registerIfMissing(Map<PacketType, PacketManagerProvider> providers, PacketManagerProvider provider) {
+        providers.putIfAbsent(provider.supportsType(), provider);
+    }
+
+    private static void registerProvider(Map<PacketType, PacketManagerProvider> providers, PacketManagerProvider provider) {
+        PacketManagerProvider previous = providers.put(provider.supportsType(), provider);
+        if (previous != null && !previous.getClass().equals(provider.getClass())) {
+            throw new IllegalStateException(
+                "Duplicate PacketManagerProvider for packet type "
+                    + provider.supportsType()
+                    + ": " + previous.getClass().getName()
+                    + " and " + provider.getClass().getName()
+            );
+        }
     }
 
     /**
-     * Creates the appropriate PacketManager based on the packet type.
-     * This overload includes additional parameters needed for certain packet types.
-     * 
-     * @param receivedPacket The deserialized packet received from the network
-     * @param membershipState The DTO for the membership of this device 
-     * @param instantiatorRole The role of this instance ("Node", "Server", "Coordinator")
-     * @param connectionManager ConnectionManager instance (required for INITIALIZATION packets)
-     * @param senderIpAddress IP address from socket connection (required for INITIALIZATION packets)
-     * @return The appropriate AbstractPacketManager subclass
-     * @throws IllegalArgumentException if packet type is unknown or required parameters are missing
+     * Attempts to create a manager for the incoming packet in the supplied context.
+     *
+     * @param context processing context
+     * @return manager if provider exists; empty for response types or unsupported packet types
      */
+    public static Optional<AbstractPacketManager> tryCreateManager(PacketProcessingContext context) {
+        validateContext(context);
+
+        PacketType packetType = context.receivedPacket().getPacketType();
+        PacketManagerProvider provider = PROVIDERS.get(packetType);
+
+        if (provider == null) {
+            return Optional.empty();
+        }
+
+        if (provider.requiresConnectionContext()) {
+            if (context.connectionManager() == null || context.senderIpAddress() == null || context.senderIpAddress().isBlank()) {
+                throw new IllegalArgumentException(
+                    "Packet type " + packetType + " requires connectionManager and senderIpAddress"
+                );
+            }
+        }
+
+        AbstractPacketManager manager = provider.create(context);
+        manager.recreateIncomingPacket(context.receivedPacket());
+        return Optional.of(manager);
+    }
+
+    /**
+     * Creates a manager from the provided packet-processing context.
+     *
+     * @param context processing context
+     * @return resolved manager
+     * @throws IllegalArgumentException when no provider is registered for the packet type
+     */
+    public static AbstractPacketManager createManager(PacketProcessingContext context) {
+        return tryCreateManager(context)
+            .orElseThrow(() -> new IllegalArgumentException(
+                "No packet manager provider registered for packet type: "
+                    + context.receivedPacket().getPacketType()
+            ));
+    }
+
+    /**
+     * @deprecated Use createManager(PacketProcessingContext) to avoid overload-specific branching.
+     */
+    @Deprecated
     public static AbstractPacketManager createManager(
             AbstractPacket receivedPacket,
-            RuntimeMembershipState membershipState,
+            core.identity.RuntimeMembershipState membershipState,
+            TierRole instantiatorRole) {
+        PacketProcessingContext context = PacketProcessingContext.builder()
+            .receivedPacket(receivedPacket)
+            .membershipState(membershipState)
+            .instantiatorRole(instantiatorRole)
+            .build();
+
+        return createManager(context);
+    }
+
+    /**
+     * @deprecated Use createManager(PacketProcessingContext) to avoid overload-specific branching.
+     */
+    @Deprecated
+    public static AbstractPacketManager createManager(
+            AbstractPacket receivedPacket,
+            core.identity.RuntimeMembershipState membershipState,
             TierRole instantiatorRole,
             ConnectionManager connectionManager,
             String senderIpAddress) {
-        
-        if (receivedPacket == null || receivedPacket.getPacketType() == null) {
-            throw new IllegalArgumentException("Received packet or packet type cannot be null");
-        }
 
-        PacketType packetType = receivedPacket.getPacketType();
-        String senderId = receivedPacket.getInstanceId();
-        
-        AbstractPacketManager manager;
+        PacketProcessingContext context = PacketProcessingContext.builder()
+            .receivedPacket(receivedPacket)
+            .membershipState(membershipState)
+            .instantiatorRole(instantiatorRole)
+            .connectionManager(connectionManager)
+            .senderIpAddress(senderIpAddress)
+            .build();
 
-        /*
-            I Used a switch here because of memory efficiency, which is important in highly distributed systems.
-        */
-        
-        switch (packetType) {
-            case INITIALIZATION:
-                if (connectionManager == null || senderIpAddress == null) {
-                    throw new IllegalArgumentException(
-                        "ConnectionManager and senderIpAddress are required for INITIALIZATION packets"
-                    );
-                }
-                manager = new InitalizationPacketManager(
-                    membershipState,
-                    senderId, 
-                    instantiatorRole,
-                    connectionManager,
-                    senderIpAddress
-                );
-                break;
-                
-            case KEEP_ALIVE:
-                manager = new KeepAliveManager(
-                    membershipState,
-                    senderId, 
-                    instantiatorRole
-                );
-                break;
-                
-            case PEER_LIST_REQ:
-                manager = new PeerListPacketManager(
-                    membershipState,
-                    senderId,
-                    instantiatorRole
-                );
-                break;
-                
-            case MESSAGE:
-                // TODO: Implement MessageManager when created
-                throw new UnsupportedOperationException(
-                    "MESSAGE packet type not yet implemented in factory"
-                );
-                
-            case INITIALIZATION_RES:
-            case ACK:
-            case ERROR:
-            case PEER_LIST_RES:
-                throw new IllegalArgumentException(
-                    "Response packet types should not be used to create managers: " + packetType
-                );
-                
-            default:
-                throw new IllegalArgumentException("Unknown packet type: " + packetType);
-        }
-        
-        manager.recreateIncomingPacket(receivedPacket);
-        
-        return manager;
+        return createManager(context);
     }
-    
+
     /**
-     * Checks if a packet type requires a manager.
-     * Response packets typically don't need managers.
-     * 
-     * @param packetType The packet type to check
-     * @return true if this packet type should have a manager
+     * Returns whether a manager provider is registered for a packet type.
+     *
+     * @param packetType packet type to check
+     * @return true when a packet manager provider is registered
      */
     public static boolean requiresManager(PacketType packetType) {
-        switch (packetType) {
-            case INITIALIZATION:
-                return true;
-            case KEEP_ALIVE:
-            case PEER_LIST_REQ:
-                return true;
-            case MESSAGE:
-                return true;
-                
-            case INITIALIZATION_RES:
-            case ACK:
-                return false;
-            case ERROR:
-            case PEER_LIST_RES:
-                return false;
-                
-            default:
-                return false;
+        if (packetType == null) {
+            return false;
+        }
+
+        return PROVIDERS.containsKey(packetType);
+    }
+
+    private static void validateContext(PacketProcessingContext context) {
+        if (context == null) {
+            throw new IllegalArgumentException("PacketProcessingContext cannot be null");
+        }
+
+        if (context.receivedPacket() == null || context.receivedPacket().getPacketType() == null) {
+            throw new IllegalArgumentException("Received packet and packet type cannot be null");
         }
     }
 }

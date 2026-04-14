@@ -26,6 +26,12 @@ import core.identity.TierRole;
 
 import core.runtime.AbstractEdgeComponent;
 
+/**
+ * Concrete coordinator runtime component.
+ *
+ * <p>Coordinator is currently modeled as the network entry point and manages
+ * downstream server registration and lifecycle checks.
+ */
 public class CoordinatorComponent extends AbstractEdgeComponent {
     
     private static CoordinatorListener coordinatorListener;
